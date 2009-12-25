@@ -1,0 +1,68 @@
+#!/usr/bin/perl -w
+use strict;
+
+main->new->run;
+
+sub new
+	{
+	my $class = shift;
+	my $s = bless({},$class);
+	return $s;
+	}
+
+sub run
+	{
+	my $s = shift;
+
+	$| = 1;  # flush output every char
+
+	# Flat prerequisites
+
+	my @modules =
+		qw(
+		Crypt::Rijndael
+		Date::Calc
+		Digest::MD5
+		Digest::SHA256
+		Exporter
+		Fcntl
+		GDBM_File
+		Getopt::Long
+		LWP::UserAgent
+		URI::Escape
+		);
+
+	my @missing = ();
+
+	for my $module (@modules)
+		{
+		print "module $module: ";
+
+		eval "require $module";
+
+		if ($@ eq "")
+			{
+			print "ok\n";
+			}
+		else
+			{
+			print "NOT FOUND\n";
+			push @missing, $module;
+			}
+		}
+
+	print "\n";
+	if (@missing == 0)
+		{
+		print "All modules are properly installed.\n";
+		}
+	else
+		{
+		print "These modules are missing:\n";
+		for my $module (@missing)
+			{
+			print "  $module\n";
+			}
+		}
+	print "\n";
+	}

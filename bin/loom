@@ -1,0 +1,23 @@
+#!/usr/bin/perl -w
+use strict;
+use FindBin;
+
+my $TOP;  # top-level directory
+
+BEGIN
+	{
+	# Use safe search path.
+	$ENV{PATH} =
+	"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+
+	# Find our top level.
+	$TOP = $FindBin::RealBin;
+	$TOP =~ /^(.*)$/;  # defeat taint checking if enabled
+	$TOP = $1;         # that's our bin directory
+	$TOP = "$TOP/..";  # go one level up
+	};
+
+use lib "$TOP/lib";
+
+use Loom::Sloop::Main;
+Loom::Sloop::Main->new($TOP)->run;
