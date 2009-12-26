@@ -69,15 +69,9 @@ sub refresh
 	# If we already have a crypto object, push the seed into it and
 	# use the result as the IV of the new crypto object.
 
-	my $iv;
-	if (defined $s->{encrypt})
-		{
-		$iv = $s->{encrypt}->encrypt($seed);
-		}
-	else
-		{
-		$iv = "\000" x 16;
-		}
+	my $iv = defined $s->{encrypt}
+		? $s->{encrypt}->encrypt($seed)
+		: "\000" x 16;
 
 	$s->{encrypt} = Loom::Crypt::AES_CBC->new($seed,$iv);
 	$s->{count} = 32;  # use new key every 32 rounds
