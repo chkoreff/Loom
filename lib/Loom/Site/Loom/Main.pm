@@ -3,6 +3,7 @@ use strict;
 use Loom::Context;
 use Loom::DB::GNU;
 use Loom::Diceware;
+use Loom::Dttm;
 use Loom::File;
 use Loom::HTML;
 use Loom::ID;
@@ -220,6 +221,8 @@ sub clear_state
 	$s->{top_links} = [];
 
 	$s->{cache_time} = "";
+	$s->{cookie_text} = "";
+	$s->{cookie_cache} = undef;
 
 	return;
 	}
@@ -429,6 +432,61 @@ EOM
 	$s->format_HTTP_response($response_code,$headers,$payload);
 	}
 
+sub get_cookie
+	{
+	my $s = shift;
+	my $key = shift;
+
+	if (!defined $s->{cookie_cache})
+		{
+		my $cookie_line = $s->{http}->{header}->get("Cookie");
+
+		my @pairs =
+			map { split(/=/,$_) }
+			split(/\s*;\s*/,$s->{html}->trimblanks($cookie_line));
+
+		$s->{cookie_cache} = Loom::Context->new(@pairs);
+		}
+
+	return $s->{cookie_cache}->get($key);
+	}
+
+sub put_cookie
+	{
+	my $s = shift;
+	my $key = shift;
+	my $val = shift;
+	my $timeout = shift;  # in seconds (optional)
+
+	my $this_url = $s->{config}->get("this_url");
+	my $http = $s->{http};
+	my $host = $http->{header}->get("Host");
+
+	my $server_name = $host;
+	$server_name =~ s/:\d+$//; # strip off port number if present
+
+	my $cookie_domain = ".$server_name";
+	my $cookie_path = "/";
+	my $cookie_secure = ($this_url =~ /^https:/);
+
+	my $expires = "";
+	if (defined $timeout)
+		{
+		my $time = time + $timeout;
+		my $dttm = Loom::Dttm->new($time)->as_cookie;
+		$expires = " expires=$dttm";
+		}
+
+	my $secure = $cookie_secure ? " secure;" : "";
+
+	$s->{cookie_text} .=
+		"Set-Cookie: $key=$val;$secure domain=$cookie_domain; "
+		."path=$cookie_path;"
+		."$expires\n";
+
+	return;
+	}
+
 sub top_navigation_bar
 	{
 	my $s = shift;
@@ -476,23 +534,33 @@ EOM
 	return $result;
 	}
 
-# LATER could move this down into Page_Folder
+# Check the session parameter for validity.  XOR it with the mask cookie to
+# reveal the real session id.  Use the {login} object to validate the real
+# session id.  If it's good, return it.  If not, clear the session parameter
+# and return null.
+
 sub check_session
 	{
 	my $s = shift;
 
 	my $op = $s->{op};
-	my $session = $op->get("session");
+	my $masked_session = $op->get("session");
+	my $mask = $s->get_cookie("mask");
 
-	if ($s->{login}->valid_session($session))
+	if ($s->{id}->valid_id($masked_session) && $s->{id}->valid_id($mask))
 		{
-		# Session is valid.  Leave it alone and return.
-		return;
+		my $real_session = $s->{id}->xor_hex($masked_session,$mask);
+
+		if ($s->{login}->valid_session($real_session))
+			{
+			# Session is valid.  Return it.
+			return $real_session;
+			}
 		}
 
-	# Session is not valid.  Delete it from the operation object.
-
+	# Session is not valid.  Clear the parameter and return null.
 	$op->put("session","");
+	return "";
 	}
 
 sub archive_get
@@ -587,17 +655,17 @@ sub format_HTTP_response
 	my $headers = shift;
 	my $content = shift;
 
-	if ($s->{cache_time} ne "")
-		{
-		$headers .=
-		"Cache-Control: max-age=$s->{cache_time}; must-revalidate\n"
-		}
-
 	my $content_length = length($content);
 
 	$s->{response_text} = "";
 	$s->{response_text} = "HTTP/1.1 $response_code\n";
 	$s->{response_text} .= $headers;
+
+	$s->{response_text} .= $s->{cookie_text};
+	$s->{response_text} .=
+		"Cache-Control: max-age=$s->{cache_time}; must-revalidate\n"
+		if $s->{cache_time} ne "";
+
 	$s->{response_text} .= "Content-Length: $content_length\n";
 	$s->{response_text} .= "\n";
 	$s->{response_text} .= $content;

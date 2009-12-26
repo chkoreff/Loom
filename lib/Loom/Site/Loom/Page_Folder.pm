@@ -51,6 +51,8 @@ sub respond
 
 	if ($op->get("new_folder") ne "" || $op->get("invite") ne "")
 		{
+		# TODO pretty sure we have to do something here with mask
+		# probably even redirect.
 		$s->handle_new_folder;
 		}
 	elsif ($op->get("login") ne "" || $op->get("passphrase") ne "")
@@ -58,14 +60,31 @@ sub respond
 		$s->handle_login;
 
 		my $session = $op->get("session");
-		if ($session ne "")
+		if ($s->{id}->valid_id($session))
 			{
+			my $mask = $site->get_cookie("mask");
+
+			# TODO might want to set the mask for ALL visits to the site,
+			# not just upon successful login.
+			# TODO test with cookies disabled, perhaps default the mask
+			# to all zeroes?
+			# TODO if cookies disabled then degrade/warn gracefully
+
+			if (!$s->{id}->valid_id($mask))
+				{
+				# Set the mask cookie to a new random value.
+				$mask = unpack("H*",$site->{random}->get);
+				$site->put_cookie("mask",$mask);
+				}
+
+			my $masked_session = $s->{id}->xor_hex($session,$mask);
+
 			# http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 
 			$site->format_HTTP_response
 				(
 				"303 See Other",
-				"Location: /?function=folder&session=$session\n",
+				"Location: /?function=folder&session=$masked_session\n",
 				"",
 				);
 
@@ -74,19 +93,13 @@ sub respond
 		}
 	elsif ($op->get("logout") ne "")
 		{
-		$site->check_session;
-		my $session = $op->get("session");
-		if ($session ne "")
-			{
-			$site->{login}->logout($session);
-			$op->put("session","");
-			}
+		my $real_session = $site->check_session;
+		$site->{login}->logout($real_session) if $real_session ne "";
 		}
 
-	$site->check_session;
-	my $session = $op->get("session");
+	my $real_session = $site->check_session;
 
-	if ($session eq "")
+	if ($real_session eq "")
 		{
 		if ($op->get("new_folder") eq "" && $op->get("invite") eq "")
 			{
@@ -96,9 +109,9 @@ sub respond
 		return;
 		}
 
-	die if $session eq "";  # being careful
+	die if $real_session eq "";  # being careful
 
-	$s->{location} = $s->{archive}->touch($session);
+	$s->{location} = $s->{archive}->touch($real_session);
 	$s->{object} = $s->{archive}->touch_object($s->{location});
 
 	my $content_type = $s->{object}->get("Content-type");
@@ -1419,7 +1432,7 @@ sub handle_new_folder
 				$grid->move($type,$remain,$sponsor,$build->{location});
 				}
 
-			$op->put("session",$session);
+			$op->put("session",$session);  # TODO review this
 
 			return;
 			}
