@@ -36,28 +36,9 @@ sub get
 	die if !defined $seed;
 	die if length($seed) != 16;
 
-	if ($s->{count} == 0)
-		{
-		# Time to change the crypto key.
-
-		# If we already have a crypto object, push the seed into it and
-		# use the result as the IV of the new crypto object.
-
-		my $iv;
-		if (defined $s->{encrypt})
-			{
-			$iv = $s->{encrypt}->encrypt($seed);
-			}
-		else
-			{
-			$iv = "\000" x 16;
-			}
-
-		$s->{encrypt} = Loom::Crypt::AES_CBC->new($seed,$iv);
-		$s->{count} = 32;  # use new key every 32 rounds
-		}
-
+	$s->refresh($seed) if $s->{count} == 0;
 	$s->{count}--;
+
 	die if $s->{count} < 0;
 
 	return $s->{encrypt}->encrypt($seed);
@@ -72,6 +53,36 @@ sub get_ulong
 	my $s = shift;
 
 	return unpack("L",$s->get);
+	}
+
+# Refresh the crypto key which we use to encrypt the entropy source.  We
+# do this automatically after every 32 random numbers generated.
+
+sub refresh
+	{
+	my $s = shift;
+	my $seed = shift;
+
+	die if !defined $seed;
+	die if length($seed) != 16;
+
+	# If we already have a crypto object, push the seed into it and
+	# use the result as the IV of the new crypto object.
+
+	my $iv;
+	if (defined $s->{encrypt})
+		{
+		$iv = $s->{encrypt}->encrypt($seed);
+		}
+	else
+		{
+		$iv = "\000" x 16;
+		}
+
+	$s->{encrypt} = Loom::Crypt::AES_CBC->new($seed,$iv);
+	$s->{count} = 32;  # use new key every 32 rounds
+
+	return;
 	}
 
 # LATER maybe an XOR object for doing distinct pseudo-random streams?

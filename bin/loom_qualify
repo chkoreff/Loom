@@ -11,6 +11,7 @@ use Loom::Context;
 use Loom::Digest::SHA256;
 use Loom::ID;
 use Loom::Site::Loom::API;
+use Loom::Test::Random;
 
 main->new($TOP)->run;
 
@@ -40,6 +41,7 @@ sub run
 	$s->get_options;
 	$s->configure;
 	$s->qualify_grid;
+	$s->qualify_random;
 	$s->other_tests;
 
 	print "All tests succeeded.\n";
@@ -79,6 +81,13 @@ sub configure
 	# LATER make a true "stress test" with hundreds of processes
 
 	$s->{loom} = Loom::Site::Loom::API->new(Loom::Context->new);
+	}
+
+sub qualify_random
+	{
+	my $s = shift;
+	Loom::Test::Random->new->run;
+	return;
 	}
 
 sub qualify_grid
