@@ -416,7 +416,7 @@ EOM
 <link rel="stylesheet" href="/cache/7200/data/style.css" type="text/css">
 $keyboard_script
 </head>
-<body style='max-width:800px'$onload_clause>
+<body style='max-width:700px'$onload_clause>
 EOM
 
 	$payload .= $s->top_navigation_bar if !$s->{printer_friendly};

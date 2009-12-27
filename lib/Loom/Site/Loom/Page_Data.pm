@@ -63,7 +63,7 @@ sub data_style_sheet
 	return <<EOM;
 Content-type: text/css
 
-body { font-family: verdana, arial, sans-serif; font-size: 10pt }
+body { font-family: verdana, arial, sans-serif; font-size: 10pt; margin-left: 20px; }
 div { font-size:10pt }
 p { font-size:10pt }
 h1 { font-size:12pt }

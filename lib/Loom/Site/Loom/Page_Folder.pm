@@ -955,14 +955,12 @@ EOM
 <td>
 $type_selector
 </td>
-<td rowspan=2>
-<input type=submit name=give value="Pay">
-</td>
 </tr>
 
 <tr>
 <td>
 $loc_selector
+<input type=submit name=give value="Pay">
 </td>
 </tr>
 
