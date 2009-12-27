@@ -146,7 +146,7 @@ sub respond
 	$q->{num_content_rows} = $num_rows;
 	}
 
-	my $input_size_id = 32 + 4;
+	my $input_size_id = 32 + 2;
 	my $input_size_hash = 2 * $input_size_id;
 
 	my $hidden = $s->{html}->hidden_fields($op->slice(qw(function)));
@@ -196,7 +196,7 @@ EOM
 	$dsp_content .= <<EOM;
 <tr>
 <td>
-Archive Content:
+Content:
 </td>
 <td>
 $link_view
@@ -213,7 +213,7 @@ EOM
 <tr>
 <td colspan=2>
 <input type=hidden name=guard value="$guard">
-<textarea name=content rows=$q->{num_content_rows} cols=120>
+<textarea name=content rows=$q->{num_content_rows} cols=80>
 $q->{content}</textarea>
 </td>
 </tr>
@@ -229,7 +229,7 @@ EOM
 	$dsp_content .= <<EOM;
 <tr>
 <td colspan=2>
-<div style='background-color:#EEEEEE; font-size:8pt; width:760px;'>
+<div style='background-color:#EEEEEE; font-size:8pt; width:700px;'>
 <pre>
 $q->{content}
 </pre>
@@ -243,13 +243,13 @@ EOM
 	$archive_table .= <<EOM;
 <table border=0 style='border-collapse:collapse'>
 <colgroup>
-<col width=150>
-<col width=700>
+<col width=80>
+<col width=620>
 </colgroup>
 
 <tr>
 <td>
-Archive Hash:
+Hash:
 </td>
 <td>
 <input type=text class=tt name=hash size=$input_size_hash value="$q->{hash}">
@@ -259,7 +259,7 @@ Archive Hash:
 
 <tr>
 <td>
-Archive Location:
+Location:
 </td>
 <td>
 <input type=text class=tt name=loc size=$input_size_id value="$q->{loc}">
@@ -272,7 +272,7 @@ $q->{dsp_error}
 
 <tr>
 <td>
-Usage Location:
+Usage:
 </td>
 <td>
 <input type=text class=tt name=usage size=$input_size_id value="$q->{usage}">

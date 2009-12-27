@@ -489,7 +489,7 @@ EOM
 	$table .= <<EOM;
 <tr style='background-color:$row_color'>
 <td colspan=4>
-<textarea name=memo rows=$num_rows cols=100 style='margin-left:20px;'>
+<textarea name=memo rows=$num_rows cols=80 style='margin-left:20px;'>
 $q_memo</textarea>
 </td>
 </tr>

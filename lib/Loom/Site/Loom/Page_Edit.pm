@@ -597,7 +597,7 @@ EOM
 <tr>
 <td colspan=5>
 <input type=hidden name=guard value="$guard">
-<textarea name=content class=small rows=$q->{num_content_rows} cols=120>
+<textarea name=content class=small rows=$q->{num_content_rows} cols=80>
 $q->{content}</textarea>
 </td>
 </tr>
