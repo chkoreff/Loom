@@ -1796,7 +1796,7 @@ EOM
 	$display->{flavor} = "invite_location";
 
 	my $loc_name = $op->get("sponsor.name");
-	$loc_name = "sponsor" if $loc_name eq "";
+	$loc_name = "My Sponsor" if $loc_name eq "";
 	$display->{location_name} = $loc_name;
 
 	$s->{object} = $build->{object};
@@ -1993,6 +1993,10 @@ sub build_folder_template
 
 	my $owner_name = $op->get("owner.name");
 	$owner_name = "My New Folder" if $owner_name eq "";
+
+	# Note that if you ever change the default sponsor name here you need
+	# to change it above in handle_new_folder above as well.  That ain't
+	# pretty but that's the way it is right now.
 
 	my $sponsor_name = $op->get("sponsor.name");
 	$sponsor_name = "My Sponsor" if $sponsor_name eq "";
