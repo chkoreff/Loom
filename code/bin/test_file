@@ -1,0 +1,20 @@
+#!/usr/bin/perl -w
+use strict;
+
+=pod
+
+=head1 NAME
+
+Stress test program for concurrent file updates
+
+=cut
+
+use FindBin;
+my $TOP;
+BEGIN { $TOP = "$FindBin::RealBin/../.." }
+
+use lib "$TOP/code";
+
+use Loom::Test::File;
+
+Loom::Test::File->new($TOP)->run;

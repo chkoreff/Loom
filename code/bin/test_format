@@ -1,0 +1,204 @@
+#!/usr/bin/perl -w
+use strict;
+
+use FindBin;
+my $TOP;
+BEGIN { $TOP = "$FindBin::RealBin/../.." }
+use lib "$TOP/code";
+
+use Getopt::Long;
+use Loom::Format::KV;
+use Loom::Format::Lines;
+
+main->new->run;
+
+# LATER integrate this into test suite
+
+sub new
+	{
+	my $class = shift;
+
+	my $s = bless({},$class);
+	$s->{quote} = Loom::Quote::C->new;
+	$s->{ok} = 1;
+	return $s;
+	}
+
+sub run
+	{
+	my $s = shift;
+
+	$s->test_parse_lines;
+	$s->test_parse_kv;
+
+	#$s->test_quote("  abc def - \n\n \003\007\nfoobar \"hi\"  ");
+	#$s->test_quote("\000\000 hi \t\t \015\n\n  ");
+
+	if ($s->{ok})
+		{
+		print "All tests succeeded.\n";
+		}
+	else
+		{
+		print "ERROR: Some tests failed.\n";
+		}
+
+	return;
+	}
+
+sub test_parse_lines
+	{
+	my $s = shift;
+
+	my $lines = Loom::Format::Lines->new;
+
+	$lines->put(
+		qq{abc\n},
+		qq{defg\015\nhij\nkl\011m"n"o\015\n},
+		qq{\015\n},
+		qq{pqrstuvwxyz});
+
+	my $expect = <<'EOM';
+line "abc"
+line "defg"
+line "hij"
+line "kl\tm\"n\"o"
+line ""
+remain "pqrstuvwxyz"
+EOM
+
+	my $result = "";
+
+	while (1)
+		{
+		my $line = $lines->get;
+		last if !defined $line;
+
+		my $q_line = $s->{quote}->quote($line);
+		$result .= qq{line "$q_line"\n};
+		}
+
+	my $remain = $lines->finish;
+	my $q_remain = $s->{quote}->quote($remain);
+	$result .= qq{remain "$q_remain"\n};
+
+	if ($result eq $expect)
+		{
+		print "test_parse_lines : success\n";
+		}
+	else
+		{
+		$s->{ok} = 0;
+		print <<EOM;
+test_parse_lines : fail
+== result
+$result
+== expect
+$expect
+EOM
+		}
+
+	return;
+	}
+
+sub test_parse_kv
+	{
+	my $s = shift;
+
+	my $text1 = <<EOM;
+Stuff up here to skip.
+(
+:x123
+=123
+
+# embedded comment
+:x24
+=24
+:x25
+strange line here instead of value
+=25
+# another comment here
+
+
+strange line here instead of key
+:x26
+EOM
+	my $text2 = <<EOM;
+=26
+)
+extra stuff on the end.
+(
+:x99
+=99
+)
+EOM
+
+	my $expect = <<EOM;
+?,Stuff up here to skip.
+B
+P,x123,123
+P,x24,24
+!,V,strange line here instead of value
+P,x25,25
+!,K,strange line here instead of key
+P,x26,26
+E
+remain = [extra stuff on the end.
+(
+:x99
+=99
+)
+]
+EOM
+
+	my $kv = Loom::Format::KV->new;
+	$kv->put($text1,$text2);
+
+	my $result = "";
+
+	while (1)
+		{
+		my @rsp = $kv->get;
+		last if @rsp == 0;
+		$result .= "".join(",",@rsp)."\n";
+
+		my $verb = shift @rsp;
+		last if $verb eq "E";
+		}
+
+	$result .= "remain = [".$kv->finish."]\n";
+
+	if ($result eq $expect)
+		{
+		print "test_parse_kv : success\n";
+		}
+	else
+		{
+		$s->{ok} = 0;
+		print <<EOM;
+test_parse_kv : fail
+== result
+$result
+== expect
+$expect
+EOM
+		}
+
+	return;
+	}
+
+# For example:
+#  test_quote("  abc def - \n\n \003\007\nfoobar \"hi\"  ");
+#  test_quote("\000\000 hi \t\t \015\n\n  ");
+
+sub test_quote
+	{
+	my $s = shift;
+	my $str = shift;
+
+	my $quote_str = $s->{quote}->quote($str);
+	my $test_str = $s->{quote}->unquote($quote_str);
+
+	print "quote str ='$quote_str'\n";
+	print "test str  : ".($test_str eq $str)."\n";
+	}

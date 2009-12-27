@@ -1,0 +1,20 @@
+#!/usr/bin/perl -w
+use strict;
+
+=pod
+
+=head1 NAME
+
+Test program for SHA-256 hash
+
+=cut
+
+use FindBin;
+my $TOP;
+BEGIN { $TOP = "$FindBin::RealBin/../.." }
+
+use lib "$TOP/code";
+
+use Loom::Test::SHA256;
+
+Loom::Test::SHA256->new($TOP)->run;
