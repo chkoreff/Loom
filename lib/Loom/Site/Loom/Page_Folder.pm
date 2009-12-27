@@ -45,39 +45,45 @@ sub respond
 	# If we got here by default then set function to "folder".
 	$op->put(function => "folder") if $op->get("function") eq "";
 
-	# We attempt a login if either the Login button was pressed OR any
-	# passphrase is specified.  That way you can log in with IE by just
-	# pressing the Enter key instead of clicking the Login button.
+	my $action = "";
 
 	if ($op->get("new_folder") ne "" || $op->get("invite") ne "")
 		{
-		# TODO pretty sure we have to do something here with mask
-		# probably even redirect.
-		$s->handle_new_folder;
+		$action = "new_folder";
 		}
 	elsif ($op->get("login") ne "" || $op->get("passphrase") ne "")
 		{
-		$s->handle_login;
+		# Attempt a login if the user pressed Login or entered a passphrase.
+		$action = "login";
+		}
+	elsif ($op->get("logout") ne "")
+		{
+		$action = "logout";
+		}
 
-		my $session = $op->get("session");
-		if ($s->{id}->valid_id($session))
+	my $mask = $site->get_cookie("mask");
+
+	if ($action ne "" && !$s->{id}->valid_id($mask))
+		{
+		$s->page_cookie_problem;
+		return;
+		}
+
+	if ($action eq "login" || $action eq "new_folder")
+		{
+		if ($action eq "login")
 			{
-			my $mask = $site->get_cookie("mask");
+			$s->handle_login;
+			}
+		else
+			{
+			$s->handle_new_folder;
+			}
 
-			# TODO might want to set the mask for ALL visits to the site,
-			# not just upon successful login.
-			# TODO test with cookies disabled, perhaps default the mask
-			# to all zeroes?
-			# TODO if cookies disabled then degrade/warn gracefully
-
-			if (!$s->{id}->valid_id($mask))
-				{
-				# Set the mask cookie to a new random value.
-				$mask = unpack("H*",$site->{random}->get);
-				$site->put_cookie("mask",$mask);
-				}
-
-			my $masked_session = $s->{id}->xor_hex($session,$mask);
+		my $real_session = $op->get("session");
+		if ($s->{id}->valid_id($real_session))
+			{
+			my $masked_session = $s->{id}->xor_hex($real_session,$mask);
 
 			# http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 
@@ -90,22 +96,32 @@ sub respond
 
 			return;
 			}
+
+		return if $action eq "new_folder";
 		}
-	elsif ($op->get("logout") ne "")
+	elsif ($action eq "logout")
 		{
 		my $real_session = $site->check_session;
-		$site->{login}->logout($real_session) if $real_session ne "";
+		if ($real_session ne "")
+			{
+			$site->{login}->logout($real_session);
+
+			$site->format_HTTP_response
+				(
+				"303 See Other",
+				"Location: /?logout=1\n",
+				"",
+				);
+
+			return;
+			}
 		}
 
 	my $real_session = $site->check_session;
 
 	if ($real_session eq "")
 		{
-		if ($op->get("new_folder") eq "" && $op->get("invite") eq "")
-			{
-			$site->set_title("Login");
-			$s->page_login;
-			}
+		$s->page_login;
 		return;
 		}
 
@@ -1020,6 +1036,56 @@ sub map_ids_to_nicknames
 	return $names;
 	}
 
+sub put_mask_if_absent
+	{
+	my $s = shift;
+	my $site = $s->{site};
+
+	my $mask = $site->get_cookie("mask");
+	if (!$s->{id}->valid_id($mask))
+		{
+		# Set the mask cookie to a new random value.
+		$mask = unpack("H*",$site->{random}->get);
+		$site->put_cookie("mask",$mask);
+		}
+
+	return;
+	}
+
+sub page_cookie_problem
+	{
+	my $s = shift;
+
+	my $site = $s->{site};
+
+	$s->put_mask_if_absent;
+
+	push @{$site->{top_links}},
+		$site->highlight_link(
+			$site->url,
+			"Home");
+
+	$site->{body} .= <<EOM;
+<h2> This site requires cookies! </h2>
+This site requires cookies in order to function properly, but it appears that
+you have disabled them in your browser.  Please change your browser preferences
+to allow cookies for this site.
+
+<h2> Why does this site require cookies? </h2>
+We could allow you to log in without cookies, but that would be a major
+<em>security hazard</em>.  Someone could look over your shoulder without
+your knowledge and see the secret session ID at the top of your browser.
+If he entered that same session ID in his own browser, he would be logged
+in <em>as you</em> and could steal all your assets.
+<p>
+A cookie prevents that.  A "shoulder surfer" might still see the session ID,
+but without the cookie value which is stored invisibly inside your browser,
+the session ID is useless.
+EOM
+
+	return;
+	}
+
 sub page_login
 	{
 	my $s = shift;
@@ -1027,9 +1093,13 @@ sub page_login
 	my $site = $s->{site};
 	my $op = $site->{op};
 
+	$site->set_title("Login");
+	$s->put_mask_if_absent;
+
 	if ($op->get("help"))
 		{
-		$site->object("Loom::Site::Loom::Page_Help",$site,"index")->respond;   # LATER get rid
+		# LATER get rid
+		$site->object("Loom::Site::Loom::Page_Help",$site,"index")->respond;
 		return;
 		}
 
@@ -1040,11 +1110,9 @@ sub page_login
 
 	if ($op->get("logout") ne "")
 		{
-		my $warning = <<EOM;
-<span class=small>Please
-<span class=alarm><b>close your browser window</b></span> now.</span>
+		$site->{nav_message} = <<EOM;
+<div class=alarm><b>Please close your browser window now.</b></div>
 EOM
-		push @{$site->{top_links}}, $warning;
 		}
 
 	my $out = $s->{out};
@@ -1089,13 +1157,6 @@ EOM
 		$q_passphrase = $s->{html}->quote($passphrase);
 		}
 
-	my $link_folder_new = $site->highlight_link(
-		$site->url(function => "folder", new_folder => 1),
-		"sign up",
-		0,
-		"Become a brand new user",
-		);
-
 	my $login_greeting = $site->{login_greeting};
 	if (!defined $login_greeting)
 		{
@@ -1122,6 +1183,12 @@ $hidden
 <p>
 EOM
 
+	# LATER let's rethink this.  If we are supposed to be at an https site
+	# but we aren't, then it means the redirection from http to https is
+	# not working.  In that case we don't want the user to log in at all.
+	# The site is effectively down and we should go into maintenance mode.
+
+	if (0)
 	{
 	my $color = "";
 	my $msg = "";
@@ -1149,12 +1216,21 @@ EOM
 
 	# LATER: we'll spruce up sign-up process.
 
+	my $link_folder_new = $site->highlight_link(
+		$site->url(function => "folder", new_folder => 1),
+		"sign up here",
+		0,
+		"Become a brand new user",
+		);
+
+	if (0)
+	{
 	$site->{body} .= <<EOM;
-<h2>Are you a new user?</h2>
-You may
-$link_folder_new
-if you have an invitation from somebody already in the system.
+<h2> Not a user yet? </h2>
+You may $link_folder_new if you have an invitation from someone already in the
+system.
 EOM
+	}
 
 	push @{$site->{top_links}}, "";
 
@@ -1243,6 +1319,8 @@ sub handle_new_folder
 	my $site = $s->{site};
 
 	my $op = $site->{op};
+	$op->put("session","");
+
 	my $out = $s->{out};
 
 	$site->set_title("Create Folder");
@@ -1432,7 +1510,7 @@ sub handle_new_folder
 				$grid->move($type,$remain,$sponsor,$build->{location});
 				}
 
-			$op->put("session",$session);  # TODO review this
+			$op->put("session",$session);
 
 			return;
 			}
@@ -1448,7 +1526,7 @@ sub handle_new_folder
 
 		if ($error_usage eq "not_valid_id")
 			{
-			$error_usage = "Not a valid hexadecimal id";
+			$error_usage = "Not a valid invitation code";
 			}
 		elsif ($error_usage eq "insufficient")
 			{

@@ -219,6 +219,7 @@ sub clear_state
 	$s->{need_keyboard} = 0;
 
 	$s->{top_links} = [];
+	$s->{nav_message} = "";
 
 	$s->{cache_time} = "";
 	$s->{cookie_text} = "";
@@ -510,7 +511,10 @@ sub top_navigation_bar
 		$padding = "padding:5px; ";
 		}
 
-	my $result = <<EOM;
+	my $nav_message = $s->{nav_message};
+
+	my $result = "";
+	$result .= <<EOM;
 <div style='${padding}background-color:#EEEEEE;
 	margin-bottom:5px;
 	border: solid 0px'>
@@ -526,6 +530,18 @@ $nav_logo_stanza
 $dsp_links
 </td>
 </tr>
+EOM
+	if ($nav_message ne "")
+		{
+		$result .= <<EOM;
+<tr>
+<td colspan=2>
+$nav_message
+</td>
+</tr>
+EOM
+		}
+	$result .= <<EOM;
 </table>
 
 </div>
