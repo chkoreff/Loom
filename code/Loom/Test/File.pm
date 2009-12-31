@@ -172,7 +172,16 @@ sub spawn_children
 
 		if (defined $child && $child == 0)
 			{
-			Loom::Test::File::Child->new($s,$child_no,$seed)->run;
+			my $option =
+				{
+				child_no => $child_no,
+				seed => $seed,
+				db => $s->{db},
+				locs => $s->{locs},
+				verbose => $s->{verbose},
+				};
+
+			Loom::Test::File::Child->new($option)->run;
 			exit;
 			}
 
@@ -209,15 +218,12 @@ use strict;
 sub new
 	{
 	my $class = shift;
-	my $env = shift;
-	my $child_no = shift;
-	my $seed = shift;  # optional but highly recommended
+	my $option = shift;
 
 	my $s = bless({},$class);
-	$s->{child_no} = $child_no;
-	$s->{env} = $env;
+	$s->{option} = $option;
 
-	srand($seed) if defined $seed;
+	srand($option->{seed}) if defined $option->{seed};
 
 	return $s;
 	}
@@ -226,12 +232,12 @@ sub run
 	{
 	my $s = shift;
 
-	my $child_no = $s->{child_no};
+	my $child_no = $s->{option}->{child_no};
 
-	my $verbose = $s->{env}->{verbose};
-	my $db = $s->{env}->{db};
+	my $verbose = $s->{option}->{verbose};
+	my $db = $s->{option}->{db};
 
-	my $locs = $s->{env}->{locs};
+	my $locs = $s->{option}->{locs};
 	$locs = [@$locs];
 	$s->shuffle($locs);
 

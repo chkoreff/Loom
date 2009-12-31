@@ -5,12 +5,13 @@ use strict;
 
 =head1 NAME
 
-A get/update layer over a directory object.
+A get/put/update layer over a directory object.
 
 =head1 DESCRIPTION
 
-Converts the Loom::File directory interface to a simple get/update
-interface used by the transaction layer Loom::DB::Trans.
+Converts the Loom::File directory interface into the get/update interface used
+by the transaction layer Loom::DB::Trans.  Also provides a put routine so you
+have simple put/get access as well.
 
 =cut
 
@@ -39,7 +40,15 @@ sub get
 	return $val;
 	}
 
-# TODO include "put" to be like Loom::DB::Mem
+sub put
+	{
+	my $s = shift;
+	my $key = shift;
+	my $val = shift;
+
+	$s->{dir}->update({$key => $val}, {});
+	return;
+	}
 
 sub update
 	{

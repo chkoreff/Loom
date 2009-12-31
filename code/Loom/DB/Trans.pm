@@ -77,7 +77,6 @@ sub cancel
 	return;
 	}
 
-
 return 1;
 
 __END__
