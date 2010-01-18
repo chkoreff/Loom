@@ -8,7 +8,7 @@ use lib "$TOP/code";
 
 use Getopt::Long;
 use Loom::DB::GNU;
-use Loom::Format::KV;
+use Loom::Quote::C;
 
 main->new->run;
 
@@ -46,34 +46,36 @@ sub hash_load
 	my $db_name = shift;
 
 	my $db = Loom::DB::GNU->new($db_name);
-	my $kv = Loom::Format::KV->new;
+	my $C = Loom::Quote::C->new;
 
-	my $count = 0;
-	my $verb = "";
+	my $key = "";
 
 	while (1)
 		{
 		my $line = <>;
 		last if !defined $line;
 
-		$count++;
-		$kv->put($line);
+		chomp $line;
+		$line =~ s/\r$//;    # strip CR
+		$line =~ s/^\s+//;   # chop any leading white space
+		next if $line eq ""; # skip blank lines
 
-		my @rsp = $kv->get;
-		next if @rsp == 0;
+		my $type = substr($line,0,1);
+		next if $type ne ":" && $type ne "=";
 
-		$verb = shift @rsp;
-		last if $verb eq "!" || $verb eq "E";
-		next if $verb ne "P";
+		my $data = $C->unquote(substr($line,1));
 
-		my $key = shift @rsp;
-		my $val = shift @rsp;
-		$db->put($key,$val);
+		if ($type eq ":")
+			{
+			$key = $data;
+			}
+		else
+			{
+			$db->put($key,$data);
+			}
 		}
 
 	$db->finish;
-
-	print STDERR "ERROR on line $count\n" if $verb eq "!";
 
 	return;
 	}

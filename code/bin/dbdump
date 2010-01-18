@@ -8,8 +8,7 @@ use lib "$TOP/code";
 
 use Getopt::Long;
 use Loom::DB::GNU;
-use Loom::Format::KV;
-use Loom::Format::Print;
+use Loom::Quote::C;
 
 main->new->run;
 
@@ -47,21 +46,24 @@ sub hash_dump
 	my $s = shift;
 	my $db_name = shift;
 
+	my $C = Loom::Quote::C->new;
+
 	my $db = Loom::DB::GNU->new($db_name);
-	my $kv = Loom::Format::KV::Out->new;
-	my $out = Loom::Format::Print->new;
 
 	my $key = $db->first_key;
 
-	$out->put($kv->put("B"));
+	print "(\n";
 
 	while (defined $key)
 		{
-		$out->put( $kv->put("P",$key,$db->get($key)) );
+		my $val = $db->get($key);
+		print ":".$C->quote($key)."\n";
+		print "=".$C->quote($val)."\n";
+
 		$key = $db->next_key($key);
 		}
 
-	$out->put($kv->put("E"));
+	print ")\n";
 
 	$db->finish;
 	}

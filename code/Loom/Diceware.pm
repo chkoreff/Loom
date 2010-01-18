@@ -1,6 +1,15 @@
 package Loom::Diceware;
 use strict;
 
+=pod
+
+=head1 NAME
+
+Implements the "diceware" algorithm for generating memorable but strong
+passphrases consisting of randomly chosen words.  (See diceware.com.)
+
+=cut
+
 sub new
 	{
 	my $class = shift;

@@ -1,14 +1,13 @@
-package Loom::Crypt::Span;
+package Loom::Crypt;
 use strict;
 use Loom::Crypt::AES_CBC;
 use Loom::Crypt::Blocks;
-use Loom::Quote::Span;
 
 =pod
 
 =head1 NAME
 
-Encryption and decryption of arbitrary text using "span" encoding.
+Simple encryption and decryption of arbitrary pieces of text
 
 =head1 DESCRIPTION
 
@@ -18,7 +17,7 @@ an AES cipher.
 SYNOPSIS:
 
   my $key = [packed binary key:  16, 24, or 32 bytes]
-  my $cipher = Loom::Crypt::Span->new($key);
+  my $cipher = Loom::Crypt->new($key);
   my $plain = [arbitrary text];
   my $crypt = $cipher->encrypt($plain);
   my $test = $cipher->decrypt($crypt);
@@ -31,9 +30,8 @@ separate calls.
 
 PADDING METHOD:
 
-Text is first converted into the "span" format (len str len str ...) and
-padded with NUL bytes so it's a multiple of the block size.  Then the block
-cipher is applied to the blocks in the encoded text.
+Append NUL bytes as necessary and then a single byte 0-15 indicating how many
+NUL bytes were used.
 
 =cut
 
@@ -45,7 +43,6 @@ sub new
 	my $s = bless({},$class);
 	$s->{cipher} = Loom::Crypt::AES_CBC->new($key);  # single-block cipher
 	$s->{cipher} = Loom::Crypt::Blocks->new($s->{cipher});  # multi-block cipher
-	$s->{quote} = Loom::Quote::Span->new;
 	return $s;
 	}
 
@@ -94,7 +91,24 @@ sub pad
 
 	my $blocksize = $s->{cipher}->blocksize;
 
-	return $s->{quote}->pad_quote($text,$blocksize);
+	my $len = length($text) + 1;  # allow for pad count byte at end
+
+	my $num_whole_blocks = int($len / $blocksize);
+	my $num_trail_bytes = $len - $blocksize * $num_whole_blocks;
+
+	my $num_pad_bytes = 0;
+
+	if ($num_trail_bytes > 0)
+		{
+		$num_pad_bytes = $blocksize - $num_trail_bytes;
+		$text .= "\000" x $num_pad_bytes;  # pad with nuls
+		}
+
+	$text .= chr($num_pad_bytes);
+
+	die if (length($text) % $blocksize) != 0;
+
+	return $text;
 	}
 
 sub unpad
@@ -102,7 +116,10 @@ sub unpad
 	my $s = shift;
 	my $text = shift;
 
-	return $s->{quote}->unquote_span($text);
+	my $num_pad_bytes = ord(substr($text,-1,1));
+	my $result_length = length($text) - 1 - $num_pad_bytes;
+
+	return substr($text, 0, $result_length);
 	}
 
 return 1;

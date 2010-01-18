@@ -1,13 +1,31 @@
 package Loom::Quote::Span;
 use strict;
 
-# This module converts text to and from the "span" format:
-#
-#   len str len str ...
-#
-# where len is a length byte (0..255) and str is a string of bytes of that
-# length.  As long as the len byte is greater than zero, the text continues.
-# When the len byte is 0, that indicates the end of the text.
+=pod
+
+=head1 NAME
+
+This module converts text to and from the "span" format:
+    len str len str ...
+
+=head1 DESCRIPTION
+
+This "span" format is:
+
+    len str len str ...
+
+where len is a length byte (0..255) and str is a string of bytes of that
+length.  As long as the len byte is greater than zero, the text continues.
+When the len byte is 0, that indicates the end of the text.
+
+This is a legacy format used in the Loom Archive.  The padding scheme used in
+Loom::Crypt is simpler, but for some reason when I designed the Loom Archive
+I was thinking in terms of "streaming" byte strings and I did this more
+complicated thing.  Oh well, we're kind of stuck with it now, in the Archive
+anyway.  It does impose a slight extra storage overhead on long text objects
+(approx 1/255 or 0.4%), but that's inconsequential.
+
+=cut
 
 sub new
 	{

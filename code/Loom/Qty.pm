@@ -2,9 +2,15 @@ package Loom::Qty;
 use strict;
 use Loom::Int128;
 
-# Creates an object which formats quantities in various ways.  This might not
-# be the most elegant way to do these rather tricky functions, but it sure does
-# the job reliably.
+=pod
+
+=head1 NAME
+
+This object formats quantities in various ways.  This might not be the most
+elegant way to do these rather tricky functions, but it sure does the job
+reliably.
+
+=cut
 
 sub new
 	{

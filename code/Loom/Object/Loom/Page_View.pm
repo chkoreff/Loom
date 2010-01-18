@@ -1,23 +1,39 @@
-#!/usr/bin/perl -w
+package Loom::Object::Loom::Page_View;
 use strict;
 
-=pod
+sub new
+	{
+	my $class = shift;
+	my $site = shift;
 
-=head1 NAME
+	my $s = bless({},$class);
+	$s->{site} = $site;
+	return $s;
+	}
 
-Test program for SHA-256 hash
+sub respond
+	{
+	my $s = shift;
 
-=cut
+	my $site = $s->{site};
 
-use FindBin;
-my $TOP;
-BEGIN { $TOP = "$FindBin::RealBin/../.." }
+	my $op = $site->{op};
+	my $loc = $op->get("hash");
 
-use lib "$TOP/code";
+	my $text = $site->archive_get($loc);
 
-use Loom::Test::SHA256;
+	if (!defined $text)
+		{
+		$site->page_not_found;
+		return;
+		}
 
-Loom::Test::SHA256->new($TOP)->run;
+	$site->page_ok($text);
+
+	return;
+	}
+
+return 1;
 
 __END__
 

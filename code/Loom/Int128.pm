@@ -2,7 +2,13 @@ package Loom::Int128;
 use Bit::Vector;
 use strict;
 
-# This module implements Loom 128-bit integers.
+=pod
+
+=head1 NAME
+
+128-bit integers
+
+=cut
 
 my $g_num_bits = 128;
 

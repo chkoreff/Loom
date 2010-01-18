@@ -1,6 +1,14 @@
 package Loom::Dttm;
 use strict;
 
+=pod
+
+=head1 NAME
+
+Date and time operations.
+
+=cut
+
 sub new
 	{
 	my $class = shift;

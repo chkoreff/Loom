@@ -7,8 +7,8 @@ BEGIN { $TOP = "$FindBin::RealBin/../.." }
 use lib "$TOP/code";
 
 use Getopt::Long;
-use Loom::Format::KV;
-use Loom::Format::Lines;
+use Loom::KV;
+use Loom::Quote::C;
 
 main->new->run;
 
@@ -19,7 +19,7 @@ sub new
 	my $class = shift;
 
 	my $s = bless({},$class);
-	$s->{quote} = Loom::Quote::C->new;
+	$s->{C} = Loom::Quote::C->new;
 	$s->{ok} = 1;
 	return $s;
 	}
@@ -50,13 +50,11 @@ sub test_parse_lines
 	{
 	my $s = shift;
 
-	my $lines = Loom::Format::Lines->new;
-
-	$lines->put(
-		qq{abc\n},
-		qq{defg\015\nhij\nkl\011m"n"o\015\n},
-		qq{\015\n},
-		qq{pqrstuvwxyz});
+	my $input =
+		qq{abc\n}.
+		qq{defg\015\nhij\nkl\011m"n"o\015\n}.
+		qq{\015\n}.
+		qq{pqrstuvwxyz};
 
 	my $expect = <<'EOM';
 line "abc"
@@ -64,23 +62,16 @@ line "defg"
 line "hij"
 line "kl\tm\"n\"o"
 line ""
-remain "pqrstuvwxyz"
+line "pqrstuvwxyz"
 EOM
 
 	my $result = "";
 
-	while (1)
+	for my $line (split(/\r?\n/,$input))
 		{
-		my $line = $lines->get;
-		last if !defined $line;
-
-		my $q_line = $s->{quote}->quote($line);
+		my $q_line = $s->{C}->quote($line);
 		$result .= qq{line "$q_line"\n};
 		}
-
-	my $remain = $lines->finish;
-	my $q_remain = $s->{quote}->quote($remain);
-	$result .= qq{remain "$q_remain"\n};
 
 	if ($result eq $expect)
 		{
@@ -105,7 +96,7 @@ sub test_parse_kv
 	{
 	my $s = shift;
 
-	my $text1 = <<EOM;
+	my $input = <<EOM;
 Stuff up here to skip.
 (
 :x123
@@ -122,8 +113,6 @@ strange line here instead of value
 
 strange line here instead of key
 :x26
-EOM
-	my $text2 = <<EOM;
 =26
 )
 extra stuff on the end.
@@ -134,39 +123,21 @@ extra stuff on the end.
 EOM
 
 	my $expect = <<EOM;
-?,Stuff up here to skip.
-B
-P,x123,123
-P,x24,24
-!,V,strange line here instead of value
-P,x25,25
-!,K,strange line here instead of key
-P,x26,26
-E
-remain = [extra stuff on the end.
-(
+:x123
+=123
+:x24
+=24
+:x25
+=25
+:x26
+=26
 :x99
 =99
-)
-]
 EOM
 
-	my $kv = Loom::Format::KV->new;
-	$kv->put($text1,$text2);
-
-	my $result = "";
-
-	while (1)
-		{
-		my @rsp = $kv->get;
-		last if @rsp == 0;
-		$result .= "".join(",",@rsp)."\n";
-
-		my $verb = shift @rsp;
-		last if $verb eq "E";
-		}
-
-	$result .= "remain = [".$kv->finish."]\n";
+	my $kv = Loom::KV->new;
+	my $hash = $kv->hash($input);
+	my $result = $kv->text($hash);
 
 	if ($result eq $expect)
 		{
@@ -196,8 +167,8 @@ sub test_quote
 	my $s = shift;
 	my $str = shift;
 
-	my $quote_str = $s->{quote}->quote($str);
-	my $test_str = $s->{quote}->unquote($quote_str);
+	my $quote_str = $s->{C}->quote($str);
+	my $test_str = $s->{C}->unquote($quote_str);
 
 	print "quote str ='$quote_str'\n";
 	print "test str  : ".($test_str eq $str)."\n";

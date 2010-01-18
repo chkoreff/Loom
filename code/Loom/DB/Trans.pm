@@ -50,7 +50,7 @@ sub put
 	my $key = shift;
 	my $val = shift;
 
-	return if !defined $key;
+	return if !defined $key || ref($key) ne "";
 	$val = "" if !defined $val;
 
 	$s->{new_val}->{$key} = "".$val;

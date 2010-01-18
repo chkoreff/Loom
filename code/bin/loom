@@ -20,4 +20,5 @@ BEGIN
 use lib "$TOP/code";
 
 use Loom::Sloop::Main;
-Loom::Sloop::Main->new($TOP)->run;
+
+Loom::Sloop::Main->run($TOP);

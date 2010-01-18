@@ -1,7 +1,15 @@
 package Loom::Context;
 use strict;
-use Loom::Format::Buffer;
-use Loom::Format::KV;
+use Loom::Quote::C;
+
+=pod
+
+=head1 NAME
+
+An in-memory put/get object which preserves the insertion order of the keys.
+This is handy for building url query strings.
+
+=cut
 
 sub new
 	{
@@ -103,42 +111,51 @@ sub read_kv
 
 	$s = $s->new if ref($s) eq "";
 
-	my $kv = Loom::Format::KV->new;
-	$kv->put($text);
+	my $C = Loom::Quote::C->new;
+	my $key = "";
 
-	while (1)
+	for my $line (split(/\r?\n/,$text))
 		{
-		my @rsp = $kv->get;
-		last if @rsp == 0;
+		$line =~ s/^\s+//;   # chop any leading white space
+		next if $line eq ""; # skip blank lines
 
-		my $verb = shift @rsp;
-		last if $verb eq "!" || $verb eq "E";
-		next if $verb ne "P";
+		my $type = substr($line,0,1);
+		next if $type ne ":" && $type ne "=";
 
-		my $key = shift @rsp;
-		my $val = shift @rsp;
-		$s->put($key,$val);
+		my $data = $C->unquote(substr($line,1));
+
+		if ($type eq ":")
+			{
+			$key = $data;
+			}
+		else
+			{
+			$s->put($key,$data);
+			}
 		}
 
 	return $s;
 	}
 
+# Write the Context in KV text format.
+
 sub write_kv
 	{
 	my $s = shift;
 
-	my $kv = Loom::Format::KV::Out->new;
-	my $out = Loom::Format::Buffer->new;
+	my $C = Loom::Quote::C->new;
 
-	$out->put($kv->put("B"));
+	my $text = "(\n";
+
 	for my $key ($s->names)
 		{
 		my $val = $s->get($key);
-		$out->put($kv->put("P",$key,$val));
+		$text .= ":".$C->quote($key)."\n";
+		$text .= "=".$C->quote($val)."\n";
 		}
-	$out->put($kv->put("E"));
 
-	return $out->get;
+	$text .= ")\n";
+	return $text;
 	}
 
 return 1;

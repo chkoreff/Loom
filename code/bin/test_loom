@@ -10,7 +10,7 @@ use Getopt::Long;
 use Loom::Context;
 use Loom::Digest::SHA256;
 use Loom::ID;
-use Loom::Site::Loom::API;
+use Loom::Object::Loom::API;
 use Loom::Test::Random;
 
 main->new($TOP)->run;
@@ -80,7 +80,7 @@ sub configure
 	# LATER make it run on real file system
 	# LATER make a true "stress test" with hundreds of processes
 
-	$s->{loom} = Loom::Site::Loom::API->new(Loom::Context->new);
+	$s->{loom} = Loom::Object::Loom::API->new(Loom::Context->new);
 	}
 
 sub qualify_random

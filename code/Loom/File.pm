@@ -756,6 +756,37 @@ sub names
 	return sort @names;
 	}
 
+# Return the deep list of names in this directory, sorted alphabetically.
+# This recursively descends through the directory.
+
+sub deep_names
+	{
+	my $s = shift;
+
+	return () if $s->type ne "d";
+
+	my @result;
+
+	for my $name ($s->names)
+		{
+		my $child = $s->child($name);
+		if ($child->type eq "d")
+			{
+			my @list = $child->deep_names;
+			for my $path (@list)
+				{
+				push @result, "$name/$path";
+				}
+			}
+		elsif ($child->type eq "f")
+			{
+			push @result, $child->name;
+			}
+		}
+
+	return @result;
+	}
+
 # Normalize the path into a standard form for simple and reliable manipulation.
 
 sub normalize_path

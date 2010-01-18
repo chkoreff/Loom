@@ -1,27 +1,48 @@
-#!/usr/bin/perl -w
+package Loom::Load;
 use strict;
 
 =pod
 
 =head1 NAME
 
-Test program for SHA-256 hash
+Dynamic loading of modules
 
 =cut
 
-use FindBin;
-my $TOP;
-BEGIN { $TOP = "$FindBin::RealBin/../.." }
+sub new
+	{
+	my $class = shift;
+	my $s = bless({},$class);
+	return $s;
+	}
 
-use lib "$TOP/code";
+sub require
+	{
+	my $s = shift;
+	my $type = shift;
 
-use Loom::Test::SHA256;
+	die if !defined $type || $type eq "";
 
-Loom::Test::SHA256->new($TOP)->run;
+	my $module = $type;
+	$module =~ s/::/\//g;
+
+	eval { require "$module.pm" };
+
+	if ($@)
+		{
+		print STDERR "Could not get object of type '$type'\n";
+		print STDERR "Error was:\n$@\n";
+		die "\n";
+		}
+
+	return $type;
+	}
+
+return 1;
 
 __END__
 
-# Copyright 2008 Patrick Chkoreff
+# Copyright 2009 Patrick Chkoreff
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
