@@ -386,7 +386,6 @@ sub normalize_file
 
 	$s->{file} = $path;
 
-
 	$s->{path} = \@path;
 
 	return;

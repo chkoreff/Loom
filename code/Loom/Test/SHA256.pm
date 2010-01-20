@@ -75,6 +75,20 @@ sub run
 	"(a million 'a's)"
 	);
 
+	if (0)
+	{
+	# LATER: Here's a cruel test which I can't run on this laptop.  The string
+	# is 2^29 repetitions of 'a'.  To test this you either need a lot of memory
+	# or you need to compute the hash chunks.
+
+	$s->test_hash(
+	'a' x (2 ** 29),  # that's 536,870,912 a's
+	"b9045a71 3caed5df f3d3b783 e98d1ce5 778d8bc3 31ee4119 d7070723 12af06a7",
+	"(2^29 'a's)"
+	);
+
+	}
+
 	$s->test_hash(
 	"93a4bcfb69824c901bd2ba64bd7cc522",
 	"e90c1415 102c3b4d 6c6e74b9 15490a4d ddf8f254 4aea91eb 796eddfe de86ec39"

@@ -111,11 +111,11 @@ sub cancel
 # \decrypt  # a function which decrypts a sequence of 128-bit blocks
 #
 # \pad      # pad a byte string to a sequence of 128-bit blocks
-#    This appends NUL bytes as necessary and prepends a single byte 0-15
+#    This appends NUL bytes as necessary and appends a single byte 0-15
 #    telling how many NUL bytes were used.
 #
 # \unpad    # unpad a sequence of 128-bit blocks to a byte string
-#    This strips off the leading count byte and the trailing NUL bytes.
+#    This strips off the trailing NUL bytes and count byte.
 #
 # \id     # 128-bit object identifier
 # \text   # object content, an arbitrary string of bytes

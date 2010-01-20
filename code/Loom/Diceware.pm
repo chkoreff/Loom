@@ -32,6 +32,8 @@ sub get
 	my $s = shift;
 	my $count = shift;
 
+	die if !defined $count;
+
 	my $passphrase = "";
 
 	for (1 .. $count)
