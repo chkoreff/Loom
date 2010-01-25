@@ -8,6 +8,9 @@ use Loom::Quote::C;
 
 Elaborate nested KV (key-value) format
 
+=head1 DESCRIPTION
+
+LATER: Note that we do not currently use this anywhere except in a test.
 =cut
 
 sub new

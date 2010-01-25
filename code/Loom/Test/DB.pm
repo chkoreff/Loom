@@ -14,10 +14,10 @@ use Getopt::Long;
 sub new
 	{
 	my $class = shift;
-	my $TOP = shift;
+	my $arena = shift;
 
 	my $s = bless({},$class);
-	$s->{TOP} = $TOP;
+	$s->{arena} = $arena;
 	return $s;
 	}
 
@@ -25,8 +25,9 @@ sub run
 	{
 	my $s = shift;
 
-	Loom::Test::DB::Mem->new->run;
-	Loom::Test::DB::Set->new->run;
+	my $arena = $s->{arena};
+	Loom::Test::DB::Mem->new($arena)->run;
+	Loom::Test::DB::Set->new($arena)->run;
 	}
 
 package Loom::Test::DB::Mem;
@@ -36,10 +37,12 @@ use Loom::DB::Trans_Mem;
 sub new
 	{
 	my $class = shift;
+	my $arena = shift;
 
 	my $s = bless({},$class);
 	$s->{key_hash} = {};
 	$s->{db} = Loom::DB::Trans_Mem->new;
+	$s->{verbose} = $arena->{verbose};
 	return $s;
 	}
 
@@ -47,7 +50,7 @@ sub run
 	{
 	my $s = shift;
 
-	print "Test in-memory DB with cancel/commit\n";
+	print "Test in-memory DB with cancel/commit\n" if $s->{verbose};
 
 	$s->check(<<EOM);
 EOM
@@ -100,7 +103,7 @@ A 1
 B 2
 EOM
 
-	print "success\n\n";
+	print "success\n\n" if $s->{verbose};
 
 	return;
 	}
@@ -188,8 +191,10 @@ use Loom::DB::Tree;
 sub new
 	{
 	my $class = shift;
+	my $arena = shift;
 
 	my $s = bless({},$class);
+	$s->{verbose} = $arena->{verbose};
 	return $s;
 	}
 
@@ -197,12 +202,12 @@ sub run
 	{
 	my $s = shift;
 
-	print "Test indexed set operations\n";
+	print "Test indexed set operations\n" if $s->{verbose};
 
 	$s->run_test_1;
 	$s->run_test_2;
 
-	print "success\n\n";
+	print "success\n\n" if $s->{verbose};
 	return;
 	}
 
@@ -220,7 +225,7 @@ sub run_test_1
 
 	$s->init;
 
-	print "Set test 1\n";
+	print "Set test 1\n" if $s->{verbose};
 
 	$s->{set}->include("4/4/4/6/9");
 	$s->{set}->include("3/1/8/9");
@@ -265,7 +270,7 @@ sub run_test_1
 	$s->check_follow("5/2","5/3");
 	$s->check_follow("5/3","");
 
-	print "\n";
+	print "\n" if $s->{verbose};
 
 	return;
 	}
@@ -276,7 +281,7 @@ sub run_test_2
 
 	$s->init;
 
-	print "Set test 2\n";
+	print "Set test 2\n" if $s->{verbose};
 
 	$s->{set}->include("4/4/4/6/9");
 	$s->{set}->include("3/1/8/9");
@@ -329,7 +334,7 @@ sub run_test_2
 	$s->check_follow("5/1","5/2");
 	$s->check_follow("5/2","");
 
-	print "\n";
+	print "\n" if $s->{verbose};
 
 	return;
 	}
@@ -341,7 +346,7 @@ sub check_has
 	my $expect = shift;
 
 	my $has = $s->{set}->has($key);
-	print "has '$key' = $has\n";
+	print "has '$key' = $has\n" if $s->{verbose};
 
 	die "expected '$expect' but got '$has'"
 		if defined $expect && $has ne $expect;
@@ -356,7 +361,7 @@ sub check_follow
 	my $expect = shift;
 
 	my $after = $s->{set}->follow($key);
-	print "after '$key' = '$after'\n";
+	print "after '$key' = '$after'\n" if $s->{verbose};
 
 	die "after '$after' is not in set"
 		if $after ne "" && !$s->{set}->has($after);

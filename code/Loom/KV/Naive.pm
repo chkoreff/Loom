@@ -54,6 +54,7 @@ aware that this will map the key "#" to the value "a comment".
 When we split the text on newlines, we use the regex /\r?\n/ which allows the
 lines to be terminated with either CR-LF or just LF.
 
+LATER: Note that we do not currently use this anywhere except in a test.
 =cut
 
 

@@ -14,19 +14,17 @@ use Loom::Object::Loom::Login;  # LATER  need this here, or move down into Folde
 use Loom::Random;
 use Loom::Sloop::HTTP::Parse;
 
-# LATER: do some periodic qualifications and consistency tests.
-
 sub new
 	{
 	my $class = shift;
-	my $top = shift;
-	my $client = shift;
+	my $arena = shift;
 
 	my $s = bless({},$class);
+	$s->{arena} = $arena;
 
-	$s->{client} = $client;
+	$s->{client} = $arena->{client};
 
-	$s->{TOP} = $top->full_path;
+	$s->{TOP} = $arena->{top}->full_path;
 
 	$s->{id} = Loom::ID->new;
 	$s->{html} = Loom::HTML->new;
@@ -49,16 +47,29 @@ sub new
 	# LATER move down into Folder?
 	$s->{login} = Loom::Object::Loom::Login->new($s->{loom});
 
+	$s->{http} = Loom::Sloop::HTTP::Parse->new($s->{client});
+
 	$s->configure;
 
 	return $s;
 	}
 
-sub respond
+# This is called if you include the -t option when starting sloop.
+
+sub qualify
 	{
 	my $s = shift;
 
-	$s->{http} = Loom::Sloop::HTTP::Parse->new($s->{client});
+	Loom::Load->new->require("Loom::Test::Sloop")->new($s->{arena})->run;
+	return;
+	}
+
+# This routine handles the entire interaction with a single client from
+# start to finish.
+
+sub respond
+	{
+	my $s = shift;
 
 	my $max_post_size = 2097152;    # max 2^21 bytes per post (2MB)
 

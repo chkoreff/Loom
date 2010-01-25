@@ -13,12 +13,19 @@ The top-level module called by the "sloop" executable.
 
 =cut
 
-sub run
+sub new
 	{
 	my $class = shift;
-	my $TOP = shift;
+	my $arena = shift;
 
 	my $s = bless({},$class);
+	$s->{arena} = $arena;
+	return $s;
+	}
+
+sub run
+	{
+	my $s = shift;
 
 	# We call umask here so that when the server creates a new file the
 	# permissions are restricted to read and write by the owner only.
@@ -36,25 +43,32 @@ sub run
 		"start", "y",
 		"stop", "n",
 		"help", "h",
+		"t",
 		);
 
 	$s->usage if !$ok;
 
 	my $do_start = $opt->{y} || $opt->{start};
 	my $do_stop = $opt->{n} || $opt->{stop};
+	my $do_test = $opt->{t};
 
 	$ok = 0 if $do_start && $do_stop;
-	$ok = 0 if !$do_start && !$do_stop;
+	$ok = 0 if !$do_start && !$do_stop && !$do_test;
+	$ok = 0 if $do_stop && $do_test;
+	$ok = 0 if $opt->{h} || $opt->{help};
 
 	$s->usage if !$ok;
 
 	# Run the server listener loop.
 
-	my $top = Loom::File->new($TOP);
+	my $top = Loom::File->new($s->{arena}->{TOP});
 	my $config = Loom::Sloop::Config->new($top,"data/conf/sloop");
 
-	my $listener = Loom::Sloop::Listen->new($top,$config);
-	$listener->respond($do_start);
+	my $arena = { top => $top, config => $config, start => $do_start,
+		test => $do_test };
+
+	my $listener = Loom::Sloop::Listen->new($arena);
+	$listener->respond;
 
 	return;
 	}
@@ -67,21 +81,25 @@ sub usage
 	$prog_name =~ s#.*/##;
 
 	print STDERR <<EOM;
-Usage:
-  $prog_name [ -start | -stop ]
-  $prog_name [ -y | -n ]
+This program will start or stop the $prog_name server.
 
-Start or stop the $prog_name server.
+To start the server, or restart if already running, you may use either:
 
-To start the server, or restart if already running:
+  $prog_name -start
+  $prog_name -y
 
-  $prog_name -start &
-
-To stop the server:
+To stop the server, you may use either:
 
   $prog_name -stop
+  $prog_name -n
 
-As a shorthand, you may use -y for -start or -n for -stop.
+You can use the -t option to force a self-test when starting the server:
+
+  $prog_name -y -t
+
+Or you can run the self-test by itself:
+
+  $prog_name -t
 
 EOM
 

@@ -17,7 +17,7 @@ use lib "$TOP/code";
 
 use Loom::Test::File;
 
-Loom::Test::File->new($TOP)->run;
+Loom::Test::File->new( { TOP => $TOP } )->run;
 
 __END__
 

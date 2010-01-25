@@ -13,10 +13,10 @@ Test suite for SHA-256 hash
 sub new
 	{
 	my $class = shift;
-	my $TOP = shift;
+	my $arena = shift;
 
 	my $s = bless({},$class);
-	$s->{TOP} = $TOP;
+	$s->{verbose} = $arena->{verbose};
 	return $s;
 	}
 
@@ -163,6 +163,8 @@ sub test_hash
 
 	my $gpg_hash = $s->GPG_sha256_hex($str);
 
+	if ($s->{verbose})
+	{
 	print "---\n";
 
 	if (!defined $str_desc)
@@ -181,24 +183,25 @@ sub test_hash
 	print "  $expected\n";
 	print "GPG says:\n";
 	print "  $gpg_hash\n";
+	}
 
 	if ($hash eq $expected && $expected eq $gpg_hash)
 		{
-		print "Correct.\n";
+		print "Correct.\n" if $s->{verbose};
 		}
 	elsif ($expected ne $gpg_hash)
 		{
-		print "=======> OOPS!!!!\n";
-		print "The result from GPG did not match your expected value:\n";
-		print "  $expected\n";
+		print STDERR "=======> OOPS!!!!\n";
+		print STDERR "The result from GPG did not match your expected value:\n";
+		print STDERR "  $expected\n";
 		die;
 		}
 	else
 		{
-		print "=======> OOPS!!!!!\n";
+		print STDERR "=======> OOPS!!!!!\n";
 		die;
 		}
-	print "\n";
+	print "\n" if $s->{verbose};
 	}
 
 sub GPG_sha256_hex

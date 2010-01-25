@@ -1,10 +1,5 @@
-#!/usr/bin/perl -w
+package Loom::Test::Grid;
 use strict;
-
-use FindBin;
-my $TOP;
-BEGIN { $TOP = "$FindBin::RealBin/../.." }
-use lib "$TOP/code";
 
 use Getopt::Long;
 use Loom::Context;
@@ -13,22 +8,17 @@ use Loom::ID;
 use Loom::Object::Loom::API;
 use Loom::Test::Random;
 
-main->new($TOP)->run;
-
-# LATER this is the only place we use a memory-based db.  The "real" loom server
-# will be using the straight file system soon, so testing in memory will have
-# to take a slightly different character.  Maybe we just DON'T test in memory.
-# Instead, point the loom server to a temporary test directory and run the
-# qualification there.  We'll need to do that eventually anyway if we're going
-# to run true stress tests with multiple processes.
+# LATER  For now we test with a memory-based db.  Soon we'll point the loom
+# server to a temporary test directory and run the qualification there.  We'll
+# also do a nondeterministic test suite with multiple processes.
 
 sub new
 	{
 	my $class = shift;
-	my $TOP = shift;
+	my $arena = shift;
 
 	my $s = bless({},$class);
-	$s->{TOP} = $TOP;
+	$s->{arena} = $arena;
 	$s->{id} = Loom::ID->new;
 	$s->{hasher} = Loom::Digest::SHA256->new;
 	return $s;
@@ -44,7 +34,7 @@ sub run
 	$s->qualify_random;
 	$s->other_tests;
 
-	print "All tests succeeded.\n";
+	print "All tests succeeded.\n" if !$s->{arena}->{embedded};
 	}
 
 sub get_options
@@ -52,6 +42,12 @@ sub get_options
 	my $s = shift;
 
 	$s->{trace} = 0;
+
+	if ($s->{arena}->{embedded})
+		{
+		$s->{trace} = $s->{arena}->{trace};
+		return;
+		}
 
 	my $opt = {};
 
@@ -1166,6 +1162,8 @@ sub put_sym
 
 	$s->{sym}->{$sym} = $val;
 	}
+
+return 1;
 
 __END__
 

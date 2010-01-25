@@ -17,7 +17,7 @@ sub new
 	return $s;
 	}
 
-sub format
+sub format   # LATER 0123 simplify
 	{
 	my $s = shift;
 	my $text = shift;
@@ -28,7 +28,7 @@ sub format
 	return $op->{output};
 	}
 
-sub respond
+sub respond   # LATER 0123 simplify
 	{
 	my $s = shift;
 	my $op = shift;

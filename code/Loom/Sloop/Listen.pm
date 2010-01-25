@@ -60,17 +60,17 @@ Loom::Sloop::Listen - Listen for inbound connections and fork handler process
 sub new
 	{
 	my $class = shift;
-	my $top = shift;
-	my $config = shift;
+	my $arena = shift;
 
 	my $s = bless({},$class);
-	$s->{top} = $top;
-	$s->{config} = $config;
+	$s->{arena} = $arena;
+	$s->{top} = $arena->{top};
+	$s->{config} = $arena->{config};
 
-	my $rundir = $top->child("data/run");
+	my $rundir = $s->{top}->child("data/run");
 	$rundir->restrict;
 
-	$s->{status} = Loom::Sloop::Status->new($rundir,$config);
+	$s->{status} = Loom::Sloop::Status->new($rundir,$arena->{config});
 	$s->{signal} = Loom::Sloop::Signal->new;
 	return $s;
 	}
@@ -81,13 +81,43 @@ sub new
 sub respond
 	{
 	my $s = shift;
-	my $start = shift;  # start if true, stop if false
 
 	$s->{signal}->put_child(0);
 	$s->{signal}->put_interrupt(0);
 
-	return if !$s->stop_server;  # Stop server if already running.
-	$s->start_server if $start;  # Start server if desired.
+	if ($s->{arena}->{test} && !$s->{arena}->{start})
+		{
+		# Qualify only.
+		$s->qualify;
+		return;
+		}
+
+	# Stop the server if already running.
+	my $ok = $s->stop_server;
+	if (!$ok)
+		{
+		# We failed to stop the server!  Give up.
+		return;
+		}
+
+	# Now start the server if desired.
+	if ($s->{arena}->{start})
+		{
+		$s->start_server;
+		}
+
+	return;
+	}
+
+# Qualify the handler module before starting the server.
+
+sub qualify
+	{
+	my $s = shift;
+
+	my $opt = $s->{config}->options;
+	my $module = Loom::Load->new->require($opt->{module});
+	$module->new( { top => $s->{top} } )->qualify;
 
 	return;
 	}
@@ -98,9 +128,32 @@ sub start_server
 	{
 	my $s = shift;
 
+	$s->qualify if $s->{arena}->{test};
+
+	# OK now we've passed the test so let's start the server running in the
+	# background.
+
+	my $child = fork;
+
+	if (!defined $child)
+		{
+		# The fork failed, probably because too many processes are running.
+		print STDERR "The server failed to start because of this error: $!\n";
+		exit(1);
+		}
+	elsif ($child != 0)
+		{
+		# The parent process does nothing.
+		exit(0);
+		}
+
+	# This is the child process, which runs in the background and implements
+	# the server.
+
 	$s->{status}->start;
 	$s->server_loop;
 	$s->{status}->stop;
+
 	return;
 	}
 
@@ -308,7 +361,10 @@ sub run_client
 
 	my $opt = $s->{config}->options;
 	my $module = Loom::Load->new->require($opt->{module});
-	$module->new($s->{top},$client)->respond;
+	my $arena = { top => $s->{top}, client => $client };
+
+	$module->new($arena)->respond;
+
 	return;
 	}
 
