@@ -56,6 +56,11 @@ sub respond
 	return;
 	}
 
+# LATER 0318 keep the usage tokens in a separate secret grid location for each
+# archive location, instead of moving them back and forth to the usaget token
+# issuer location.  That will make Archive a completely decoupled API which
+# requires no privileged operations, i.e. calling charge_usage.
+
 sub do_buy
 	{
 	my $s = shift;

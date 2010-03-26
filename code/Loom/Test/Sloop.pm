@@ -29,11 +29,16 @@ sub run
 	Loom::Test::Grid->new({embedded => 1})->run;
 
 	# Test concurrent file operations with many processes.
+
+	# LATER 0318 After we actually port the current GNU DB over to individual
+	# files, I'll write a massively parallel test suite for API operations
+	# themselves, in addition to this raw file test.
+
 	{
 	my $arena =
 		{
 		embedded => 1,
-		count => 30,
+		count => 128,
 		verbose => 0,
 		TOP => $s->{arena}->{top}->full_path,
 		};

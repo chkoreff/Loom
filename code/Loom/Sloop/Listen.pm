@@ -85,53 +85,37 @@ sub respond
 	$s->{signal}->put_child(0);
 	$s->{signal}->put_interrupt(0);
 
-	if ($s->{arena}->{test} && !$s->{arena}->{start})
-		{
-		# Qualify only.
-		$s->qualify;
-		return;
-		}
+	return if !$s->stop_server;  # Stop the server if already running.
 
-	# Stop the server if already running.
-	my $ok = $s->stop_server;
-	if (!$ok)
-		{
-		# We failed to stop the server!  Give up.
-		return;
-		}
+	$s->init_server if $s->{arena}->{start} || $s->{arena}->{test};
+		# Initialize server if starting or testing.
 
-	# Now start the server if desired.
-	if ($s->{arena}->{start})
-		{
-		$s->start_server;
-		}
+	$s->start_server if $s->{arena}->{start}; # Start the server if desired.
 
 	return;
 	}
 
-# Qualify the handler module before starting the server.
+# When the user starts the server with -y, or runs the self-test with -t, we
+# create an instance of the handler module without a client.  That gives it a
+# chance to initialize, run tests, etc.  We don't do anything with the handler,
+# we just create it and let it go.
 
-sub qualify
+sub init_server
 	{
 	my $s = shift;
 
 	my $opt = $s->{config}->options;
 	my $module = Loom::Load->new->require($opt->{module});
-	$module->new( { top => $s->{top} } )->qualify;
+	my $handler = $module->new($s->{arena});
 
 	return;
 	}
 
-# Start the server and loop until terminated.
+# Start the server running in the background and loop until terminated.
 
 sub start_server
 	{
 	my $s = shift;
-
-	$s->qualify if $s->{arena}->{test};
-
-	# OK now we've passed the test so let's start the server running in the
-	# background.
 
 	my $child = fork;
 

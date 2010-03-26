@@ -14,6 +14,18 @@ use Loom::Object::Loom::Login;  # LATER  need this here, or move down into Folde
 use Loom::Random;
 use Loom::Sloop::HTTP::Parse;
 
+# LATER 0325 Let's do a local install of all the prerequisite Perl modules.
+
+# LATER 0325 Let's not "use" all the modules right away here.  That way if some
+# some modules are missing the self-test will get a chance to run and report
+# them cleanly.  As it stands the code just dies if something like
+# Crypt::Rijndael is missing.
+
+# LATER 0318 object system, including dynamic asset type descriptor, "pay me"
+# site, shopping carts, digital vending machines, and even a code browser
+# for Loom itself.  (I have already written that code browser on another site
+# so I'll just port it here.)
+
 sub new
 	{
 	my $class = shift;
@@ -25,6 +37,16 @@ sub new
 	$s->{client} = $arena->{client};
 
 	$s->{TOP} = $arena->{top}->full_path;
+
+	if (!defined $arena->{client})
+		{
+		# The Sloop::Listen module will call us without a client object first
+		# upon starting the server.  That gives us a chance to do special
+		# processing including self-test.
+
+		$s->startup;
+		return $s;
+		}
 
 	$s->{id} = Loom::ID->new;
 	$s->{html} = Loom::HTML->new;
@@ -54,13 +76,21 @@ sub new
 	return $s;
 	}
 
-# This is called if you include the -t option when starting sloop.
+# We call this right before the server starts up or when running the test.
 
-sub qualify
+sub startup
 	{
 	my $s = shift;
 
-	Loom::Load->new->require("Loom::Test::Sloop")->new($s->{arena})->run;
+	if ($s->{arena}->{test})
+		{
+		# We saw the -t option.  Run the self-test.
+
+		print "Running self-test.\n";
+		Loom::Load->new->require("Loom::Test::Sloop")->new($s->{arena})->run;
+		print "Test succeeded.\n";
+		}
+
 	return;
 	}
 
@@ -449,8 +479,7 @@ sub top_navigation_bar
 	my $top_links = $s->{top_links};
 	for my $link (@$top_links)
 		{
-		$link = "/" if !defined $link || $link eq "";
-
+		$link = "|" if !defined $link || $link eq "";
 		$dsp_links .= qq{<span style='padding-right:15px'>$link</span>\n};
 		}
 

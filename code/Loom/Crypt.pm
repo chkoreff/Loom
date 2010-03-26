@@ -89,6 +89,8 @@ sub pad
 	my $s = shift;
 	my $text = shift;
 
+	die if !defined $text;
+
 	my $blocksize = $s->{cipher}->blocksize;
 
 	my $len = length($text) + 1;  # allow for pad count byte at end
@@ -115,6 +117,8 @@ sub unpad
 	{
 	my $s = shift;
 	my $text = shift;
+
+	die if !defined $text;
 
 	my $num_pad_bytes = ord(substr($text,-1,1));
 	my $result_length = length($text) - 1 - $num_pad_bytes;

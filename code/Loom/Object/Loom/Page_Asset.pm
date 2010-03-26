@@ -87,8 +87,7 @@ sub top_links
 		push @{$site->{top_links}},
 			$site->highlight_link(
 				$site->url($op->slice("function","name","session")),
-				$q_name,
-				$s->{menu} eq "zoom");
+				"Refresh",1) if $s->{menu} eq "zoom";
 
 		push @{$site->{top_links}}, "" if $s->{menu} eq "zoom";
 

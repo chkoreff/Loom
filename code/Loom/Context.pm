@@ -108,6 +108,7 @@ sub read_kv
 	{
 	my $s = shift;
 	my $text = shift;
+	$text = "" if !defined $text;
 
 	$s = $s->new if ref($s) eq "";
 

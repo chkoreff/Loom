@@ -78,8 +78,7 @@ sub top_links
 		push @{$site->{top_links}},
 			$site->highlight_link(
 				$site->url($op->slice("function","name","session")),
-				$q_name,
-				$s->{menu} eq "zoom");
+				"Refresh",1) if $s->{menu} eq "zoom";
 
 		push @{$site->{top_links}}, "" if $s->{menu} eq "zoom";
 
@@ -152,7 +151,7 @@ sub top_links
 			$site->highlight_link(
 				$site->url($op->slice("function"),
 					action => "invite",
-					include_usage_tokens => "on",
+					default_include_usage_tokens => "1",
 					$op->slice("session")),
 				"Invite",
 				$s->{menu} eq "invite",
@@ -1184,7 +1183,7 @@ EOM
 
 	if ($action eq "invite")
 	{
-	my $checked = $op->get("include_usage_tokens") ne "" ? " checked" : "";
+	my $checked = $op->get("default_include_usage_tokens") ne "" ? " checked" : "";
 	$table .= <<EOM;
 <tr>
 <td align=right>

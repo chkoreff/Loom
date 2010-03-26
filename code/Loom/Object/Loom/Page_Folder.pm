@@ -40,6 +40,15 @@ sub respond
 	$s->{archive} = Loom::Object::Loom::EZ_Archive->new($site->{loom});
 	$s->{grid} = Loom::Object::Loom::EZ_Grid->new($site->{loom});
 
+	# LATER 0318 The next goal is the atomic API, with parallel update, commit,
+	# loop, all that.  That way we can do a series of individual operations
+	# and they'll all be committed at once, with no effect if any one of them
+	# fails.  For example, updating the session id in the archive requires two
+	# writes.  Those should be atomic.
+
+	# LATER 0318 make the entire server completely self-configuring upon
+	# installation.
+
 	my $op = $site->{op};
 
 	# If we got here by default then set function to "folder".

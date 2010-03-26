@@ -13,6 +13,10 @@ Converts the Loom::File directory interface into the get/update interface used
 by the transaction layer Loom::DB::Trans.  Also provides a put routine so you
 have simple put/get access as well.
 
+WARNING: This module makes *no* assumptions about file names whatsoever.  It
+assumes that the caller knows what it is doing and is only passing in valid
+file names.
+
 =cut
 
 sub new
@@ -46,7 +50,7 @@ sub put
 	my $key = shift;
 	my $val = shift;
 
-	$s->{dir}->update({$key => $val}, {});
+	$s->update({$key => $val}, {});
 	return;
 	}
 

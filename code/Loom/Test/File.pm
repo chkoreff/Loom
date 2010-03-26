@@ -88,7 +88,15 @@ sub run
 
 	my $TOP = $s->{arena}->{TOP};
 	die if !defined $TOP;
-	$s->{data} = Loom::File->new("$TOP/data/test_3e1fc2ef");
+
+	$s->{testdir} = Loom::File->new("$TOP/test");
+
+	my $prog_name = $0;
+	$prog_name =~ s#.*/##;
+
+	$s->{data} = $s->{testdir}->child($prog_name);
+	$s->{data}->create_path;
+
 	$s->{data}->remove_tree;
 
 	$s->{data}->create_dir;
@@ -155,6 +163,7 @@ EOM
 		{
 		# Success!
 		$s->{data}->remove_tree;
+		$s->{testdir}->remove_dir;  # remove empty test dir if possible
 		return 0;
 		}
 	else
