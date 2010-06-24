@@ -1,5 +1,6 @@
 package Loom::Sloop::HTTP::Parse;
 use strict;
+use Loom::Context;
 use URI::Escape;
 
 =pod
@@ -44,6 +45,8 @@ HTTP Parser
 #
 # Notice that we support queries with both url parameters and form paramters
 # at the same time.  The Sloop test page demonstrates this.
+#
+# LATER port the Sloop test page over
 
 sub new
 	{
@@ -52,21 +55,69 @@ sub new
 
 	my $s = bless({},$class);
 	$s->{client} = $client;
-	$s->clear;
 	return $s;
 	}
 
+# The following methods should be called after read_complete_message.
+
+# Return the path string.
+sub path
+	{
+	my $s = shift;
+	return $s->{path};
+	}
+
+# Return the key-value map of the query and post parameters.
+sub op
+	{
+	my $s = shift;
+	return $s->{op};
+	}
+
+# Return the key-value map of the HTTP headers.
+sub header
+	{
+	my $s = shift;
+	return $s->{header};
+	}
+
+# Return the key-value map of the uploaded files.
+sub upload
+	{
+	my $s = shift;
+	return $s->{upload};
+	}
+
+# Clear the input buffer.
 sub clear
 	{
 	my $s = shift;
-
-	$s->{done} = 0;
 	$s->{buffer} = "";
-	$s->{exiting} = 0;
+	return;
+	}
+
+# Read a complete HTTP message and return true if successful.  Note that if you
+# don't call "clear" before this, it will re-parse the last message we read
+# into the buffer.   This is actually useful behavior which we use to replay a
+# request upon database commit failure.
+
+sub read_complete_message
+	{
+	my $s = shift;
+
+	$s->{offset} = 0;   # Reset offset to beginning of buffer.
+
+	$s->{max_size} = 2097152; # max 2^21 bytes (2 MiB) per complete message
+
+	# LATER:  This currently limits the ability to upload very large files.
+	# Later we can handle the upload function specially, switching to a
+	# streaming mode which keeps reading and writing as long as you have
+	# sufficient usage tokens.
+
 	$s->{method} = "";
 	$s->{uri} = "";
 	$s->{proto} = "";
-	$s->{file} = "";
+	$s->{path} = "";
 	$s->{query} = "";
 
 	$s->{bytes_read} = 0;
@@ -75,33 +126,13 @@ sub clear
 	$s->{content_type} = "";
 	$s->{connection} = "";
 
-	$s->{has_trailing_slash} = 0;
-	$s->{path} = [];
-
 	$s->{header} = undef;
 	$s->{op} = undef;
 	$s->{upload} = undef;
-	$s->{max_size} = 0;
 
-	return;
-	}
-
-sub read_complete_message
-	{
-	my $s = shift;
-	my $max_size = shift;  # max size of entire message
-	my $header = shift;    # headers go here
-	my $op = shift;        # params go here
-	my $upload = shift;    # uploads go here
-
-	die if !defined $max_size;
-
-	$s->clear;
-
-	$s->{header} = $header;
-	$s->{op} = $op;
-	$s->{upload} = $upload;
-	$s->{max_size} = $max_size;
+	$s->{header} = Loom::Context->new;    # headers go here
+	$s->{op} = Loom::Context->new;        # params go here
+	$s->{upload} = Loom::Context->new;    # uploads go here
 
 	{
 	# Read the request line, which should look something like:
@@ -117,22 +148,17 @@ sub read_complete_message
 		$s->{method} = $1;
 		$s->{uri} = $2;
 		$s->{proto} = $3;
-		$s->{file} = "";
+		$s->{path} = "";
 		$s->{query} = "";
 
 		# split at '?'
 		if ($s->{uri} =~ /([^?]*)(?:\?(.*))?/)
 			{
-			# LATER perhaps = uri_unescape($1)
-			# e.g. with a path like /a/%3Cbr%3E%3F%2Fqr
-
-			$s->{file} = $1;
+			$s->{path} = $1;
 			$s->{query} = $2;
 			$s->{query} = "" if !defined $s->{query};
 
-			$s->normalize_file;
-
-			$s->parse_urlencoded_body(\$s->{query});  # LATER parse on the fly
+			$s->parse_urlencoded_body($s->{query});
 			}
 		}
 	else
@@ -170,9 +196,7 @@ sub read_complete_message
 	# Read the subsequent content, whose length was specified in the
 	# Content-Length header.
 
-	# LATER parse on the fly
-
-	my $max_read = 1048576;  # read at most 1MB per round
+	my $max_read = 1048576;  # read at most 2^20 bytes (1 MiB) per round
 
 	while (1)
 		{
@@ -184,13 +208,11 @@ sub read_complete_message
 	{
 	# Request is complete.
 
-	$s->{done} = 1;
-
 	if ($s->{method} eq "POST")
 		{
 		if ($s->{content_type} eq "application/x-www-form-urlencoded")
 			{
-			$s->parse_urlencoded_body(\$s->{buffer});
+			$s->parse_urlencoded_body( substr($s->{buffer},$s->{offset}) );
 			}
 		elsif ($s->{content_type} =~
 			/^multipart\/form-data; boundary=\"?([^\";,]+)\"?/)
@@ -206,24 +228,24 @@ sub read_complete_message
 	# subsequent ones just "Connection: TE".  Those subsequent "TE" messages
 	# will stay connected by default here.
 
-	$s->{exiting} = 0;
-
 	for my $type (split(/\s*,\s*/,$s->{connection}))
 		{
 		$type = lc($type);
 
-		if ($type eq "keep-alive")
+		if ($type eq "close")
 			{
-			$s->{exiting} = 0;
+			# Disconnect if the connection type is "close".
+			$s->{client}->disconnect;
 			}
-		elsif ($type eq "close")
+		else
 			{
-			$s->{exiting} = 1;
+			# Stay connected if the connection type is anything else, typically
+			# "keep-alive".
 			}
 		}
 	}
 
-	return;
+	return 1;
 	}
 
 sub read_header
@@ -273,7 +295,9 @@ sub read_content
 	my $s = shift;
 	my $max_read = shift;
 
-	my $remain = $s->{content_length} - length($s->{buffer});
+	my $curr_length = length($s->{buffer}) - $s->{offset};
+	my $remain = $s->{content_length} - $curr_length;
+
 	return 0 if $remain <= 0;
 
 	$remain = $max_read if $remain > $max_read;
@@ -285,22 +309,19 @@ sub read_content
 sub read_line
 	{
 	my $s = shift;
-	my $max_line = shift;  # optional max, defaults to 4096
 
-	$max_line = 4096 if !defined $max_line;
-
-	my $pos = 0;
+	my $max_line = 4096;  # max 4096 bytes per line
 
 	while (1)
 		{
 		return if $s->{client}->exiting;
 
-		my $index = index($s->{buffer},"\012",$pos);
+		my $index = index($s->{buffer},"\012",$s->{offset});
 		if ($index < 0)
 			{
-			$pos = length($s->{buffer});
+			my $len_line = length($s->{buffer}) - $s->{offset};
 
-			if ($pos > $max_line)
+			if ($len_line > $max_line)
 				{
 				$s->{client}->disconnect;
 				return;
@@ -310,9 +331,13 @@ sub read_line
 			}
 		else
 			{
-			my $line = substr($s->{buffer},0,$index);
+			my $len_line = $index - $s->{offset};
+
+			my $line = substr($s->{buffer}, $s->{offset}, $len_line);
 			$line =~ s/\015$//;  # strip trailing CR
-			substr($s->{buffer},0,$index+1) = "";  # chop line from buffer
+
+			$s->{offset} = $index + 1;  # skip over this line
+
 			return $line;
 			}
 		}
@@ -323,19 +348,16 @@ sub receive
 	my $s = shift;
 	my $max_read = shift;
 
-	if (defined $s->{max_size})
+	my $max_size = $s->{max_size};
+	my $bytes_read = $s->{bytes_read};
+
+	$max_read = $max_size - $bytes_read
+		if $bytes_read + $max_read > $max_size;
+
+	if ($max_read <= 0)
 		{
-		my $max_size = $s->{max_size};
-		my $bytes_read = $s->{bytes_read};
-
-		$max_read = $max_size - $bytes_read
-			if $bytes_read + $max_read > $max_size;
-
-		if ($max_read <= 0)
-			{
-			$s->{client}->disconnect;
-			return 0;
-			}
+		$s->{client}->disconnect;
+		return 0;
 		}
 
 	my $num_read = $s->{client}->receive($s->{buffer}, $max_read);
@@ -344,61 +366,14 @@ sub receive
 	return $num_read;
 	}
 
-# Normalize the file (path).  Get rid of consecutive "/".  Make sure to
-# preserve any trailing slash.  Also interpret any "." and ".." which might
-# appear in the path.  Normally the browser doesn't send those because it
-# interprets the path ahead of time.  But we do it here just in case.
-#
-# The routine splits the path on slashes and puts the list of path legs into
-# the {path} field.
-#
-# The routine sets the {has_trailing_slash} field which indicates if the path
-# ends in a slash.  This is especially important when rendering HTML pages
-# which contain relative links.  If the original URL does not end in a slash,
-# those links won't function properly.  So the caller can check this flag, and
-# if there was no trailing slash, redirect to the URL with the slash appended.
-
-sub normalize_file
-	{
-	my $s = shift;
-
-	my $path = $s->{file};
-	$s->{has_trailing_slash} = ($path =~ /\/$/);
-
-	my @path;
-	for my $leg (split("/",$path))
-		{
-		next if $leg eq "";   # ignore null legs
-		next if $leg eq ".";  # ignore "." along the way
-
-		if ($leg eq "..")
-			{
-			# If we see a "..", just pop off the last leg we pushed.
-			pop @path;
-			next;
-			}
-
-		push @path, $leg;
-		}
-
-	$path = join("/",@path);
-	$path .= "/" if $s->{has_trailing_slash};
-
-	$s->{file} = $path;
-
-	$s->{path} = \@path;
-
-	return;
-	}
-
 sub parse_urlencoded_body
 	{
 	my $s = shift;
 	my $body = shift;
 
-	$$body =~ tr/+/ /;
+	$body =~ tr/+/ /;
 
-	for my $pair ( split( /[&;]/, $$body ) )
+	for my $pair ( split( /[&;]/, $body ) )
 		{
 		my ($name, $value) = split(/=/, $pair);
 
@@ -427,7 +402,7 @@ sub parse_multipart_body
 	# Search for boundary breaks in the body, breaking the body into chunks.
 
 	my $chunks = [];
-	my $pos = 0;
+	my $pos = $s->{offset};
 
 	while (1)
 		{

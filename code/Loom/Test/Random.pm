@@ -24,7 +24,7 @@ sub run
 	{
 	my $s = shift;
 
-	print "===== test_random\n" if $s->{trace};
+	print "Test_random numbers.\n" if $s->{trace};
 
 	$s->{random} = Loom::Random->new("/dev/zero");
 
@@ -106,7 +106,14 @@ e3db8f9e086029e8179a971d6bd9b482
 447622fca55cc806b43edcf75c01df32
 EOM
 
-	die if $result ne $expected;
+	if ($result ne $expected)
+		{
+		print STDERR "!!! Random number test failed!\n";
+		die;
+		}
+
+	print "Random number test succeeded.\n" if $s->{trace};
+	return;
 	}
 
 return 1;

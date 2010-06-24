@@ -10,7 +10,8 @@ Stress test for concurrent file operations
 =cut
 
 use Getopt::Long;
-use Loom::DB::Trans_File;
+use Loom::DB::File;
+use Loom::DB::Trans;
 use Loom::File;
 use Loom::Random;
 
@@ -107,7 +108,11 @@ sub run
 	$s->{data}->{delay} = $s->{delay} if $s->{delay} != 0;
 
 	# Now wrap a put/get transaction object around the data directory.
-	$s->{db} = Loom::DB::Trans_File->new($s->{data});
+	{
+	my $db = Loom::DB::File->new($s->{data});  # make dir look like db
+	$db = Loom::DB::Trans->new($db);   # wrap in a transaction layer.
+	$s->{db} = $db;
+	}
 
 	if ($s->{data}->type ne "d")
 		{

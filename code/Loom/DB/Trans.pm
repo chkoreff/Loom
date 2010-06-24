@@ -25,6 +25,8 @@ sub new
 	return $s;
 	}
 
+# LATER 0331 experimenting with monitoring size in web transactions
+
 sub get
 	{
 	my $s = shift;
@@ -41,6 +43,7 @@ sub get
 	$val = $s->{db}->get($key);
 
 	$s->{old_val}->{$key} = $val;
+	$s->{size} += length($val) if defined $val;
 	return $val;
 	}
 
@@ -53,10 +56,20 @@ sub put
 	return if !defined $key || ref($key) ne "";
 	$val = "" if !defined $val;
 
-	$s->{new_val}->{$key} = "".$val;
-		# prepend null to force numbers to be stored as strings
+	my $old_len = 0;
+	$old_len = length($s->{new_val}->{$key}) if defined $s->{new_val}->{$key};
 
+	$val = "".$val; # prepend null to force numbers to be stored as strings
+	$s->{new_val}->{$key} = $val;
+
+	$s->{size} += length($val) - $old_len;
 	return;
+	}
+
+sub size
+	{
+	my $s = shift;
+	return $s->{size};
 	}
 
 sub commit
@@ -74,6 +87,7 @@ sub cancel
 
 	$s->{old_val} = {};
 	$s->{new_val} = {};
+	$s->{size} = 0;
 	return;
 	}
 

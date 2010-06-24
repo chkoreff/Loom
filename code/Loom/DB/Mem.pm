@@ -9,8 +9,9 @@ In-memory db with get/put/update
 
 =head1 DESCRIPTION
 
-The update routine makes it easy to wrap a Loom::DB::Trans around it.  For an
-example see Loom::DB::Trans_Mem.
+The update routine makes it easy to wrap a Loom::DB::Trans around it.
+
+LATER This module is not currently used.
 
 =cut
 

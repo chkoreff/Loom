@@ -2,7 +2,6 @@ package Loom::Crypt::Span;
 use strict;
 use Loom::Crypt::AES_CBC;
 use Loom::Crypt::Blocks;
-use Loom::Quote::Span;
 
 =pod
 
@@ -31,9 +30,22 @@ separate calls.
 
 PADDING METHOD:
 
-Text is first converted into the "span" format (len str len str ...) and
-padded with NUL bytes so it's a multiple of the block size.  Then the block
-cipher is applied to the blocks in the encoded text.
+Text is first converted into the "span" format and padded with NUL bytes so
+it's a multiple of the block size.  Then the block cipher is applied to the
+blocks in the encoded text.
+
+This "span" format is:
+
+    len str len str ...
+
+where len is a length byte (0..255) and str is a string of bytes of that
+length.  As long as the len byte is greater than zero, the text continues.
+When the len byte is 0, that indicates the end of the text.
+
+This format allows distinct encrypted strings to be stored end-to-end in a
+contiguous block of memory without any leading length indicators, and easily
+decrypted in a streaming fashion without any confusion about where each string
+ends.
 
 =cut
 
@@ -42,21 +54,78 @@ sub new
 	my $class = shift;
 	my $key = shift;
 
+	my $cipher = Loom::Crypt::AES_CBC->new($key);  # single-block cipher
+	$cipher = Loom::Crypt::Blocks->new($cipher);   # multi-block cipher
+	return $class->with_cipher($cipher);
+	}
+
+sub with_cipher
+	{
+	my $class = shift;
+	my $cipher = shift;  # any block cipher
+
 	my $s = bless({},$class);
-	$s->{cipher} = Loom::Crypt::AES_CBC->new($key);  # single-block cipher
-	$s->{cipher} = Loom::Crypt::Blocks->new($s->{cipher});  # multi-block cipher
-	$s->{quote} = Loom::Quote::Span->new;
+	$s->{cipher} = $cipher;
 	return $s;
 	}
 
-# Cipher arbitrary text with padding.
+# Return the inner block cipher.
+sub cipher
+	{
+	my $s = shift;
+	return $s->{cipher};
+	}
 
 sub encrypt
 	{
 	my $s = shift;
 	my $text = shift;
 
-	return $s->encrypt_blocks( $s->pad($text) );
+	die if !defined $text;
+
+	# Quote the text into the span format.
+
+	my $quoted = "";
+	{
+	my $len = length($text);
+	my $pos = 0;
+	my $span = 0;
+
+	while ($pos < $len)
+		{
+		$pos++;
+		$span++;
+
+		if ($span == 255 || $pos == $len)
+			{
+			$quoted .= chr($span);
+			$quoted .= substr($text, $pos - $span, $span);
+
+			$span = 0;
+			}
+		}
+
+	$quoted .= "\000";
+	$text = "";
+	}
+
+	# Pad the quoted text with NULs to an even multiple of blocksize.
+
+	my $blocksize = $s->{cipher}->blocksize;
+	my $len = length($quoted);
+
+	my $num_whole_blocks = int($len / $blocksize);
+	my $num_trail_bytes = $len - $blocksize * $num_whole_blocks;
+
+	if ($num_trail_bytes > 0)
+		{
+		my $num_missing_bytes = $blocksize - $num_trail_bytes;
+		$quoted .= "\000" x $num_missing_bytes;  # pad with nuls
+		}
+
+	die if (length($quoted) % $blocksize) != 0;
+
+	return $s->{cipher}->encrypt($quoted);
 	}
 
 sub decrypt
@@ -64,45 +133,25 @@ sub decrypt
 	my $s = shift;
 	my $text = shift;
 
-	return $s->unpad( $s->decrypt_blocks($text) );
-	}
+	die if !defined $text;
 
-# Cipher blocks directly without padding.
+	$text = $s->{cipher}->decrypt($text);
 
-sub encrypt_blocks
-	{
-	my $s = shift;
-	my $text = shift;
+	my $pos = 0;
+	my $unquoted = "";
 
-	return $s->{cipher}->encrypt($text);
-	}
+	my $len = length($text);
 
-sub decrypt_blocks
-	{
-	my $s = shift;
-	my $text = shift;
+	while (1)
+		{
+		last if $pos >= $len;
+		my $span = ord(substr($text,$pos,1));
+		$pos += ($span + 1);
+		last if $span == 0;
+		$unquoted .= substr($text, $pos - $span, $span);
+		}
 
-	return $s->{cipher}->decrypt($text);
-	}
-
-# Padding routines.
-
-sub pad
-	{
-	my $s = shift;
-	my $text = shift;
-
-	my $blocksize = $s->{cipher}->blocksize;
-
-	return $s->{quote}->pad_quote($text,$blocksize);
-	}
-
-sub unpad
-	{
-	my $s = shift;
-	my $text = shift;
-
-	return $s->{quote}->unquote_span($text);
+	return $unquoted;
 	}
 
 return 1;

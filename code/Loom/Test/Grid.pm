@@ -5,8 +5,8 @@ use Getopt::Long;
 use Loom::Context;
 use Loom::Digest::SHA256;
 use Loom::ID;
-use Loom::Object::Loom::API;
 use Loom::Test::Random;
+use Loom::Web::API;
 
 # LATER  For now we test with a memory-based db.  Soon we'll point the loom
 # server to a temporary test directory and run the qualification there.  We'll
@@ -76,7 +76,7 @@ sub configure
 	# LATER make it run on real file system
 	# LATER make a true "stress test" with hundreds of processes
 
-	$s->{loom} = Loom::Object::Loom::API->new(Loom::Context->new);
+	$s->{loom} = Loom::Web::API->new(Loom::Context->new);
 	}
 
 sub qualify_random

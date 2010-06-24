@@ -564,6 +564,8 @@ sub put_bytes
 # very difficult to reach under ordinary conditions, but by inserting random
 # delays (see below) I was able to test every branch repeatably.
 #
+# See the "test_file" program for an extreme stress test.
+#
 # Note that the update routine calls only normal module routines.  It does not
 # do any privileged operations.
 #

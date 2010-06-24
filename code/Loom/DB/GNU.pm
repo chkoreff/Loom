@@ -3,6 +3,10 @@ use strict;
 use GDBM_File;
 use Fcntl qw(:flock);
 
+# LATER 0328 deprecate this and all the bin utilities which depend on it.
+# We are now committing to a pure filesystem approach to managing all Loom
+# data, allowing much greater concurrency among readers and writers.
+
 sub new
 	{
 	my $class = shift;
@@ -182,6 +186,18 @@ sub finish
 	}
 
 *DESTROY = *finish;
+
+# LATER this is just a dummy routine.  When we switch to file system with
+# optimistic concurrency, this whole module will go away.
+
+sub commit
+	{
+	my $s = shift;
+
+	$s->finish;
+
+	return 1;
+	}
 
 return 1;
 

@@ -1,10 +1,7 @@
 package Loom::Test::Crypt;
 use strict;
-use Loom::Crypt;
-use Loom::Quote::C;
+use Loom::Crypt::Span;
 use Loom::Random;
-
-# LATER integrate somewhere
 
 =pod
 
@@ -17,44 +14,60 @@ Test suite for crypto operations
 sub new
 	{
 	my $class = shift;
+	my $trace = shift;
 
-	my $s = bless({},$class);r
-	$s->{C} = Loom::Quote::C->new;
+	my $s = bless({},$class);
+	$s->{trace} = $trace;
 	return $s;
 	}
 
-sub test_crypto
+sub run
 	{
 	my $s = shift;
 
 	my $genrand = Loom::Random->new;
 	my $key = $genrand->get;
 
+	$s->run_cipher_type("Loom::Crypt::Span",$key);
+
+	return;
+	}
+
+sub run_cipher_type
+	{
+	my $s = shift;
+	my $cipher_type = shift;
+	my $key = shift;
+
 	my $key_len = length($key);
 	my $q_key = unpack("H*",$key);
 
-	print STDERR <<EOM;
-== begin crypto test with key length $key_len, key = $q_key
+	print <<EOM if $s->{trace};
+Begin crypto test type $cipher_type key = $q_key (length $key_len).
 EOM
 
-	$s->{cipher} = Loom::Crypt->new($key);
+	$s->{cipher} = $cipher_type->new($key);
 
-	$s->test_crypto_case("");
-	$s->test_crypto_case("a");
-	$s->test_crypto_case("abcdefghijklmnopqrstuvwxyz");
-	$s->test_crypto_case("abcdefghijklmnopqrstuvwxyz" x 18);
+	# A few miscellaneous tests.
 
-	# Test many lengths
+	$s->test_crypto_case("", "null string");
+	$s->test_crypto_case("a", "the letter 'a'");
+	$s->test_crypto_case("abcdefghijklmnopqrstuvwxyz", "the alphabet");
+	$s->test_crypto_case("abcdefghijklmnopqrstuvwxyz" x 18,
+		"18 copies of the alphabet");
 
-	for (0 .. 1000)
+	# Test many lengths.
+	{
+	for my $count (0 .. 1000)
 		{
-		$s->test_crypto_case("abc" x $_);
+		$s->test_crypto_case("abc" x $count, "$count copies of 'abc'");
 		}
+	}
 
+	# Test large string.
+	{
 	my $beg_time = time;
 
-	#my $large_string = "abcdefghijklmnopqrstuvwxyz" x 8000;
-	#my $large_string = "abcdefghijklmnopqrstuvwxyz" x 16000;
 	my $large_string = "abcdefghijklmnopqrstuvwxyz" x 32000;
 
 	# 32000 reps = 832,000 bytes : 4 seconds
@@ -63,23 +76,24 @@ EOM
 
 	my $len_large_string = length($large_string);
 
-	print STDERR <<EOM;
-begin test of large value round trip with $len_large_string bytes
+	print <<EOM if $s->{trace};
+Begin test of large value round trip with $len_large_string bytes ...
 EOM
 
-
-	$s->test_crypto_case($large_string);
-
-	delete $s->{cipher};
+	$s->test_crypto_case($large_string,
+		"large string of $len_large_string bytes");
 
 	my $elapsed = time - $beg_time;
 
-	print STDERR <<EOM;
-that took $elapsed seconds
+	print <<EOM if $s->{trace};
+... That took $elapsed seconds.
 EOM
+	}
 
-	print STDERR <<EOM;
-== finish crypto test
+	delete $s->{cipher};
+
+	print <<EOM if $s->{trace};
+Finished crypt test type $cipher_type.
 EOM
 
 	return;
@@ -89,27 +103,22 @@ sub test_crypto_case
 	{
 	my $s = shift;
 	my $plain = shift;
+	my $label = shift;
 
 	my $cipher = $s->{cipher};
 
 	my $crypt = $cipher->encrypt($plain);
 	my $test = $cipher->decrypt($crypt);
 
-	my $q_test = $s->{C}->quote($test);
+	if ($test ne $plain)
+		{
+		print STDERR <<EOM;
+!!! failure: $label
+EOM
+		die;
+		}
 
-	if ($test eq $plain)
-	{
-	print STDERR <<EOM if 0;
-== succeed "$plain"
-EOM
-	}
-	else
-	{
-	print STDERR <<EOM;
-== fail    "$plain"
-   test    "$q_test"
-EOM
-	}
+	print "success: $label\n" if $s->{trace};
 
 	return;
 	}

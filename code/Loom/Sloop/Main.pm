@@ -43,18 +43,15 @@ sub run
 		"start", "y",
 		"stop", "n",
 		"help", "h",
-		"t",
 		);
 
 	$s->usage if !$ok;
 
 	my $do_start = $opt->{y} || $opt->{start};
 	my $do_stop = $opt->{n} || $opt->{stop};
-	my $do_test = $opt->{t};
 
 	$ok = 0 if $do_start && $do_stop;
-	$ok = 0 if !$do_start && !$do_stop && !$do_test;
-	$ok = 0 if $do_stop && $do_test;
+	$ok = 0 if !$do_start && !$do_stop;
 	$ok = 0 if $opt->{h} || $opt->{help};
 
 	$s->usage if !$ok;
@@ -64,8 +61,7 @@ sub run
 	my $top = Loom::File->new($s->{arena}->{TOP});
 	my $config = Loom::Sloop::Config->new($top,"data/conf/sloop");
 
-	my $arena = { top => $top, config => $config, start => $do_start,
-		test => $do_test };
+	my $arena = { top => $top, config => $config, start => $do_start };
 
 	my $listener = Loom::Sloop::Listen->new($arena);
 	$listener->respond;
@@ -92,14 +88,6 @@ To stop the server, you may use either:
 
   $prog_name -stop
   $prog_name -n
-
-You can use the -t option to force a self-test when starting the server:
-
-  $prog_name -y -t
-
-Or you can run the self-test by itself:
-
-  $prog_name -t
 
 EOM
 

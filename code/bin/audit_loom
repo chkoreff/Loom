@@ -15,6 +15,7 @@ main->new->run;
 sub new
 	{
 	my $class = shift;
+
 	my $s = bless({},$class);
 	return $s;
 	}
@@ -23,22 +24,44 @@ sub run
 	{
 	my $s = shift;
 
+	$s->get_options;
+	$s->audit_grid;
+
+	exit(0);
+	}
+
+sub get_options
+	{
+	my $s = shift;
+
 	my $opt = {};
-	GetOptions($opt,"v","l");
+	my $ok = GetOptions($opt,"l","s","h");
 
-	$s->{verbose} = 0;
-	$s->{show_subtotal} = 0;
+	if (!$ok || $opt->{h})
+		{
+		my $prog_name = $0;
+		$prog_name =~ s#.*/##;
 
-	if ($opt->{v})
-		{
-		$s->{verbose} = 1;
-		$s->{show_subtotal} = 1;
+	print STDERR <<EOM;
+Usage: $prog_name [-l | -s]
+
+Audit the Loom grid.
+  $prog_name      # Check, but don't show detail.
+  $prog_name -l   # List grid values.
+  $prog_name -s   # Show subtotals.
+EOM
+		exit(2);
 		}
-	elsif ($opt->{l})
-		{
-		$s->{verbose} = 1;
-		$s->{show_subtotal} = 0;
-		}
+
+	$s->{verbose} = $opt->{l} || $opt->{s};
+	$s->{show_subtotal} = $opt->{s};
+
+	return;
+	}
+
+sub audit_grid
+	{
+	my $s = shift;
 
 	my $dbname = "$TOP/data/app/loom.db";
 
@@ -182,10 +205,8 @@ sub run
 			}
 		exit(3);
 		}
-	else
-		{
-		my $count = @types;
-		print "--- SUCCESS:  All $count types look good.\n";
-		exit(0);
-		}
+
+	my $num_types = @types;
+	print "--- SUCCESS:  All $num_types types look good.\n";
+	return;
 	}

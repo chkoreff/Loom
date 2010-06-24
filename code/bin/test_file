@@ -7,6 +7,22 @@ use strict;
 
 Stress test program for concurrent file updates
 
+=head1 CAVEAT
+
+I have run this test with hundreds or even thousands of processes and many
+different delay factors.  I have run it hundreds of times on different file
+systems including ext2, ext3, ext4, and reiserfs.  I have never seen it fail in
+those situations.
+
+HOWEVER, I have seen the test fail when running on a Linux home directory
+encrypted with the "ecryptfs" layer.  In that case it fails about 10% of the
+time.  This suggests that the ecryptfs software is doing something which
+violates the sanctity of lock semantics when using the "flock" routine.
+
+This exposure of such a subtle flaw in ecryptfs actually bolsters my confidence
+in the thoroughness of the stress test and the strength of the underlying
+Loom::File::update routine.
+
 =cut
 
 use FindBin;

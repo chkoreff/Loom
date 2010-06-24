@@ -86,30 +86,13 @@ sub respond
 	$s->{signal}->put_interrupt(0);
 
 	return if !$s->stop_server;  # Stop the server if already running.
-
-	$s->init_server if $s->{arena}->{start} || $s->{arena}->{test};
-		# Initialize server if starting or testing.
-
-	$s->start_server if $s->{arena}->{start}; # Start the server if desired.
+	$s->start_server if $s->{arena}->{start};
 
 	return;
 	}
 
-# When the user starts the server with -y, or runs the self-test with -t, we
-# create an instance of the handler module without a client.  That gives it a
-# chance to initialize, run tests, etc.  We don't do anything with the handler,
-# we just create it and let it go.
-
-sub init_server
-	{
-	my $s = shift;
-
-	my $opt = $s->{config}->options;
-	my $module = Loom::Load->new->require($opt->{module});
-	my $handler = $module->new($s->{arena});
-
-	return;
-	}
+# LATER 0331 do we get a catchable signal when shutting down this machine?
+# I noticed that the pid file wasn't getting cleared.
 
 # Start the server running in the background and loop until terminated.
 

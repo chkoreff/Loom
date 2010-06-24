@@ -30,7 +30,7 @@ sub require
 
 	if ($@)
 		{
-		print STDERR "Could not get object of type '$type'\n";
+		print STDERR "Could not load module '$type'\n";
 		print STDERR "Error was:\n$@\n";
 		die "\n";
 		}
