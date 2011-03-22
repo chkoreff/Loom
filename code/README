@@ -1,0 +1,47 @@
+#
+Loom Version 2011.03.18.13.33 <https://loom.cc>
+Written by Patrick Chkoreff
+
+Loom is a open source web server.  All code in this directory is subject to the
+license conditions described in the "NOTICE" file.
+
+Loom provides two basic concepts known as the "Grid" and the "Archive".  In
+short:
+
+	The Grid is a two-dimensional array of integers.
+	The Archive is a one-dimensional array of strings.
+
+These arrays are huge, with 128-bit row and column numbers in the range 0
+through 2^128-1.
+
+The server has a standard API (Application Programming Interface) for
+manipulating these arrays, allowing fully independent developers to create
+their own applications and user interfaces.
+
+The server also has a "Wallet" interface built on top of the Grid and Archive,
+allowing users to log into the web site, create new asset types, and spend them
+around freely in a cash-like manner.
+
+The server does not do SSL (Secure Socket Layer) by itself.  For that, you need
+to run it behind the "pound" front-end, which handles all the SSL and then
+communicates with the Loom back-end in simple plain text.  See
+http://www.apsis.ch/pound/ for details.
+
+= NOTES ON TESTING
+
+= To start the server:
+
+	loom -y
+
+= To shut down the server:
+
+	loom -n
+
+= Test programs:
+
+	audit_loom
+	test_api_demo
+	test_api_stress
+	test_file
+	test_float
+	test_loom

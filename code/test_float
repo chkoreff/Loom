@@ -1,0 +1,9 @@
+#!/usr/bin/perl -w
+use strict;
+use FindBin;
+use lib $FindBin::RealBin;
+
+use bin;
+use test_float;
+
+test_float_all();

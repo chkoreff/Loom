@@ -1,0 +1,99 @@
+#!/usr/bin/perl -w
+use strict;
+
+# Loom API demo
+#
+# Quick background:
+#   The Grid is a two-dimensional array of integers.
+#   The Archive is a one-dimensional array of strings.
+
+use FindBin;
+use lib $FindBin::RealBin;
+use bin;
+use context;
+use test_api;
+use web;
+
+# Get the Loom API URL and return the result as a hash.  This also prints the
+# raw text returned from the server and the corresponding hash.
+sub demo_api_call
+	{
+	my $url = shift;
+
+	my $text = get_url($url);
+	print $text;
+
+	my $op = op_read_kv(op_new(),$text);
+	die if $text ne op_write_kv($op); # Just testing here
+
+	return $op;
+	}
+
+#############
+
+# Here we demonstrate taking a look at the balance in Grid location A.
+sub demo_grid_touch
+	{
+	my $server_name = test_api_config("server");
+	my $type = test_api_config("type");
+	my $loc_A = test_api_config("loc_A");
+
+	demo_api_call(
+	"$server_name/?function=grid&action=touch&type=$type&loc=$loc_A");
+	}
+
+# Here we demonstrate moving $qty units from location A to location B.  Note
+# that *all* asset types in Loom are counted in whole integers only, so pay
+# attention to the scale factor for the asset type you're using.  For example,
+# a dollar-based asset type is probably based in pennies, so to move $142.57
+# you would actually use the quantity 14257 which is the number of whole
+# pennies to move.
+
+sub demo_grid_move
+	{
+	my $qty = rand() < 0.5 ? -2 : 2;
+		# The number of units to move.  If you use a negative number, it simply
+		# moves the units in the opposite direction.
+
+	my $server_name = test_api_config("server");
+	my $type = test_api_config("type");
+	my $loc_A = test_api_config("loc_A");
+	my $loc_B = test_api_config("loc_B");
+
+	my $op = demo_api_call(
+	"$server_name/?function=grid&action=move&type=$type"
+		."&qty=$qty"
+		."&orig=$loc_A"
+		."&dest=$loc_B"
+		);
+
+	if (op_get($op,"status") eq "success")
+		{
+		print "I succeeded in moving $qty units\n";
+		}
+	else
+		{
+		print "I failed to move $qty units\n";
+		}
+	}
+
+# Here we demonstrate looking directly into an Archive location.
+sub demo_archive_touch
+	{
+	my $server_name = test_api_config("server");
+	my $loc_A = test_api_config("loc_A");
+
+	demo_api_call(
+	"$server_name/?function=archive&action=touch"
+		."&loc=$loc_A");
+	}
+
+# Do the demo.
+sub test_api_demo
+	{
+	demo_grid_touch();
+	demo_grid_move();
+	demo_archive_touch();
+	}
+
+test_api_demo();

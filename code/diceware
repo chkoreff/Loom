@@ -1,0 +1,50 @@
+#!/usr/bin/perl -w
+use strict;
+
+use FindBin;
+use lib $FindBin::RealBin;
+
+use bin;
+use diceware;
+
+my $g_num_words;
+
+sub diceware_check_usage
+	{
+	my $usage_error = 0;
+
+	my $argc = scalar(@ARGV);
+
+	if ($argc == 1)
+		{
+		$g_num_words = shift @ARGV;
+		if ($g_num_words !~ /^\d+$/)
+			{
+			$usage_error = 1;
+			}
+		}
+	else
+		{
+		$usage_error = 1;
+		}
+
+	return if !$usage_error;
+
+	my $prog = $0;
+	$prog =~ s#^.*/##;
+
+	print STDERR <<EOM;
+Usage : $prog count
+EOM
+	exit 2;
+	}
+
+sub diceware_main
+	{
+	diceware_check_usage();
+
+	my $passphrase = diceware_passphrase($g_num_words);
+	print "$passphrase\n";
+	}
+
+diceware_main();

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+grep -r "^sub " . | perl -n -e 'chomp; my ($a,$b) = split ":"; $a =~ s/^\.\///; $b =~ s/^sub //; print "$b $a\n"' | sort
+

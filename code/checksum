@@ -1,0 +1,109 @@
+#!/usr/bin/perl -w
+use strict;
+
+=pod
+
+=head1 NAME
+
+Compute recursive SHA256 hash of directory or file.
+
+=cut
+
+use FindBin;
+use lib $FindBin::RealBin;
+
+use bin;
+use file;
+use Getopt::Long;
+use sha256;
+
+# Compute checksum of a file only.
+sub file_content_hash
+	{
+	my $file = shift;
+
+	file_read($file);
+	my $text = file_get_content($file);
+	$text = "" if !defined $text;
+
+	return unpack("H*",sha256($text));
+	}
+
+# Compute readable checksum of a file or directory.
+sub file_hash
+	{
+	my $dir = shift;
+	my $long = shift;
+
+	my $result = "";
+	my $listing = "";
+
+	my $type = file_type($dir);
+
+	if ($type eq "")
+		{
+		# It does not exist.
+		}
+	elsif ($type eq "f")
+		{
+		# It's a file.
+		my $name = file_name($dir);
+		my $sum = file_content_hash($dir);
+
+		$listing .= "$sum $name\n";
+
+		$result .= $listing if $long;
+		$result .= "$sum\n";
+		}
+	elsif ($type eq "d")
+		{
+		# It's a directory.
+		for my $name (file_deep_names($dir))
+			{
+			my $sum = file_content_hash(file_child($dir,$name));
+			$listing .= "$sum $name\n";
+			}
+
+		if ($listing ne "")
+			{
+			my $sum = unpack("H*",sha256($listing));
+			$result .= $listing if $long;
+			$result .= "$sum\n";
+			}
+		}
+
+	return $result;
+	}
+
+sub checksum_main
+	{
+	my $opt = {};
+
+	my $ok = GetOptions($opt, "l");
+	my $dir_name;
+
+	$dir_name = $ARGV[0] if $ok;
+	$ok = 0 if $ok && !defined $dir_name;
+
+	if (!$ok)
+		{
+		my $prog_name = $0;
+		$prog_name =~ s#.*/##;
+
+		print STDERR <<EOM;
+Usage: $prog_name dir-or-file [-l]
+
+Print the recursive sha256 hash of the directory.  The -l option prints the
+hashes of each individual file first.
+EOM
+		exit(2);
+		}
+
+	my $dir = file_new($dir_name);
+	my $result = file_hash($dir,$opt->{l});
+	print $result;
+
+	exit(0);
+	}
+
+checksum_main();

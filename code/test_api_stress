@@ -1,0 +1,117 @@
+#!/usr/bin/perl -w
+use strict;
+
+# This program runs a bunch of processes that all use the API to move a usage
+# token back and forth between two locations.  This tests contention in a very
+# busy system, deliberately causing commit failures and retries in sloop_client.
+
+use FindBin;
+use lib $FindBin::RealBin;
+use bin;
+
+use api_remote;
+use context;
+use process;
+use random;
+use test_api;
+
+# LATER unify with demo_api
+sub test_api_balance
+	{
+	my $loc = shift;
+
+	my $server_name = test_api_config("server");
+	my $type = test_api_config("type");
+
+	my $op = api_remote_respond(
+	"$server_name/?function=grid&action=touch&type=$type&loc=$loc");
+
+	return op_get($op,"value");
+	}
+
+sub test_api_child
+	{
+	# You *must* seed it here otherwise all the numbers are the same.
+	srand(random_ulong());
+
+	my $qty = rand() > 0.5 ? 1 : -1;
+
+	my $server_name = test_api_config("server");
+	my $type = test_api_config("type");
+	my $loc_A = test_api_config("loc_A");
+	my $loc_B = test_api_config("loc_B");
+
+	my $op = api_remote_respond(
+	"$server_name/?function=grid&action=move&type=$type"
+		."&qty=$qty"
+		."&orig=$loc_A"
+		."&dest=$loc_B");
+
+	if (op_get($op,"status") eq "success")
+		{
+		my $value_orig = op_get($op,"value_orig");
+		my $value_dest = op_get($op,"value_dest");
+		my $total = $value_orig + $value_dest;
+		printf "Moved %2d units:  A = %4d B = %4d total = %4d\n",
+			$qty, $value_orig, $value_dest, $total;
+		}
+	else
+		{
+		print "The move of $qty units failed.\n";
+		}
+	}
+
+sub test_api_spawn_children
+	{
+	my $count = shift;
+
+	print "Spawn $count children\n";
+
+	for my $child_no (1 .. $count)
+		{
+		my $child = fork();
+
+		if (defined $child && $child == 0)
+			{
+			test_api_child();
+			exit;
+			}
+
+		if (!defined $child)
+			{
+			die "Too many children! (Only spawned ".($child_no-1).")\n";
+			}
+		}
+	}
+
+sub test_api_show_balances
+	{
+	my $loc_A = test_api_config("loc_A");
+	my $loc_B = test_api_config("loc_B");
+
+	my $A = test_api_balance($loc_A);
+	my $B = test_api_balance($loc_B);
+
+	my $total = $A + $B;
+
+	print <<EOM;
+  A     = $A
+  B     = $B
+  total = $total
+EOM
+	return;
+	}
+
+sub test_api
+	{
+	print "BEFORE:\n";
+	test_api_show_balances();
+
+	test_api_spawn_children(20);
+	wait_children();
+
+	print "AFTER:\n";
+	test_api_show_balances();
+	}
+
+test_api();

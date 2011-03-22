@@ -1,0 +1,214 @@
+#!/usr/bin/perl -w
+use strict;
+
+use FindBin;
+use lib $FindBin::RealBin;
+use bin;
+use context;
+use c_quote;
+use id;
+use test_crypt;
+use test_file;
+use test_float;
+use test_grid;
+use test_random;
+use test_sha256;
+
+sub test_c_quote
+	{
+	my $str = shift;
+
+	my $quote_str = c_quote($str);
+	my $test_str = c_unquote($quote_str);
+
+	if ($test_str ne $str)
+		{
+		print "test_c_quote '$quote_str'\n";
+		print "=== failed\n";
+		exit(1);
+		}
+
+	return;
+	}
+
+sub test_parse_lines
+	{
+	my $input =
+		qq{abc\n}.
+		qq{defg\015\nhij\nkl\011m"n"o\015\n}.
+		qq{\015\n}.
+		qq{pqrstuvwxyz};
+
+	my $expect = <<'EOM';
+line "abc"
+line "defg"
+line "hij"
+line "kl\tm\"n\"o"
+line ""
+line "pqrstuvwxyz"
+EOM
+
+	my $result = "";
+
+	for my $line (split(/\r?\n/,$input))
+		{
+		my $q_line = c_quote($line);
+		$result .= qq{line "$q_line"\n};
+		}
+
+	if ($result ne $expect)
+		{
+		print <<EOM;
+test_parse_lines : fail
+== result
+$result
+== expect
+$expect
+EOM
+		exit(1);
+		}
+
+	return;
+	}
+
+sub test_parse_kv
+	{
+	my $input = <<EOM;
+Stuff up here to skip.
+(
+:x123
+=123
+
+# embedded comment
+:x24
+=24
+:x25
+strange line here instead of value
+=25
+# another comment here
+
+
+strange line here instead of key
+:x26
+=26
+)
+extra stuff on the end.
+(
+:x99
+=99
+)
+EOM
+
+	my $expect = <<EOM;
+(
+:x123
+=123
+:x24
+=24
+:x25
+=25
+:x26
+=26
+:x99
+=99
+)
+EOM
+
+	my $op = op_read_kv(op_new(),$input);
+	my $result = op_write_kv($op);
+
+	if ($result ne $expect)
+		{
+		print <<EOM;
+test_parse_kv : fail
+== result
+$result
+== expect
+$expect
+EOM
+		exit(1);
+		}
+
+	return;
+	}
+
+sub test_valid_id
+	{
+	my $id = shift;
+	my $expect = shift;
+
+	my $result = valid_id($id) ? 1 : 0;
+
+	if ($expect != $result)
+		{
+		print STDERR "ERROR:  '$id' result=$result expect=$expect\n";
+		die;
+		}
+	return;
+	}
+
+sub test_valid_hash
+	{
+	my $id = shift;
+	my $expect = shift;
+
+	my $result = valid_hash($id) ? 1 : 0;
+
+	if ($expect != $result)
+		{
+		print STDERR "ERROR:  '$id' result=$result expect=$expect\n";
+		die;
+		}
+	return;
+	}
+
+sub test_id_cases
+	{
+	test_valid_id("f" x 32, 1);
+	test_valid_id("f" x 32 . "\n", 0);
+	test_valid_id("f" x 31 . "\n", 0);
+	test_valid_id("f" x 31, 0);
+
+	test_valid_hash("f" x 64, 1);
+	test_valid_hash("f" x 64 . "\n", 0);
+	}
+
+# Test the overall Loom system.
+
+# LATER: a verbose option
+
+sub test_loom_main
+	{
+	print "Testing the Loom system.\n";
+
+	# We call umask here so that when the server creates a new file the
+	# permissions are restricted to read and write by the owner only.
+	# The octal 077 value disables the "group" and "other" permission bits.
+
+	umask(077);
+
+	test_float_all();
+
+	test_parse_lines();
+	test_parse_kv();
+
+	test_c_quote("");
+	test_c_quote("  abc def - \n\n \003\007\nfoobar \"hi\"  ");
+	test_c_quote("\000\000 hi \t\t \015\n\n  ");
+
+	test_crypt_run();
+	test_random_run();
+	test_sha256_run();
+	test_id_cases();
+
+	test_grid_run();
+
+	# Test concurrent file operations with many processes.
+	test_file_run(128,-1,0,0);
+
+	print "The Loom system test succeeded.\n";
+
+	return;
+	}
+
+test_loom_main();

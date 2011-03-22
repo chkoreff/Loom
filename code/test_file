@@ -1,0 +1,70 @@
+#!/usr/bin/perl -w
+use strict;
+
+=pod
+
+=head1 NAME
+
+Stress test program for concurrent file updates
+
+=head1 CAVEAT
+
+I have run this test with hundreds or even thousands of processes and many
+different delay factors.  I have run it hundreds of times on different file
+systems including ext2, ext3, ext4, and reiserfs.  I have never seen it fail in
+those situations.
+
+HOWEVER, I have seen the test fail when running on a Linux home directory
+encrypted with the "ecryptfs" layer.  In that case it fails about 10% of the
+time.  This suggests that the ecryptfs software is doing something which
+violates the sanctity of lock semantics when using the "flock" routine.
+
+This exposure of such a subtle flaw in ecryptfs actually bolsters my confidence
+in the thoroughness of the stress test and the strength of the underlying
+file_update routine.
+
+=cut
+
+use FindBin;
+use lib $FindBin::RealBin;
+use bin;
+use Getopt::Long;
+use test_file;
+
+sub test_file_main
+	{
+	my $opt = {};
+	my $ok = GetOptions($opt, "v", "d=n");
+
+	my $verbose = $opt->{v};
+	$verbose = 0 if !defined $verbose;
+
+	my $delay = $opt->{d};
+	$delay = -1 if !defined $delay;
+
+	my $count = $ARGV[0];
+
+	$ok &&= defined $count;
+	$ok &&= $count =~ /^\d+$/;
+
+	if (!$ok)
+		{
+		my $prog_name = $0;
+		$prog_name =~ s#.*/##;
+
+		print STDERR <<EOM;
+Usage: $prog_name count [-v] [-d N]
+
+count : number of processes to spawn
+-v    : verbose output
+-d N  : insert delay of N cycles to increase test coverage (default 100000)
+EOM
+		exit(2);
+		}
+
+	test_file_run($count,$delay,$verbose,1);
+
+	return;
+	}
+
+test_file_main();

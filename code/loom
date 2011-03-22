@@ -1,0 +1,17 @@
+#!/usr/bin/perl -w
+use strict;
+
+=pod
+
+=head1 NAME
+
+Loom server program
+
+=cut
+
+use FindBin;
+use lib $FindBin::RealBin;
+use bin;
+use sloop_main;
+
+sloop_main();

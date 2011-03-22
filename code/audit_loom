@@ -1,0 +1,199 @@
+#!/usr/bin/perl -w
+use strict;
+
+use FindBin;
+use lib $FindBin::RealBin;
+use bin;
+use file;
+use Getopt::Long;
+use int128;
+use sloop_top;
+
+my @g_bad_types;
+my $g_num_types = 0;
+my $g_trace_audit_loom = 0;
+my $g_show_subtotal = 0;
+my $g_type_zero = "0" x 32;
+
+sub audit_get_options
+	{
+	my $opt = {};
+	my $ok = GetOptions($opt,"l","s","h");
+
+	if (!$ok || $opt->{h})
+		{
+		my $prog_name = $0;
+		$prog_name =~ s#.*/##;
+
+	print STDERR <<EOM;
+Usage: $prog_name [-l | -s]
+
+Audit the Loom grid.
+  $prog_name      # Check, but don't show detail.
+  $prog_name -l   # List grid values.
+  $prog_name -s   # Show subtotals.
+EOM
+		exit(2);
+		}
+
+	$g_trace_audit_loom = $opt->{l} || $opt->{s};
+	$g_show_subtotal = $opt->{s};
+
+	return;
+	}
+
+sub audit_check_type
+	{
+	my $place = shift;
+	my $type = shift;
+
+	my $issuer;
+	{
+	my $file = file_child($place,"$type/I");
+	$issuer = file_get_content($file);
+	$issuer = "" if !defined $issuer;
+	file_release($file);
+
+	# LATER explicit release of $file here and in similar situations, to make
+	# it more C-like.
+	}
+	my $dsp_issuer = substr($issuer,0,8);
+
+	print "\n" if $g_trace_audit_loom;
+	if ($g_trace_audit_loom)
+		{
+		print "type $type issuer $dsp_issuer\n";
+		}
+	$g_num_types++;
+
+	my $type_total = int128_from_dec("0");
+
+	$place = file_child($place,"$type/V");
+	for my $leg (file_names($place))
+		{
+		my $place = file_child($place,$leg);
+		for my $leg (file_names($place))
+			{
+			my $place = file_child($place,$leg);
+			for my $hash (file_names($place))
+				{
+				my $place = file_child($place,$hash);
+				my $val = file_get_content($place);
+
+				int128_add($type_total,int128_from_dec($val));
+				my $q_total = int128_to_dec($type_total);
+
+				my $q_hash = substr($hash,0,8);
+				if ($g_trace_audit_loom)
+					{
+					if ($g_show_subtotal)
+						{
+						printf "  %-8s %20s %20s\n", $q_hash, $val, $q_total;
+						}
+					else
+						{
+						printf "  %-8s %20s\n", $q_hash, $val;
+						}
+					}
+				}
+			}
+		}
+
+	my $q_total = int128_to_dec($type_total);
+
+	if ($g_trace_audit_loom)
+		{
+		if ($g_show_subtotal)
+			{
+			printf "  %-8s %20s %20s\n", "TOTAL", "", $q_total;
+			}
+		else
+			{
+			printf "  %-8s %20s\n", "TOTAL", $q_total;
+			}
+		}
+
+	if ($type eq $g_type_zero)
+		{
+		print "  (Any total is acceptable for type zero.)\n"
+			if $g_trace_audit_loom;
+		}
+	else
+		{
+		if ($q_total eq "-1")
+			{
+			# The type totals to -1 as expected.  Let's make sure the
+			# issuer location has been bought.
+			if ($issuer eq "")
+				{
+				# ERROR: Issuer location has not been bought.
+				push @g_bad_types, $type;
+				}
+			}
+		elsif ($q_total eq "0")
+			{
+			# The type totals to 0.  In this case we expect that nobody
+			# has yet bought the issuer location (which is why the -1
+			# didn't appear during the key scan).
+
+			if ($issuer ne "")
+				{
+				# ERROR: Issuer location has been bought, but we total
+				# to 0.
+				push @g_bad_types, $type;
+				}
+			}
+		else
+			{
+			push @g_bad_types, $type;
+			}
+		}
+	}
+
+sub audit_grid
+	{
+	my $data_dir = file_child(sloop_top(),"data/app");
+	file_restrict($data_dir);
+
+	print "-- balances by type\n" if $g_trace_audit_loom;
+
+	my $place = file_child($data_dir,"grid");
+	for my $leg (file_names($place))
+		{
+		my $place = file_child($place,$leg);
+		for my $leg (file_names($place))
+			{
+			my $place = file_child($place,$leg);
+			for my $type (file_names($place))
+				{
+				audit_check_type($place,$type);
+				}
+			}
+		}
+
+	print "\n" if $g_trace_audit_loom;
+
+	if (@g_bad_types)
+		{
+		print "--- FAIL: Something is wrong with the following types:\n";
+		for my $type (@g_bad_types)
+			{
+			print "  $type\n";
+			}
+		exit(3);
+		}
+
+	print "--- SUCCESS:  All $g_num_types types look good.\n";
+
+	return;
+	}
+
+sub audit_main
+	{
+	audit_get_options();
+	audit_grid();
+
+	exit(0);
+	}
+
+audit_main();
