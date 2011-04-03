@@ -57,11 +57,16 @@ sub help_index
 			top_url("function","folder_tools"),
 			"Tools");
 
+		my $link_source = highlight_link(
+			"/source",
+			"Source Code", 0, "Source code for the Loom server");
+
 		top_link("");
 		top_link($link_grid_api);
 		top_link($link_archive_api);
 		top_link($link_cms);
 		top_link($link_tools);
+		top_link($link_source);
 		}
 
 	if ($topic eq "contact_info")
