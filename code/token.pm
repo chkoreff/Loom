@@ -74,12 +74,12 @@ sub token_get_nl
 			}
 		else
 			{
-			# Grab token up to ending white space.
+			# Grab token up to ending white space or end of string.
 			my $token = "";
 			while (1)
 				{
 				$token .= $ch;
-				return undef if $$pos >= length($$in);
+				return $token if $$pos >= length($$in);
 				$ch = substr($$in,$$pos,1);
 				return $token if $ch =~ /\s/;
 				$$pos++;
@@ -98,8 +98,7 @@ sub token_get
 		{
 		my $token = token_get_nl($$in,$$pos);
 		return if !defined $token;
-		next if $token eq "\n";
-		return $token;
+		return $token if $token ne "\n";
 		}
 	}
 

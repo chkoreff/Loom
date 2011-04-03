@@ -1624,7 +1624,7 @@ EOM
 	{
 	my $link_folder_new = highlight_link(
 		top_url("function","folder", "new_folder",1),
-		"sign up here.",
+		"you may sign up here.",
 		0,
 		"Become a brand new user",
 		);

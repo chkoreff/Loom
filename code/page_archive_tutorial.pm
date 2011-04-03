@@ -23,18 +23,8 @@ sub page_archive_tutorial_links
 		($function eq "archive_tutorial" && http_get("help"))
 		);
 
-	if (http_get("help"))
-		{
-		top_link($link_api);
-		top_link("");
-		top_link($link_tutorial);
-		}
-	else
-		{
-		top_link($link_tutorial);
-		top_link("");
-		top_link($link_api);
-		}
+	top_link($link_api);
+	top_link($link_tutorial);
 
 	return;
 	}

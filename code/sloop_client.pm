@@ -848,7 +848,7 @@ sub loom_top_navigation_bar
 	my $dsp_links = "";
 	for my $link (@$g_top_links)
 		{
-		$link = "/" if !defined $link || $link eq "";
+		next if !defined $link || $link eq "";
 		$dsp_links .= qq{<span style='padding-right:15px'>$link</span>\n};
 		}
 
@@ -863,7 +863,8 @@ sub loom_top_navigation_bar
 		}
 
 	# LATER soft-code more colors in a single module
-	my $color = "#b0e0ee";
+	#my $color = "#b0e0ee";
+	my $color = "#ffffff";
 
 	my $result = "";
 	$result .= <<EOM;

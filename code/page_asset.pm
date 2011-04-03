@@ -718,7 +718,7 @@ EOM
 		}
 
 		emit(<<EOM
-<h1>Asset: $q_type_name</h1>
+<h1>$q_type_name</h1>
 <p>
 Enter the new name you would like to use for this asset:
 <form method=post action="" autocomplete=off>
@@ -842,7 +842,7 @@ EOM
 	}
 
 	emit(<<EOM
-<h1>Asset: $q_type_name</h1>
+<h1>$q_type_name</h1>
 EOM
 );
 
@@ -950,6 +950,8 @@ EOM
 
 	# LATER maybe single out the issuer case specially.
 
+	if (0)
+	{
 	if ($has_assets)
 	{
 	emit(<<EOM
@@ -965,6 +967,7 @@ EOM
 You do not have this asset at any contact points.
 EOM
 );
+	}
 	}
 
 	emit($table);

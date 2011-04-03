@@ -308,7 +308,7 @@ EOM
 		}
 
 		emit(<<EOM
-<h1>Contact: $q_loc_name</h1>
+<h1>$q_loc_name</h1>
 <p>
 Enter the new name you would like to use for this contact:
 <form method=post action="" autocomplete=off>
@@ -416,7 +416,7 @@ EOM
 	my $num_items = scalar(@{$display->{location_items}->{$loc}});
 
 	emit(<<EOM
-<h1>Contact: $q_loc_name</h1>
+<h1>$q_loc_name</h1>
 EOM
 );
 
@@ -511,6 +511,8 @@ EOM
 ) if defined $link_delete;
 	}
 
+	if (0)
+	{
 	if ($num_items > 0)
 	{
 	emit(<<EOM
@@ -527,8 +529,12 @@ This contact contains no assets.
 EOM
 );
 	}
+	}
 
+	if ($num_items > 0)
+	{
 	emit($table);
+	}
 
 	emit(<<EOM
 <h2>Contact ID</h2>
