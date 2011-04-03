@@ -14,7 +14,7 @@ sub help_contact
 A contact is a point through which two individuals may move assets back and
 forth to each other.  A contact has a specific identifier (ID) which is a
 hexadecimal number consisting of exactly 32 digits 0-9 or a-f.  Both parties
-who wish to exchange value must add this same contact ID to their respective
+who wish to exchange value must add this same contact point to their respective
 wallets.  When one party moves assets to the contact, the other party will see
 the assets there and can claim them with a single click.
 <p>
@@ -29,14 +29,15 @@ Alice does it.  Here are the steps:
 
 <h2> Alice creates a new contact in her wallet </h2>
 <ul>
-<li> Alice clicks Contacts, then Create.  A brand new random contact ID appears.
+<li> Alice clicks Contacts, then Create.  A brand new random contact point
+appears.
 <li> Alice enters the name "Bob" to help her remember who the contact is.
 <li> Alice presses Save.
 </ul>
 
-<h2> Alice sends the new contact ID to Bob </h2>
+<h2> Alice sends the new contact point to Bob </h2>
 <ul>
-<li> Alice copies the contact ID (using Ctrl-C or right-click/Copy), pastes
+<li> Alice copies the contact point (using Ctrl-C or right-click/Copy), pastes
 it into a message, and sends it to Bob.  Alice should do this as
 <em>securely</em> as possible (see below for a discussion of this).
 <li> Bob receives the message from Alice.
@@ -45,7 +46,7 @@ it into a message, and sends it to Bob.  Alice should do this as
 <h2> Bob adds the new contact to his wallet </h2>
 <ul>
 <li> Bob clicks "Accept" in his contact list.
-<li> Bob copies the contact ID out of Alice's message and pastes it into the
+<li> Bob copies the contact point out of Alice's message and pastes it into the
 ID field on the form.
 <li> Bob enters the name "Alice" to help him remember who the contact is.
 <li> Bob presses Save.
@@ -61,21 +62,21 @@ thing when Bob pays Alice.
 
 <h1> Communicating securely </h1>
 
-When Alice communicates the new contact ID to Bob, she should do so as
+When Alice communicates the new contact point to Bob, she should do so as
 <em>securely</em> as possible.  Ideally she would send it by encrypted email,
 but using a messaging program such as Skype is probably acceptable.
 <p>
 Alice might choose to send it by normal unencrypted email, but that is not
-advisable.  There is some chance that a hacker might view the email and add
-the contact ID to his own wallet.  If the hacker happens to be looking at that
+advisable.  There is some chance that a hacker might view the email and add the
+contact point to his own wallet.  If the hacker happens to be looking at that
 contact point while Alice or Bob are moving assets through it, he could claim
-the assets for himself.  This scenario should be fairly unlikely, but if it
-is at all practical to avoid unencrypted emails, please do so.
+the assets for himself.  This scenario should be fairly unlikely, but if it is
+at all practical to avoid unencrypted emails, please do so.
 <p>
-Alice could call Bob on the telephone and read the contact ID to him, and even
-that is more secure than normal email.  If Alice were especially cautious, she
-might insist on meeting Bob <em>in person</em> and giving him the new contact
-ID on a slip of paper.
+Alice could call Bob on the telephone and read the contact point to him, and
+even that is more secure than normal email.  If Alice were especially cautious,
+she might insist on meeting Bob <em>in person</em> and giving him the new
+contact point on a slip of paper.
 EOM
 );
 	return;
@@ -101,7 +102,7 @@ sub page_contact_list
 		"default_include_usage_tokens","1",
 		http_slice("session"));
 
-	my $label = "Create a brand new contact ID.";
+	my $label = "Create a brand new contact point.";
 	$link_invite = qq{<a href="$url">$label</a>};
 	}
 
@@ -110,7 +111,7 @@ sub page_contact_list
 		"action","accept",
 		http_slice("session"));
 
-	my $label = "Accept a contact ID that someone sent to you.";
+	my $label = "Accept a contact point that someone sent to you.";
 	$link_accept = qq{<a href="$url">$label</a>};
 	}
 
@@ -119,10 +120,10 @@ sub page_contact_list
 
 	$table .= <<EOM;
 <h1> Contact List </h1>
-These are the contact locations where you may store and move assets.  The first
-contact is the secret location where you store your own personal assets.  The
-other contacts are locations that you can share with someone else, allowing you
-to pay each other through the shared location.
+These are the contact points where you may store and move assets.  The first
+contact is the secret location where you store your own personal assets.  Each
+of the other contacts is a location that you share with a single individual,
+allowing you to pay each other.
 
 <p>
 $link_invite
@@ -252,7 +253,7 @@ sub page_zoom_contact_heading
 <td style='padding:5px; font-size:11pt; font-weight:bold;'> $q_loc_name </td>
 </tr>
 <tr>
-<td> Contact identifier: </td>
+<td> Contact point: </td>
 <td class=tiny_mono style='padding:5px; color:green; font-weight:bold'$q_title>
 $q_loc_id
 </td>
@@ -395,7 +396,7 @@ EOM
 		my $found = 0;
 
 		# First search the history to see if there's an entry with this
-		# contact ID.
+		# contact point.
 
 		{
 		my $list_H = folder_get("list_H");
@@ -520,13 +521,13 @@ EOM
 	{
 	my $url = top_url("function","folder", "loc",http_get("name"),
 		http_slice("session"));
-	$link_pay = qq{<a href="$url">Pay this contact.</a>};
+	$link_pay = qq{<a href="$url">Pay assets to this contact point.</a>};
 	}
 
 	{
 	my $url = top_url(http_slice("function","name","session"),
 		"action","rename");
-	$link_rename = qq{<a href="$url">Rename this contact.</a>};
+	$link_rename = qq{<a href="$url">Rename this contact point.</a>};
 	}
 
 	if ($loc ne $loc_folder)
@@ -534,7 +535,7 @@ EOM
 	my $url = top_url(http_slice("function","name","session"),
 		"action","delete");
 
-	$link_delete = qq{<a href="$url">Delete this contact.</a>};
+	$link_delete = qq{<a href="$url">Delete this contact point.</a>};
 	}
 
 	emit(<<EOM
@@ -677,15 +678,16 @@ EOM
 	{
 	emit(<<EOM
 Since this contact already contains $actual_usage usage tokens, you can send
-him the contact ID and it will work just fine.
+him the contact point and it will work just fine.
 EOM
 );
 	}
 	else
 	{
 	emit(<<EOM
-So if you are sending this contact ID to a brand new user, be sure to pay at
-least 100 usage tokens to this contact first.  Then send him the contact ID.
+So if you are sending this contact point to a brand new user, be sure to pay
+at least 100 usage tokens to this contact first.  Then send him the contact
+location.
 EOM
 );
 	}
@@ -793,8 +795,8 @@ EOM
 
 		$q_error_stanza .= <<EOM;
 <p>
-You have already added this contact ID into your wallet and named it
-<b>$q_old_name</b>.  You cannot add the same contact ID again.
+You have already added this contact point into your wallet and named it
+<b>$q_old_name</b>.  You cannot add the same contact point again.
 EOM
 		}
 
@@ -897,14 +899,14 @@ EOM
 	if ($action eq "accept")
 	{
 	emit(<<EOM
-<h1>Accept an invitation that someone sent to you.</h1>
+<h1>Accept a contact point that someone sent to you.</h1>
 EOM
 );
 	}
 	else
 	{
 	emit(<<EOM
-<h1>Create a brand new contact ID.</h1>
+<h1>Create a brand new contact point.</h1>
 EOM
 );
 	}
@@ -967,7 +969,7 @@ EOM
 	else
 	{
 	$table .= <<EOM;
-Here we have conveniently inserted a random ID for the new contact.
+Here we have conveniently inserted a new random contact point.
 EOM
 	}
 

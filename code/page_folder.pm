@@ -435,7 +435,7 @@ EOM
 	$result .= <<EOM;
 <tr>
 <td class=wallet_bold_clean colspan=3>
-Send Money
+Pay Assets
 </td>
 </tr>
 

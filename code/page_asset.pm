@@ -904,7 +904,7 @@ EOM
 	{
 	my $url = top_url("function","folder", "type",http_get("name"),
 		http_slice("session"));
-	$link_pay = qq{<a href="$url">Pay this asset.</a>};
+	$link_pay = qq{<a href="$url">Pay this asset to a contact point.</a>};
 	}
 
 	{
