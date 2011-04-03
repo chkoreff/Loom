@@ -1890,13 +1890,16 @@ EOM
 	}
 
 	{
-	top_link(highlight_link(
-		top_url("function","folder", http_slice("session")),
-		"Refresh Wallet",
+	my $on_wallet_page =
 		http_get("function") eq "folder"
 			&& !http_get("h_only")
-			&& !http_get("help"),
-		"Refresh your wallet display to see if any assets have moved."));
+			&& !http_get("help");
+
+	top_link(highlight_link(
+		top_url("function","folder", http_slice("session")),
+		($on_wallet_page ? "Refresh" : "Wallet"),
+		$on_wallet_page,
+		"Show current wallet status."));
 
 	top_link(highlight_link(
 		top_url("function","contact", http_slice("session")),

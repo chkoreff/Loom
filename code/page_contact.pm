@@ -219,6 +219,49 @@ EOM
 	return;
 	}
 
+sub page_zoom_contact_heading
+	{
+	my $loc_name = http_get("name");
+	my $loc = map_nickname_to_id("loc",$loc_name);
+	my $loc_folder = folder_location();
+	my $q_loc_name = html_quote($loc_name);
+
+	my $q_title;
+	my $q_loc_id;
+
+	if ($loc ne $loc_folder)
+		{
+		$q_title = qq{ title="Send to recipient of payment."};
+		$q_loc_id = $loc;
+		}
+	else
+		{
+		$q_title = "";
+		$q_loc_id = "(Secret)";
+		}
+
+	emit(<<EOM
+<table border=0 style='border-collapse:collapse;'>
+<colgroup>
+<col width=140>
+<col width=510>
+</colgroup>
+
+<tr>
+<td> Contact name: </td>
+<td style='padding:5px; font-size:11pt; font-weight:bold;'> $q_loc_name </td>
+</tr>
+<tr>
+<td> Contact identifier: </td>
+<td class=tiny_mono style='padding:5px; color:green; font-weight:bold'$q_title>
+$q_loc_id
+</td>
+</tr>
+</table>
+EOM
+);
+	}
+
 sub page_zoom_contact
 	{
 	my $loc_name = http_get("name");
@@ -295,6 +338,8 @@ EOM
 			}
 		}
 
+		# LATER simplify all this logic.
+
 		if (!$rename_complete)
 		{
 		# LATER 0514 A friend discovered that this form doesn't work with
@@ -307,8 +352,9 @@ EOM
 		$link_cancel = qq{<a class=large style='padding-left:20px' href="$url">Cancel</a>};
 		}
 
+		page_zoom_contact_heading();
+
 		emit(<<EOM
-<h1>$q_loc_name</h1>
 <p>
 Enter the new name you would like to use for this contact:
 <form method=post action="" autocomplete=off>
@@ -415,10 +461,7 @@ EOM
 	my $table = page_folder_value_table($display);
 	my $num_items = scalar(@{$display->{location_items}->{$loc}});
 
-	emit(<<EOM
-<h1>$q_loc_name</h1>
-EOM
-);
+	page_zoom_contact_heading();
 
 	if ($action eq "delete" && $loc ne $loc_folder)
 	{
@@ -491,7 +534,7 @@ EOM
 	my $url = top_url(http_slice("function","name","session"),
 		"action","delete");
 
-	$link_delete = qq{<a href="$url">Delete this contact with confirmation.</a>};
+	$link_delete = qq{<a href="$url">Delete this contact.</a>};
 	}
 
 	emit(<<EOM
@@ -532,44 +575,9 @@ EOM
 	}
 
 	if ($num_items > 0)
-	{
-	emit($table);
-	}
-
-	emit(<<EOM
-<h2>Contact ID</h2>
-EOM
-);
-
-	if ($loc eq $loc_folder)
-	{
-	emit(<<EOM
-This contact is where your own personal assets are stored.  We do not show
-you its raw identifier here because it is not meant to be shared with anyone
-else.
-EOM
-);
-	}
-	else
-	{
-	emit(<<EOM
-The identifier of this contact is:
-
-<p class=mono style='margin:20px; color:green; font-weight:bold' title="Copy and paste into web site to make a payment.">$loc</p>
-
-<p>
-To share that ID with someone else, copy and paste it into a secure message.
-
-<p>
-Typically you will share this ID with only <em>one</em> other user, who will
-accept it into his own wallet.  Then the two of you can pay each other
-privately through the shared contact ID.
-<p>
-You can also use the ID like a debit card to make payments on a web site.
-Simply copy and paste it into the merchant's payment form.
-EOM
-);
-	}
+		{
+		emit($table);
+		}
 
 	# NOTE: I am keeping the elaborate Invitation Link mechanism because it's
 	# good for automated invitation systems.  However, I am disabling its

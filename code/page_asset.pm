@@ -630,6 +630,57 @@ EOM
 	return ($update_folder,$edit_form);
 	}
 
+sub page_zoom_asset_heading
+	{
+	my $type_name = http_get("name");
+	my $type = map_nickname_to_id("type",$type_name);
+	my $q_type_name = html_quote($type_name);
+
+	my $q_title = qq{ title="Send to recipient of payment."};
+
+	my $q_description = asset_description($type);
+
+	emit(<<EOM
+<table border=0 style='border-collapse:collapse;'>
+<colgroup>
+<col width=140>
+<col width=510>
+</colgroup>
+
+<tr>
+<td> Asset name: </td>
+<td style='padding:5px; font-size:11pt; font-weight:bold;'> $q_type_name </td>
+</tr>
+<tr>
+<td> Asset description: </td>
+<td class=tiny_mono style='padding:5px; color:green; font-weight:bold'$q_title>
+$q_description
+</td>
+</tr>
+</table>
+EOM
+);
+	}
+
+sub asset_description
+	{
+	my $type = shift;
+
+	my $type_name = folder_get("type_name.$type");
+	my $scale = folder_get("type_scale.$type");
+	my $precision = folder_get("type_min_precision.$type");
+
+	my $hex_name = unpack("H*",$type_name);
+	my $description = $type."x".$scale."x".$precision."x".$hex_name;
+
+	# Now append a hash checksum of the main description.
+	my $checksum = substr(unpack("H*",sha256($description)),0,8);
+
+	$description .= "x$checksum";
+
+	return $description;
+	}
+
 sub page_zoom_asset
 	{
 	my $type_name = http_get("name");
@@ -717,8 +768,8 @@ EOM
 		$link_cancel = qq{<a class=large style='padding-left:20px' href="$url">Cancel</a>};
 		}
 
+		page_zoom_asset_heading();
 		emit(<<EOM
-<h1>$q_type_name</h1>
 <p>
 Enter the new name you would like to use for this asset:
 <form method=post action="" autocomplete=off>
@@ -841,10 +892,7 @@ EOM
 		}
 	}
 
-	emit(<<EOM
-<h1>$q_type_name</h1>
-EOM
-);
+	page_zoom_asset_heading();
 
 	if ($action ne "delete" && $action ne "edit")
 	{
@@ -868,13 +916,13 @@ EOM
 	{
 	my $url = top_url(http_slice("function","name","session"),
 		"action","edit");
-	$link_edit = qq{<a href="$url">Edit the details of this asset.</a>};
+	$link_edit = qq{<a href="$url">Edit asset details.</a>};
 	}
 
 	{
 	my $url = top_url(http_slice("function","name","session"),
 		"action","delete");
-	$link_delete = qq{<a href="$url">Delete this asset with confirmation.</a>};
+	$link_delete = qq{<a href="$url">Delete this asset.</a>};
 	}
 
 	emit(<<EOM
@@ -971,38 +1019,6 @@ EOM
 	}
 
 	emit($table);
-
-	# Display the asset description string.
-	{
-	my $type_name = folder_get("type_name.$type");
-	my $scale = folder_get("type_scale.$type");
-	my $precision = folder_get("type_min_precision.$type");
-
-	my $hex_name = unpack("H*",$type_name);
-	my $description = $type."x".$scale."x".$precision."x".$hex_name;
-
-	# Now append a hash checksum of the main description.
-	my $checksum = substr(unpack("H*",sha256($description)),0,8);
-
-	$description .= "x$checksum";
-
-	emit(<<EOM
-<h2>Asset Description</h2>
-If you need to exchange this asset with a friend who has not yet accepted it
-into his own wallet, send him this description:
-
-<p class=mono style='margin:20px; color:green; font-weight:bold' title="Double-click, Copy and Paste this into a message">
-$description
-</p>
-
-<p>
-Double-click, copy, and paste that description into an email or chat.  When
-your friend receives it, he can Accept it into his own wallet.  You can also
-publish the description on a blog or web site so others can find out about it
-as well.
-EOM
-);
-	}
 
 	return;
 	}
