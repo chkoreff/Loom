@@ -940,7 +940,7 @@ EOM
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 <meta http-equiv="Content-Language" content="en-us">
 <meta name="description" content="$system_name">
-<meta name="keywords" content="CMS content-management gold money payment freedom">
+<meta name="keywords" content="CMS content-management gold payment freedom">
 <title>$title</title>
 <link rel="stylesheet" href="/cache/7200/data/style.css" type="text/css">
 $keyboard_script
