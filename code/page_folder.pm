@@ -562,7 +562,7 @@ sub configure_value_display
 			configure_scan_display($display,[$loc],\@list_type);
 			}
 		}
-	elsif ($display->{flavor} eq "delete_type")
+	elsif ($display->{flavor} eq "zoom_asset")
 		{
 		# Show all locations which have something of a given type.
 
@@ -685,7 +685,9 @@ EOM
 
 	my $link_view_contact = "";
 
-	if ($display->{flavor} ne "invite_location")
+	if ($display->{flavor} ne "invite_location"
+		&& $display->{flavor} ne "zoom_contact"
+		)
 		{
 		$link_view_contact =
 		qq{<a href="$url" title="View details of this contact.">}.
@@ -741,6 +743,8 @@ EOM
 
 	my $link_asset = "";
 
+	# LATER use highlight_link here
+
 	if ($display->{flavor} eq "move_dialog" && $loc ne $loc_folder)
 		{
 		my $url = top_url(
@@ -757,7 +761,9 @@ EOM
 		.qq{Claim asset</a>};
 		}
 	elsif ($display->{flavor} ne "move_dialog"
-		&& $display->{flavor} ne "invite_location")
+		&& $display->{flavor} ne "invite_location"
+		&& $display->{flavor} ne "zoom_asset"
+		)
 		{
 		my $url = top_url("function","asset",
 			"name",$type_name, "session",http_get("session"));

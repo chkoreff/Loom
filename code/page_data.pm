@@ -12,7 +12,7 @@ Content-Type: text/css
 body { font-family: verdana, arial, sans-serif; font-size: 10pt; margin:auto; background:#ffffff; }
 div { font-size:10pt }
 p { font-size:10pt }
-h1 { font-size:12pt }
+h1 { font-size:11pt }
 h2 { font-size:10pt }
 h3 { font-size:8pt }
 td { font-size:10pt }

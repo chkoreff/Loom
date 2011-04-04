@@ -93,27 +93,18 @@ sub page_contact_list
 
 	my $table = "";
 
-	my $link_accept;
-	my $link_invite;
+	my $link_create = highlight_link(
+		top_url(http_slice("function"),
+			"action","invite",
+			"default_include_usage_tokens","1",
+			http_slice("session")),
+		"Create a new contact point.");
 
-	{
-	my $url = top_url(http_slice("function"),
-		"action","invite",
-		"default_include_usage_tokens","1",
-		http_slice("session"));
-
-	my $label = "Create a brand new contact point.";
-	$link_invite = qq{<a href="$url">$label</a>};
-	}
-
-	{
-	my $url = top_url(http_slice("function"),
-		"action","accept",
-		http_slice("session"));
-
-	my $label = "Accept a contact point that someone sent to you.";
-	$link_accept = qq{<a href="$url">$label</a>};
-	}
+	my $link_accept = highlight_link(
+		top_url(http_slice("function"),
+			"action","accept",
+			http_slice("session")),
+		"Accept a contact point that someone sent to you.");
 
 	my $hidden = html_hidden_fields(
 		http_slice(qw(function session)));
@@ -126,9 +117,10 @@ of the other contacts is a location that you share with a single individual,
 allowing you to pay each other.
 
 <p>
-$link_invite
-<p>
-$link_accept
+Options:
+<span style='padding-left:15px'> $link_create </span>
+<span style='padding-left:15px'> $link_accept </span>
+</p>
 <form method=post action="" autocomplete=off>
 $hidden
 <table border=0 cellpadding=1 style='border-collapse:collapse;'>
@@ -240,25 +232,12 @@ sub page_zoom_contact_heading
 		$q_title = "";
 		$q_loc_id = "(Secret)";
 		}
-
+	
 	emit(<<EOM
-<table border=0 style='border-collapse:collapse;'>
-<colgroup>
-<col width=140>
-<col width=510>
-</colgroup>
-
-<tr>
-<td> Contact name: </td>
-<td style='padding:5px; font-size:11pt; font-weight:bold;'> $q_loc_name </td>
-</tr>
-<tr>
-<td> Contact point: </td>
-<td class=tiny_mono style='padding:5px; color:green; font-weight:bold'$q_title>
-$q_loc_id
-</td>
-</tr>
-</table>
+<h1> Contact : $q_loc_name </h1>
+<p> Location :
+<span class=mono style='color:green; font-weight:bold'$q_title>$q_loc_id</span>
+</p>
 EOM
 );
 	}
@@ -513,66 +492,49 @@ EOM
 
 	if ($action ne "delete")
 	{
-	my $link_pay;
-	my $link_rename;
-	my $link_delete;
+	my $link_refresh = highlight_link(
+		top_url(http_slice("function","name","session")),
+		"Refresh",
+		);
 
-	if ($loc ne $loc_folder)
-	{
-	my $url = top_url("function","folder", "loc",http_get("name"),
-		http_slice("session"));
-	$link_pay = qq{<a href="$url">Pay assets to this contact point.</a>};
-	}
+	my $link_rename = highlight_link(
+		top_url(http_slice("function","name","session"), "action","rename"),
+		"Rename");
 
-	{
-	my $url = top_url(http_slice("function","name","session"),
-		"action","rename");
-	$link_rename = qq{<a href="$url">Rename this contact point.</a>};
-	}
-
-	if ($loc ne $loc_folder)
-	{
-	my $url = top_url(http_slice("function","name","session"),
-		"action","delete");
-
-	$link_delete = qq{<a href="$url">Delete this contact point.</a>};
-	}
-
-	emit(<<EOM
-<p>
-$link_pay
-EOM
-) if defined $link_pay;
-	emit(<<EOM
-<p>
-$link_rename
-EOM
-);
-	emit(<<EOM
-<p>
-$link_delete
-EOM
-) if defined $link_delete;
-	}
-
-	if (0)
-	{
-	if ($num_items > 0)
+	if ($loc eq $loc_folder)
 	{
 	emit(<<EOM
 <p>
-This contact contains these assets:
+Options:
+<span style='padding-left:15px'> $link_refresh </span>
+<span style='padding-left:15px'> $link_rename </span>
+</p>
 EOM
 );
 	}
 	else
 	{
+	my $link_pay = highlight_link(
+		top_url("function","folder", "loc",http_get("name"),
+			http_slice("session")),
+		"Pay");
+
+	my $link_delete = highlight_link(
+		top_url(http_slice("function","name","session"), "action","delete"),
+		"Delete");
+
 	emit(<<EOM
 <p>
-This contact contains no assets.
+Options:
+<span style='padding-left:15px'> $link_refresh </span>
+<span style='padding-left:15px'> $link_pay </span>
+<span style='padding-left:15px'> $link_rename </span>
+<span style='padding-left:15px'> $link_delete </span>
+</p>
 EOM
 );
 	}
+
 	}
 
 	if ($num_items > 0)

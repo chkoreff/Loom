@@ -102,36 +102,27 @@ sub page_asset_list
 
 	my $table = "";
 
-	my $link_accept;
-	my $link_create;
+	my $link_accept = highlight_link(
+		top_url(http_slice("function"), "action","accept",
+			http_slice("session")),
+		"Accept an existing asset into your wallet.");
 
-	{
-	my $url = top_url(http_slice("function"),
-		"action","accept",
-		http_slice("session"));
-	my $label = "Accept an existing asset into your wallet.";
-	$link_accept = qq{<a href="$url">$label</a>};
-	}
+	my $link_create = highlight_link(
+		top_url(http_slice("function"), "action","create",
+			http_slice("session")),
+		"Create a brand new asset which you issue.");
 
-	{
-	my $url = top_url(http_slice("function"),
-		"action","create",
-		http_slice("session"));
-	my $label = "Create a brand new asset which you issue.";
-	$link_create = qq{<a href="$url">$label</a>};
-	}
-
-	my $hidden = html_hidden_fields(
-		http_slice(qw(function session)));
+	my $hidden = html_hidden_fields(http_slice(qw(function session)));
 
 	$table .= <<EOM;
 <h1> Asset List </h1>
 These are the asset types which your wallet currently recognizes.
 
 <p>
-$link_accept
-<p>
-$link_create
+Options:
+<span style='padding-left:15px'> $link_accept </span>
+<span style='padding-left:15px'> $link_create </span>
+</p>
 <form method=post action="" autocomplete=off>
 $hidden
 <table border=0 cellpadding=1 style='border-collapse:collapse;'>
@@ -641,23 +632,12 @@ sub page_zoom_asset_heading
 	my $q_description = asset_description($type);
 
 	emit(<<EOM
-<table border=0 style='border-collapse:collapse;'>
-<colgroup>
-<col width=140>
-<col width=510>
-</colgroup>
-
-<tr>
-<td> Asset name: </td>
-<td style='padding:5px; font-size:11pt; font-weight:bold;'> $q_type_name </td>
-</tr>
-<tr>
-<td> Asset description: </td>
-<td class=tiny_mono style='padding:5px; color:green; font-weight:bold'$q_title>
+<h1> Asset : $q_type_name </h1>
+<p> Description :
+<span class=tiny_mono style='color:green; font-weight:bold'$q_title>
 $q_description
-</td>
-</tr>
-</table>
+</span>
+</p>
 EOM
 );
 	}
@@ -896,50 +876,42 @@ EOM
 
 	if ($action ne "delete" && $action ne "edit")
 	{
-	my $link_pay;
-	my $link_rename;
-	my $link_edit;
-	my $link_delete;
+	my $link_refresh = highlight_link(
+		top_url(http_slice("function","name","session")),
+		"Refresh");
 
-	{
-	my $url = top_url("function","folder", "type",http_get("name"),
-		http_slice("session"));
-	$link_pay = qq{<a href="$url">Pay this asset to a contact point.</a>};
-	}
+	my $link_pay = highlight_link(
+		top_url("function","folder", "type",http_get("name"),
+			http_slice("session")),
+		"Pay");
 
-	{
-	my $url = top_url(http_slice("function","name","session"),
-		"action","rename");
-	$link_rename = qq{<a href="$url">Rename this asset.</a>};
-	}
+	my $link_rename = highlight_link(
+		top_url(http_slice("function","name","session"), "action","rename"),
+		"Rename");
 
-	{
-	my $url = top_url(http_slice("function","name","session"),
-		"action","edit");
-	$link_edit = qq{<a href="$url">Edit asset details.</a>};
-	}
+	my $link_edit = highlight_link(
+		top_url(http_slice("function","name","session"), "action","edit"),
+		"Edit details");
 
-	{
-	my $url = top_url(http_slice("function","name","session"),
-		"action","delete");
-	$link_delete = qq{<a href="$url">Delete this asset.</a>};
-	}
+	my $link_delete = highlight_link(
+		top_url(http_slice("function","name","session"), "action","delete"),
+		"Delete");
 
 	emit(<<EOM
 <p>
-$link_pay
-<p>
-$link_rename
-<p>
-$link_edit
-<p>
-$link_delete
+Options:
+<span style='padding-left:15px'> $link_refresh </span>
+<span style='padding-left:15px'> $link_pay </span>
+<span style='padding-left:15px'> $link_rename </span>
+<span style='padding-left:15px'> $link_edit </span>
+<span style='padding-left:15px'> $link_delete </span>
+</p>
 EOM
 );
 	}
 
 	my $display = {};
-	$display->{flavor} = "delete_type";  # LATER obsolete
+	$display->{flavor} = "zoom_asset";
 	$display->{type_name} = $type_name;
 
 	my $table = page_folder_value_table($display);
