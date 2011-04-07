@@ -909,11 +909,8 @@ sub loom_render_page
 	return if $g_response_text ne "";
 
 	my $onload_clause = "";
-	{
-	my $focus_field = $g_focus_field;
-	$onload_clause = qq{ onload="document.forms[0].$focus_field.focus()"}
-		if $focus_field ne "";
-	}
+	$onload_clause = qq{ onload="document.forms[0].$g_focus_field.focus()"}
+		if $g_focus_field ne "";
 
 	my $system_name = loom_config("system_name");
 	my $title = get_title();

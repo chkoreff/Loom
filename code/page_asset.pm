@@ -119,7 +119,7 @@ sub page_asset_list
 These are the asset types which your wallet currently recognizes.
 
 <p>
-Options:
+<b>Options:</b>
 <span style='padding-left:15px'> $link_accept </span>
 <span style='padding-left:15px'> $link_create </span>
 </p>
@@ -899,7 +899,7 @@ EOM
 
 	emit(<<EOM
 <p>
-Options:
+<b>Options:</b>
 <span style='padding-left:15px'> $link_refresh </span>
 <span style='padding-left:15px'> $link_pay </span>
 <span style='padding-left:15px'> $link_rename </span>

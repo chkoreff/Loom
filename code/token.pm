@@ -1,5 +1,8 @@
 use strict;
 
+# LATER define in terms of $source
+# LATER include the extra functions from fexl
+
 # Get the next token with newlines significant.
 sub token_get_nl
 	{

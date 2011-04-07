@@ -117,7 +117,7 @@ of the other contacts is a location that you share with a single individual,
 allowing you to pay each other.
 
 <p>
-Options:
+<b>Options:</b>
 <span style='padding-left:15px'> $link_create </span>
 <span style='padding-left:15px'> $link_accept </span>
 </p>
@@ -505,7 +505,7 @@ EOM
 	{
 	emit(<<EOM
 <p>
-Options:
+<b>Options:</b>
 <span style='padding-left:15px'> $link_refresh </span>
 <span style='padding-left:15px'> $link_rename </span>
 </p>
@@ -525,7 +525,7 @@ EOM
 
 	emit(<<EOM
 <p>
-Options:
+<b>Options:</b>
 <span style='padding-left:15px'> $link_refresh </span>
 <span style='padding-left:15px'> $link_pay </span>
 <span style='padding-left:15px'> $link_rename </span>

@@ -1,9 +1,11 @@
-#
-Loom Version 2011.03.18.13.33 <https://loom.cc>
+Loom Server
 Written by Patrick Chkoreff
 
 Loom is a open source web server.  All code in this directory is subject to the
 license conditions described in the "NOTICE" file.
+
+This code is currently running at <https://loom.cc>, and possibly other places
+as well.
 
 Loom provides two basic concepts known as the "Grid" and the "Archive".  In
 short:
