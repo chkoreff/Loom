@@ -5,11 +5,13 @@ sub data_style_sheet
 	# LATER simplify the wallet styles a bit
 
 	my $bar_color = "#baeaf8";
+	my $area_color = "#ffffff";
+	my $surround_color = "grey";
 
 	return <<EOM;
 Content-Type: text/css
 
-body { font-family: verdana, arial, sans-serif; font-size: 10pt; margin:auto; background:#ffffff; }
+body { font-family: verdana, arial, sans-serif; font-size: 10pt; margin:auto; background:$surround_color; }
 div { font-size:10pt }
 p { font-size:10pt }
 h1 { font-size:11pt }
@@ -56,6 +58,21 @@ td.wallet_small_clean
 	padding:5px;
 	vertical-align:bottom;
 	background-color:$bar_color;
+	}
+
+#navigation { padding:5px 25px 5px 25px; background-color: $area_color;
+	border-radius: 1em;
+	-moz-border-radius:1em;
+	-webkit-border-radius:1em;
+	margin-top:5px;
+	}
+
+#content { padding:5px 25px 5px 25px; background-color: $area_color;
+	border-radius: 1em;
+	-moz-border-radius:1em;
+	-webkit-border-radius:1em;
+	margin-top:5px;
+	margin-bottom:5px;
 	}
 EOM
 	}

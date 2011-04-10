@@ -854,25 +854,14 @@ sub loom_top_navigation_bar
 
 	my $nav_logo_stanza = loom_config("nav_logo_stanza");
 
-	my $padding = "";
-
 	if ($nav_logo_stanza eq "")
 		{
 		$nav_logo_stanza = "<td></td>\n";
-		$padding = "padding:5px; ";
 		}
-
-	# LATER soft-code more colors in a single module
-	#my $color = "#b0e0ee";
-	my $color = "#ffffff";
 
 	my $result = "";
 	$result .= <<EOM;
-<div style='${padding}background-color:$color;
-	margin-bottom:5px;
-	border: solid 0px;
-	width: 650px;'>
-
+<div id=navigation>
 <table border=0 width="100%" cellpadding=0 cellspacing=0>
 <colgroup>
 <col>
@@ -948,7 +937,9 @@ EOM
 	$payload .= loom_top_navigation_bar() if !$g_printer_friendly;
 
 	$payload .= <<EOM;
+<div id=content>
 $g_body
+</div>
 </body>
 </html>
 EOM
