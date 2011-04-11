@@ -931,7 +931,7 @@ EOM
 <link rel="stylesheet" href="/cache/7200/data/style.css" type="text/css">
 $keyboard_script
 </head>
-<body style='max-width:650px'$onload_clause>
+<body style='max-width:700px'$onload_clause>
 EOM
 
 	$payload .= loom_top_navigation_bar() if !$g_printer_friendly;
