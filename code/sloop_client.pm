@@ -594,7 +594,7 @@ sub interpret_archive_slot
 		top_link(highlight_link(top_url(), "Home"));
 
 		top_link(highlight_link(
-			top_url(http_slice("function")),
+			http_path(),
 			get_title(),1));
 		}
 	elsif ($content_type eq "loom-trade-page")
@@ -826,6 +826,13 @@ sub loom_dispatch
 		my $result = op_write_kv($api);
 
 		format_HTTP_response($response_code,$headers,$result);
+		}
+	elsif ($name eq "object")
+		{
+		my @path = http_split_path($path);
+		shift @path;
+		my $id = shift @path;
+		interpret_archive_slot($id);
 		}
 	else
 		{

@@ -440,6 +440,18 @@ EOM
 		);
 	}
 
+	my $link_object;
+	{
+	# LATER probably need to make a simple ultra-reliable path-quotation thing.
+	my $q_hash = html_quote(http_get("hash"));
+	my $url = "/object/$q_hash";
+
+	$link_object = highlight_link(
+		$url,
+		"Object", 0, "View as a rendered object",
+		);
+	}
+
 	my $link_change_loc = highlight_link(
 		top_url("function",$function,
 			"change_loc",1,
@@ -477,6 +489,7 @@ EOM
 	top_link($link_edit) if $enable_edit;
 	top_link($link_upload);
 	top_link($link_view);
+	top_link($link_object);
 	top_link($link_change_loc);
 	top_link($link_change_usage);
 	}
