@@ -110,10 +110,10 @@ sub show_history
 <table border=0 cellpadding=0 style='border-collapse:collapse;'>
 <colgroup>
 <col width=50>
-<col width=140>
+<col width=150>
 <col width=110>
-<col width=175>
-<col width=175>
+<col width=170>
+<col width=170>
 </colgroup>
 
 EOM
@@ -131,7 +131,7 @@ EOM
 		my $url = top_url(@params);
 
 		$history_control .=
-		qq{<a href="$url" title="Show wallet also.">Show wallet also</a>};
+		qq{<a href="$url" title="Show wallet also.">Zoom out</a>};
 		}
 	else
 		{
@@ -140,7 +140,7 @@ EOM
 		my $url = top_url(@params, "h_only",1);
 
 		$history_control .=
-		qq{<a href="$url" title="Show history only">Show history only</a>};
+		qq{<a href="$url" title="Show history only">Zoom in</a>};
 		}
 
 		{
@@ -153,7 +153,7 @@ EOM
 
 		$history_control .=
 		qq{<a href="$url" style='padding-left:15px' }
-		.qq{title="Disable transaction history">Disable history</a>};
+		.qq{title="Disable transaction history">Disable</a>};
 		}
 
 		}
@@ -282,10 +282,7 @@ EOM
 	{
 	$table .= <<EOM;
 <tr>
-<td class=wallet_bold_clean align=right>
-<input class=smaller type=submit name=edit_history_items value="Edit">
-</td>
-<td class=wallet_bold_clean align=right>
+<td class=wallet_bold_clean colspan=2>
 History
 </td>
 <td colspan=2 align=left class=wallet_small_clean>
@@ -302,16 +299,14 @@ EOM
 	{
 	$table .= <<EOM;
 <tr>
-<td class=wallet_small_clean>
-<input class=smaller type=submit name=edit_history_items value="Edit">
+<td class=wallet_bold_clean colspan=2>
+History
 </td>
-<td class=wallet_small_clean>
+<td align=left class=wallet_small_clean>
 <input class=small type=submit name=save_history_items value="Save Changes">
 </td>
 <td align=left class=wallet_small_clean>
 <input class=small type=submit name=cancel_history_items value="Cancel">
-</td>
-<td align=left class=wallet_small_clean>
 </td>
 <td class=wallet_small_clean align=right>
 <input class=small type=submit name=delete_history_items value="Delete Chosen Items Now!">
@@ -324,7 +319,7 @@ EOM
 	$table .= <<EOM;
 <tr>
 <td class=wallet_small_clean align=right>
-<span style='color:green'>choices:</span>
+<input class=smaller type=submit name=edit_history_items value="Edit">
 </td>
 <td class=wallet_bold_clean align=right>
 Time (UTC)
@@ -537,13 +532,11 @@ EOM
 
 	my $link_enable =
 	qq{<a href="$url" title="Enable history">}
-	.qq{Enable history</a>};
+	.qq{Enable</a>};
 
 	$table .= <<EOM;
 <tr>
-<td class=wallet_small_clean>
-</td>
-<td class=wallet_bold_clean align=right>
+<td class=wallet_bold_clean colspan=2>
 History
 </td>
 <td class=wallet_small_clean>

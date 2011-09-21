@@ -11,7 +11,7 @@ sub data_style_sheet
 	return <<EOM;
 Content-Type: text/css
 
-body { font-family: verdana, arial, sans-serif; font-size: 10pt; margin:auto; background:$surround_color; }
+body { font-family: verdana, arial, sans-serif; font-size: 10pt; margin-left:20px; background:$surround_color; }
 div { font-size:10pt }
 p { font-size:10pt }
 h1 { font-size:11pt }
@@ -31,6 +31,7 @@ pre { font-family: verdana, arial, sans-serif; }
 .large { font-size:12pt }
 .alarm { color:red }
 .color_heading { margin-top:12px; padding:5px; background-color:$bar_color; width:100% }
+.description { font-family: monospace; font-size: 6pt; color:green; font-weight:bold }
 
 A:link, A:visited { color:#0048d5; text-decoration:none }
 A:hover { color:#0000cc; text-decoration:underline }

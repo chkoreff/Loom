@@ -47,3 +47,72 @@ http://www.apsis.ch/pound/ for details.
 	test_file
 	test_float
 	test_loom
+
+
+= HOW TO START A BRAND NEW SERVER
+
+I know I could improve and streamline this process, but it hasn't been a high
+priority yet because you only do it once.  So here it is.
+
+1. Download the .zip source code and run "unzip" on it.  (You've
+probably already done that.)
+
+2. CD into the directory.
+
+3. mkdir -p data/run
+
+4. Run "code/loom -y" to start the server.  You might want to go ahead and set
+your PATH variable so you can just run "loom" instead of having to specify the
+ full path to it.
+
+5. Point your browser to http://localhost:8286/
+
+6. Click the "Sign Up" link.
+
+7. Choose a passphrase for the master account where you'll issue usage
+tokens.  Enter that passphrase twice.
+
+8. At this point, in a brand new system, the issuer location for usage
+tokens is at the zero location 00000000000000000000000000000000 .  There
+you have an infinite supply of usage tokens.  So you will use that
+location as your initial "invitation" in the sign up form.  Copy and
+paste that into Step 3 there.
+
+9. You have now created a new wallet.  However, the issuer location for
+usage tokens is still at your "Sponsor" location zero.  Now you have to
+do a trick to claim the issuer location for yourself, changing it from
+zero to your secret master folder location.  Here's how.
+
+10. Click "Assets".
+
+11. Click "usage tokens" in your asset list.
+
+12. Click "Delete".
+
+13. Check the box to confirm, then press the "Delete Now!" button.
+
+14. Click "Create a brand new asset type which you issue."
+
+15. Paste 00000000000000000000000000000000 in as the asset ID.
+
+16. Enter "usage tokens" as the name.
+
+17. Leave Scale and Min Precision blank.
+
+18. Press Save.
+
+19. Now you're done.  Your wallet has now successfully seized control of
+issuing usage tokens because it has changed the issuer location from
+zero to your own secret wallet location.
+
+At this point you may want to delete the "My Sponsor" location, which is
+location zero.  That is useless now, so you might as well delete it.
+
+1. Click "Contacts".
+
+2. Click "My Sponsor".
+
+3. Click "Delete".
+
+4. Check the box to confirm, then press the "Delete Now!" button.
+

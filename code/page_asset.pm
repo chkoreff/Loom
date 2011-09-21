@@ -117,12 +117,8 @@ sub page_asset_list
 	$table .= <<EOM;
 <h1> Asset List </h1>
 These are the asset types which your wallet currently recognizes.
-
-<p>
-<b>Options:</b>
-<span style='padding-left:15px'> $link_accept </span>
-<span style='padding-left:15px'> $link_create </span>
-</p>
+<p>$link_accept</p>
+<p>$link_create</p>
 <form method=post action="" autocomplete=off>
 $hidden
 <table border=0 cellpadding=1 style='border-collapse:collapse;'>

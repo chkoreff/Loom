@@ -13,8 +13,8 @@ my $g_num_bits = 128;
 
 # Convert decimal to a 128-bit integer value.
 #
-# max = +2^128-1 =  170141183460469231731687303715884105727
-# min = -2^128   = -170141183460469231731687303715884105728
+# max = +2^127-1 =  170141183460469231731687303715884105727
+# min = -2^127   = -170141183460469231731687303715884105728
 #
 # Since we know there's a maximum of 39 digits, we go ahead and check that
 # first even though the Bit::Vector routines detect over/underflow.  Their

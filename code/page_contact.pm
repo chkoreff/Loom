@@ -115,12 +115,8 @@ These are the contact points where you may store and move assets.  The first
 contact is the secret location where you store your own personal assets.  Each
 of the other contacts is a location that you share with a single individual,
 allowing you to pay each other.
-
-<p>
-<b>Options:</b>
-<span style='padding-left:15px'> $link_create </span>
-<span style='padding-left:15px'> $link_accept </span>
-</p>
+<p>$link_create</p>
+<p>$link_accept</p>
 <form method=post action="" autocomplete=off>
 $hidden
 <table border=0 cellpadding=1 style='border-collapse:collapse;'>

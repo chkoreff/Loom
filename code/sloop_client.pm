@@ -926,11 +926,20 @@ EOM
 
 	my $payload = "";
 
+	# Allow optional "base ref" clause in case someone is running the Loom
+	# server behind a front-end that uses some other root path.
+	my $base_clause = "";
+	if (loom_config("use_base"))
+		{
+		my $this_url = loom_config("this_url");
+		$base_clause = qq{<base href="$this_url">\n};
+		}
+
 	$payload .= <<EOM;
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+$base_clause<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 <meta http-equiv="Content-Language" content="en-us">
 <meta name="description" content="$system_name">
 <meta name="keywords" content="CMS content-management gold payment freedom">

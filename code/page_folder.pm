@@ -632,9 +632,9 @@ sub page_folder_value_table
 	$table .= <<EOM;
 <table border=0 cellpadding=2 style='border-collapse:collapse;'>
 <colgroup>
-<col width=180>
+<col width=170>
 <col width=380>
-<col width=90>
+<col width=100>
 </colgroup>
 EOM
 
@@ -1626,26 +1626,10 @@ $login_greeting
 EOM
 );
 
-	# LATER: we'll spruce up sign-up process.
-	{
-	my $link_folder_new = highlight_link(
-		top_url("function","folder", "new_folder",1),
-		"you may sign up here.",
-		0,
-		"Become a brand new user",
-		);
-
-	emit(<<EOM
-If someone sent you an invitation, $link_folder_new
-EOM
-);
-	}
-
 	emit(<<EOM
 <p>
-If you have already signed up, enter your passphrase and press Login.
-<br>
-For extra security, use the keyboard icon.
+Please enter your passphrase here.  For your security, we highly recommend that
+you <em>bookmark</em> this site and only come here by clicking that bookmark.
 <p>
 <form method=post action="">
 $hidden
@@ -1654,8 +1638,64 @@ $hidden
 <input type=submit name=login value="Login">$error
 </div>
 </form>
+EOM
+);
+
+	# LATER: we'll spruce up sign-up process.
+	{
+	my $link_folder_new = highlight_link(
+		top_url("function","folder", "new_folder",1),
+		"you may sign up here",
+		0,
+		"Become a brand new user",
+		);
+
+	emit(<<EOM
 <p>
-<table border=0 cellpadding=0 style='border-collapse:collapse'>
+If you don't have a passphrase yet, $link_folder_new.
+EOM
+);
+	}
+
+	if (0)
+	{
+	emit(<<EOM
+<p>
+<h1>Q. What is Loom ...</h1>
+<ul>
+<li>Digital Money?
+<li>A Private Trading Platform?
+<li>An Alternative to Fiat Currencies?
+<li>A Hedge Against Runaway Inflation?
+</ul>
+<h1>A. Actually, a bit of all of the above.  Here's a basic explanation:</h1>
+<p>
+At heart, Loom is a very private <em>communications</em> channel for sharing
+information.  Mostly, the information is about digital assets and who owns
+them.  Loom allows people to give away those assets or exchange them, in
+total privacy.
+<p>
+Loom is not about any specific asset.  <em>Any asset</em> that can be represented
+digitally, can be traded via Loom.  There isn't even just one Loom.  Loom is
+an open-source software <em>standard</em>.  So <em>anyone</em> can run their own
+version of loom if they want.
+EOM
+);
+	}
+
+	emit(<<EOM
+<p>
+<a href="/help">Learn more &hellip;</a>
+EOM
+);
+
+	# Disable the security advice for now, it just scares people.
+	# LATER:  figure out a non-threatening way to bring some of it back.
+	if (0)
+	{
+	emit(<<EOM
+<p>
+<table border=1 cellpadding=0 style='border-collapse:collapse'>
 <tr>
 <td colspan=2>
 <h2> Important Security Advice </h2>
@@ -1694,6 +1734,56 @@ will steal your passphrase.  You have been warned.
 </table>
 EOM
 );
+	}
+
+	# Disable for now.  This is all on the Help page.
+	if (0)
+	{
+	emit(<<EOM
+<h1> What is Loom? </h1>
+<p>
+Loom is a system which enables people to transfer ownership of any kind of
+asset privately and at will.
+
+<p>
+For example, a reputable individual can store gold in a vault and create a
+brand new digital asset redeemable for that physical gold.  People who know and
+trust that digital asset can add it to their Loom wallets and pay it around
+however they like.
+
+<p>
+Gold is just one example.  Imagine digital assets directly redeemable for cash,
+silver, coffee, oil, copper, electricity, lumber, hours of professional
+service, rewards &mdash; the possibilities are endless!
+
+<h1> How do I sign up? </h1>
+<p>
+First, you should know that using the Loom system is not free.  To use Loom,
+you must have an asset called <em>usage tokens</em>.  Loom charges usage tokens
+when you store information, and refunds usage tokens when you delete
+information.
+
+<p>
+So before you can sign up and create a Loom wallet, you need to get an
+<em>invitation code</em>, which is a location that contains enough usage
+tokens for you to get started.
+
+<h1> Where do I get an invitation? </h1>
+<p>
+If you know someone who already uses Loom, you can ask them for an invitation.
+Or you can purchase an invitation from an exchanger such as:
+
+<ul>
+<li> <a href="https://secure.goldnow.st/register.php">GoldNow</a> </li>
+<li> <a href="https://secure.gsfsystem.com/">GSF System</a> </li>
+<li> <a href="http://www.loommarket.com/">Loom Market</a> </li>
+</ul>
+EOM
+);
+	# LATER: soft-code these exchangers, and possibly all this text, into the
+	# Loom archive.  For now I don't really care.  If you're running your own
+	# Loom server, just hack in whatever you want here.
+	}
 
 	# LATER let's rethink this.  If we are supposed to be at an https site
 	# but we aren't, then it means the redirection from http to https is
@@ -1733,17 +1823,17 @@ EOM
 		"Sign Up", 0, "Become a brand new user"));
 
 	top_link(highlight_link(
-		"/faq",
-		"FAQ", 0, "Frequently Asked Questions"));
+		"/help",
+		"Help", 0, "Frequently Asked Questions"));
 
 	top_link(highlight_link(
 		top_url("help",1, "topic","contact_info"),
 		"Contact", 0, "Contact someone for help with your questions"));
 
-	top_link(highlight_link(
-		"/news",
-		"News", 0,
-		"See the latest announcements and other useful information"));
+#	top_link(highlight_link(
+#		"/news",
+#		"News", 0,
+#		"See the latest announcements and other useful information"));
 
 	top_link(highlight_link(
 		"/merchants",
