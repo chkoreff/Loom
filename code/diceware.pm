@@ -1,4 +1,6 @@
+package diceware;
 use strict;
+use export "diceware_passphrase";
 use random;
 
 =pod

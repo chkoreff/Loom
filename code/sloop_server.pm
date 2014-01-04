@@ -1,4 +1,6 @@
+package sloop_server;
 use strict;
+use export "sloop_respond";
 use file;
 use signal;
 use sloop_client;

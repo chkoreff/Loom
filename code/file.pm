@@ -1,4 +1,42 @@
+package file;
 use strict;
+use export
+	"file_new",
+	"path_normalize",
+	"file_full_path",
+	"file_local_path",
+	"file_name",
+	"file_type",
+	"file_size",
+	"file_restrict",
+	"file_child",
+	"file_parent",
+	"file_release",
+	"file_create_text",
+	"file_remove_text",
+	"file_create_dir",
+	"file_names",
+	"file_deep_names",
+	"file_remove_dir",
+	"file_remove_tree",
+	"file_remove_children",
+	"file_rename",
+	"file_create_path",
+	"file_remove_path",
+	"file_is_detached",
+	"file_open_read",
+	"file_open_write",
+	"file_get_line",
+	"file_get_bytes",
+	"file_get_content",
+	"file_get_by_name",
+	"file_put_bytes",
+	"file_put_content",
+	"file_put_by_name",
+	"file_append",
+	"file_update_set_test_delay",
+	"file_update",
+	;
 use Fcntl qw(:DEFAULT :flock);
 
 =pod
@@ -96,6 +134,7 @@ sub file_full_path
 sub file_local_path
 	{
 	my $file = shift;
+	return "" if !defined $file;
 
 	my @path = split("/",$file->{path});
 	my $level = $file->{level};
@@ -127,6 +166,7 @@ sub file_type
 	{
 	my $file = shift;
 
+	return "" if !defined $file;
 	return "f" if -f $file->{path};
 	return "d" if -d _;
 	return "";
@@ -162,6 +202,7 @@ sub file_child
 	my $path = shift;
 
 	$path = "" if !defined $path;
+	die if !defined $dir->{path};
 	return file_new("$dir->{path}/$path",$dir->{level});
 	}
 
@@ -308,16 +349,17 @@ sub file_remove_dir
 	}
 
 # Remove the entire directory tree here.
-
 sub file_remove_tree
 	{
 	my $dir = shift;
 
+	return 0 if !defined $dir;
 	my $type = file_type($dir);
 
-	return 0 if $type eq "";
-	return file_remove_text($dir) if $type eq "f";
+	return file_remove_text($dir) if $type eq "f" || -l $dir->{path};
+		# If it's a symlink just unlink it, don't delete the whole tree.
 
+	return 0 if $type ne "d";
 	file_remove_children($dir);
 	return file_remove_dir($dir);
 	}
@@ -343,6 +385,8 @@ sub file_remove_children
 # contains the old path, which now refers to a non-existent file system object.
 #
 # Note that this rename will clobber any existing destination.
+#
+# TODO 20130830 This is not a portable way to move files to other directories.
 
 sub file_rename
 	{
@@ -427,7 +471,7 @@ sub file_is_detached
 # the lock on a normal attached file.  See file_is_detached for a discussion of
 # attached and detached files.
 
-sub file_read
+sub file_open_read
 	{
 	my $file = shift;
 	my $blocking = shift;  # optional, default 1
@@ -463,7 +507,7 @@ sub file_read
 # got the lock on a normal attached file.  See file_is_detached for a
 # discussion of attached and detached files.
 
-sub file_write
+sub file_open_write
 	{
 	my $file = shift;
 	my $blocking = shift;  # optional, default 1
@@ -523,7 +567,7 @@ sub file_get_bytes
 	return undef if !defined $file->{fh};
 
 	my $data;
-	my $len = sysread($file->{fh},$data,$num_bytes);
+	my $len = read($file->{fh},$data,$num_bytes);
 
 	return $data;
 	}
@@ -534,7 +578,7 @@ sub file_get_content
 	{
 	my $file = shift;
 
-	file_read($file);
+	file_open_read($file);
 
 	return undef if $file->{mode} eq "";
 	return undef if !defined $file->{fh};
@@ -545,7 +589,7 @@ sub file_get_content
 	my $pos = 0;
 	while (1)
 		{
-		my $num_read = sysread($file->{fh},$text,16384,$pos);
+		my $num_read = read($file->{fh},$text,16384,$pos);
 		if (!defined $num_read)
 			{
 			next if $! =~ /^Interrupted/;
@@ -609,7 +653,7 @@ sub file_put_content
 	my $file = shift;
 	my $text = shift;
 
-	file_write($file);
+	file_open_write($file);
 
 	return 0 if $file->{mode} ne "W";
 	return 0 if !defined $file->{fh};
@@ -668,10 +712,11 @@ sub file_append
 # directory structure needed to support the keys (file names) which are
 # mentioned in the $new table.
 #
-# As an extra security precaution, we recommend that you call "restrict" on the
-# directory handle before calling "update".  That will prevent any keys from
-# using ".." to reach up and modify files outside the directory.  Calling
-# restrict will make the directory into a securely sealed off "sandbox".
+# As an extra security precaution, we recommend that you call "file_restrict"
+# on the directory handle before calling "file_update".  That will prevent any
+# keys from using ".." to reach up and modify files outside the directory.
+# Calling file_restrict will make the directory into a securely sealed off
+# "sandbox".
 #
 # This routine has been highly tested under extreme processor loads and
 # adverse timing conditions to maximize contention.  Many code branches are
@@ -711,9 +756,14 @@ sub file_update
 	die if !defined $new;
 	die if !defined $old;
 
-	my $ok = 1;
-
 	my @key_list = keys %$new;
+
+	# Guard against opening too many files.
+	my $num_files = scalar(@key_list);
+	die "Too many files ($num_files)"
+		if $num_files > 800;  # Arbitrary maximum.
+
+	my $ok = 1;
 
 	my $file_map = {};  # map from key (name) to file object
 	my @file_list;      # list of file objects to update
@@ -752,7 +802,7 @@ sub file_update
 
 		for my $file (@file_list)
 			{
-			next if file_write($file);
+			next if file_open_write($file);
 
 			# Some possible errors here:
 			#   Inappropriate ioctl for device
@@ -874,6 +924,7 @@ sub file_update
 				print STDERR "$$ [$len_new_val] new $new_val\n";
 				print STDERR "$$ [$len_old_val] old $old_val\n";
 				}
+			die;
 			}
 		}
 

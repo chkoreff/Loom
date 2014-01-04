@@ -1,4 +1,16 @@
+package context;
 use strict;
+use export
+	"op_new",
+	"op_get",
+	"op_put",
+	"op_default",
+	"op_names",
+	"op_slice",
+	"op_pairs",
+	"op_read_kv",
+	"op_write_kv",
+	;
 use c_quote;
 
 =pod

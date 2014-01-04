@@ -1,8 +1,15 @@
+package page_contact;
 use strict;
+use export "page_contact_respond";
 use archive;
+use context;
 use grid;
+use html;
 use http;
 use id;
+use loom_config;
+use page;
+use page_folder; # TODO
 use random;
 
 sub help_contact
@@ -435,7 +442,9 @@ EOM
 	$display->{location_name} = $loc_name;
 
 	my $table = page_folder_value_table($display);
-	my $num_items = scalar(@{$display->{location_items}->{$loc}});
+	my $items = $display->{location_items}->{$loc};
+	$items = [] if !defined $items;
+	my $num_items = scalar(@$items);
 
 	page_zoom_contact_heading();
 
@@ -864,7 +873,7 @@ EOM
 	else
 	{
 	emit(<<EOM
-<h1>Create a brand new contact point.</h1>
+<h1>Create a new contact point.</h1>
 EOM
 );
 	}
@@ -962,12 +971,14 @@ EOM
 <input$checked type=checkbox name=include_usage_tokens>
 </td>
 <td style='padding-bottom:15px'>
-Click this checkbox if you are inviting a brand new user who has never
-used Loom before.  This will include 100 usage tokens at the contact point,
-enabling the user to Sign Up and create a brand new wallet.
+Click this checkbox if you are inviting a brand new user.
+This will include 100 usage tokens at the contact point.
 </td>
 </tr>
 EOM
+#Click this checkbox if you are inviting a brand new user who has never
+#used Loom before.  This will include 100 usage tokens at the contact point,
+#enabling the user to Sign Up and create a brand new wallet.
 	}
 
 	my $link_cancel;

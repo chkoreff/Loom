@@ -1,4 +1,10 @@
+package loom_config;
 use strict;
+use export "loom_config";
+use archive;
+use context;
+use file;
+use sloop_top;
 
 my $g_loom_config;
 

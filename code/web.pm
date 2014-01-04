@@ -1,4 +1,6 @@
+package web;
 use strict;
+use export "get_url";
 use LWP::UserAgent;
 
 # NOTE: You must install Crypt::SSLeay in order for https to work.

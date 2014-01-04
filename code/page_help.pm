@@ -1,6 +1,13 @@
+package page_help;
 use strict;
+use export "help_context_table","help_topic";
+use archive;
 use help_archive;
 use help_grid;
+use html;
+use http;
+use loom_config;
+use page;
 
 sub get_email_support
 	{

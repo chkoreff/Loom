@@ -1,4 +1,6 @@
+package sha256;
 use strict;
+use export "sha256","sha256_hex";
 use Digest::SHA256;
 
 =pod

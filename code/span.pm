@@ -1,4 +1,6 @@
+package span;
 use strict;
+use export "span_quote","span_unquote";
 
 sub span_quote
 	{

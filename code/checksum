@@ -12,7 +12,6 @@ Compute recursive SHA256 hash of directory or file.
 use FindBin;
 use lib $FindBin::RealBin;
 
-use bin;
 use file;
 use Getopt::Long;
 use sha256;
@@ -22,7 +21,7 @@ sub file_content_hash
 	{
 	my $file = shift;
 
-	file_read($file);
+	file_open_read($file);
 	my $text = file_get_content($file);
 	$text = "" if !defined $text;
 
@@ -75,15 +74,12 @@ sub file_hash
 	return $result;
 	}
 
-sub checksum_main
+sub main
 	{
 	my $opt = {};
 
 	my $ok = GetOptions($opt, "l");
-	my $dir_name;
-
-	$dir_name = $ARGV[0] if $ok;
-	$ok = 0 if $ok && !defined $dir_name;
+	$ok = 0 if $ok && @ARGV == 0;
 
 	if (!$ok)
 		{
@@ -99,11 +95,16 @@ EOM
 		exit(2);
 		}
 
-	my $dir = file_new($dir_name);
-	my $result = file_hash($dir,$opt->{l});
-	print $result;
+	# TODO 20130830 This doesn't allow paths that start with "../".
+
+	for my $path (@ARGV)
+		{
+		my $file = file_new($path);
+		my $result = file_hash($file,$opt->{l});
+		print $result;
+		}
 
 	exit(0);
 	}
 
-checksum_main();
+main();

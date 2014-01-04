@@ -1,4 +1,6 @@
+package loom_db;
 use strict;
+use export "loom_db_get","loom_db_put";
 use c_quote;
 use trans;
 

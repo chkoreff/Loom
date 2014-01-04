@@ -1,4 +1,9 @@
+package page_view;
 use strict;
+use export "page_view_respond";
+use archive;
+use http;
+use page;
 
 sub page_view_respond
 	{

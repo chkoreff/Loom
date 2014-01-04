@@ -1,4 +1,6 @@
+package crypt_span;
 use strict;
+use export "span_encrypt","span_decrypt";
 use aes;
 use span;
 

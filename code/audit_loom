@@ -3,7 +3,6 @@ use strict;
 
 use FindBin;
 use lib $FindBin::RealBin;
-use bin;
 use file;
 use Getopt::Long;
 use int128;

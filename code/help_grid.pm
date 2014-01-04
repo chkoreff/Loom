@@ -1,4 +1,9 @@
+package help_grid;
 use strict;
+use export "help_grid";
+use loom_config;
+use page;
+use page_help;
 
 sub help_grid_buy
 	{

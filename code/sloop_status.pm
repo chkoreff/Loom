@@ -1,4 +1,15 @@
+package sloop_status;
 use strict;
+use export
+	"sloop_status_init",
+	"sloop_status_start",
+	"sloop_status_stop",
+	"sloop_info",
+	"sloop_children",
+	"sloop_num_children",
+	"sloop_child_enters",
+	"sloop_child_exits",
+	;
 use file;
 use sloop_config;
 use sloop_top;

@@ -1,4 +1,8 @@
+package page_data;
 use strict;
+use export "page_data_respond";
+use http;
+use page;
 
 sub data_style_sheet
 	{
@@ -8,10 +12,15 @@ sub data_style_sheet
 	my $area_color = "#ffffff";
 	my $surround_color = "grey";
 
+#body { font-family: verdana, arial, sans-serif; font-size: 10pt; margin-left:20px; background:$surround_color; }
+
+	# justify screws up the "Please enter a passphrase" error message.
+#body { font-family: verdana, arial, sans-serif; font-size: 10pt; text-align:justify; margin:auto; background:$surround_color; }
 	return <<EOM;
 Content-Type: text/css
 
-body { font-family: verdana, arial, sans-serif; font-size: 10pt; margin-left:20px; background:$surround_color; }
+body { font-family: verdana, arial, sans-serif; font-size: 10pt; margin:auto; background:$surround_color; }
+
 div { font-size:10pt }
 p { font-size:10pt }
 h1 { font-size:11pt }
@@ -62,16 +71,12 @@ td.wallet_small_clean
 	}
 
 #navigation { padding:5px 25px 5px 25px; background-color: $area_color;
-	border-radius: 1em;
-	-moz-border-radius:1em;
-	-webkit-border-radius:1em;
+	border-radius:1em;
 	margin-top:5px;
 	}
 
 #content { padding:5px 25px 5px 25px; background-color: $area_color;
-	border-radius: 1em;
-	-moz-border-radius:1em;
-	-webkit-border-radius:1em;
+	border-radius:1em;
 	margin-top:5px;
 	margin-bottom:5px;
 	}

@@ -4,7 +4,6 @@ use strict;
 use FindBin;
 use lib $FindBin::RealBin;
 
-use bin;
 use diceware;
 
 my $g_num_words;

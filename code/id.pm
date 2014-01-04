@@ -1,4 +1,11 @@
+package id;
 use strict;
+use export
+	"valid_id",
+	"valid_hash",
+	"xor_hex",
+	"fold_hash",
+	;
 
 # Return true if string is a valid 32 character (128 bit) hexadecimal value.
 

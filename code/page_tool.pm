@@ -1,5 +1,12 @@
+package page_tool;
 use strict;
+use export "page_tool_respond";
 use diceware;
+use html;
+use http;
+use loom_login;
+use random;
+use page;
 
 sub page_tool_respond
 	{

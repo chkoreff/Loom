@@ -1,4 +1,14 @@
+package int128;
 use strict;
+use export
+	"int128_from_dec",
+	"int128_to_dec",
+	"int128_is_zero",
+	"int128_sign",
+	"int128_add",
+	"int128_sub",
+	"int128_inc",
+	;
 use Bit::Vector;
 
 =pod

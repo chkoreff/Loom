@@ -1,4 +1,6 @@
+package test_grid;
 use strict;
+use export "test_grid_run";
 use api;
 use context;
 use file;

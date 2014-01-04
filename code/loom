@@ -11,7 +11,6 @@ Loom server program
 
 use FindBin;
 use lib $FindBin::RealBin;
-use bin;
 use sloop_main;
 
 sloop_main();

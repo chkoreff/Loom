@@ -1,4 +1,6 @@
+package sloop_main;
 use strict;
+use export "sloop_main";
 use Getopt::Long;
 use sloop_server;
 

@@ -1,4 +1,10 @@
+package random_stream;
 use strict;
+use export
+	"random_new",
+	"random_get",
+	"random_get_ulong",
+	;
 use aes;
 use file;
 
@@ -22,7 +28,7 @@ sub random_new
 	my $stream = {};
 
 	$stream->{entropy} = file_new($source);
-	file_read($stream->{entropy});
+	file_open_read($stream->{entropy});
 
 	$stream->{encrypt} = undef;
 	$stream->{count} = 0;  # use new key when count reaches zero

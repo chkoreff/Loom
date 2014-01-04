@@ -1,4 +1,13 @@
+package trans;
 use strict;
+use export
+	"trans_init",
+	"trans_get",
+	"trans_put",
+	"trans_size",
+	"trans_cancel",
+	"trans_commit",
+	;
 use file;
 
 =pod

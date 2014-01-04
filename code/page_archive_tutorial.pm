@@ -1,4 +1,14 @@
+package page_archive_tutorial;
 use strict;
+use export "page_archive_tutorial_respond";
+use api;
+use context;
+use html;
+use http;
+use loom_config;
+use page;
+use page_help;
+use sha256;
 
 sub page_archive_tutorial_links
 	{

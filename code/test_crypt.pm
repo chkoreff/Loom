@@ -1,4 +1,6 @@
+package test_crypt;
 use strict;
+use export "test_crypt_run";
 use crypt_span;
 use random;
 

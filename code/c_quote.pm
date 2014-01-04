@@ -1,4 +1,6 @@
+package c_quote;
 use strict;
+use export "c_quote","c_unquote";
 
 =pod
 

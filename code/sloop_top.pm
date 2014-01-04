@@ -1,10 +1,12 @@
+package sloop_top;
 use strict;
+use export "sloop_top","sloop_top_path";
 use file;
 use FindBin;
 
 my $g_top;
 
-# Return a handle to the top-level directory for this server,  which has this
+# Return a handle to the top-level directory for this server, which has this
 # directory structure:
 #
 #   code/                 # code

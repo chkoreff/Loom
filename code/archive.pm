@@ -1,5 +1,20 @@
+package archive;
 use strict;
+use export
+	"archive_buy",
+	"archive_sell",
+	"archive_touch",
+	"archive_look",
+	"archive_get",
+	"archive_write",
+	"archive_is_vacant",
+	"archive_random_vacant_location",
+	"archive_touch_object",
+	"archive_object_text",
+	"archive_write_object",
+	;
 use api;
+use context;
 use id;
 use random;
 

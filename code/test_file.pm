@@ -1,4 +1,6 @@
+package test_file;
 use strict;
+use export "test_file_run";
 use array;
 use file;
 use process;

@@ -1,4 +1,6 @@
+package process;
 use strict;
+use export "wait_children";
 
 # Wait for all children to finish.
 

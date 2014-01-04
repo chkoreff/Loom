@@ -1,4 +1,15 @@
+package page_edit;
 use strict;
+use export "page_edit_respond";
+use api;
+use archive;
+use context;
+use grid;
+use html;
+use http;
+use id;
+use page;
+use sha256;
 
 # LATER it's somewhat annoying that when you press Enter, the Random Passphrase
 # button is selected because it's first on the page.  Perhaps the accesskey

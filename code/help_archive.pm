@@ -1,4 +1,10 @@
+package help_archive;
 use strict;
+use export "help_archive";
+use loom_config;
+use page_help;
+use page;
+use URI::Escape;
 
 sub help_archive_buy
 	{

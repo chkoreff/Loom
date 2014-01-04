@@ -1,5 +1,16 @@
+package grid;
 use strict;
+use export
+	"grid_buy",
+	"grid_sell",
+	"grid_issuer",
+	"grid_touch",
+	"grid_look",
+	"grid_move",
+	"grid_scan",
+	;
 use api;
+use context;
 
 sub grid_buy
 	{

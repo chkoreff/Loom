@@ -1,4 +1,6 @@
+package test_api;
 use strict;
+use export "test_api_config";
 use context;
 use file;
 use sloop_top;

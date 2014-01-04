@@ -1,7 +1,15 @@
+package page_wallet;
 use strict;
+use export "page_wallet_respond";
+use context;
 use dttm;
+use grid;
 use history;
+use html;
+use http;
 use loom_qty;
+use page;
+use page_folder; # TODO
 
 sub handle_history
 	{

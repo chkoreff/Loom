@@ -1,4 +1,12 @@
+package sloop_io;
 use strict;
+use export
+	"sloop_io_init",
+	"sloop_receive",
+	"sloop_send",
+	"sloop_disconnect",
+	"sloop_exiting",
+	;
 use signal;
 use sloop_status;
 
@@ -93,6 +101,7 @@ sub sloop_receive
 		alarm(10);
 
 		# Read bytes from the socket onto the end of the buffer.
+		# TODO test with just read
 		my $num_read = sysread $g_client_socket, $$buffer, $max_read,
 			length($$buffer);
 

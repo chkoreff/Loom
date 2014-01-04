@@ -1,4 +1,12 @@
+package page_trade;
 use strict;
+use export "page_trade_respond";
+use array;
+use context;
+use html;
+use http;
+use page;
+use token;
 
 my $g_trade_url;
 my $g_vendor_url;

@@ -1,6 +1,12 @@
+package page_test;
 use strict;
+use export "page_test_respond";
+use context;
 use c_quote;
+use html;
 use http;
+use loom_config;
+use page;
 
 sub html_c_quote
 	{

@@ -1,4 +1,6 @@
+package token;
 use strict;
+use export "token_get_nl","token_get";
 
 # LATER define in terms of $source
 # LATER include the extra functions from fexl

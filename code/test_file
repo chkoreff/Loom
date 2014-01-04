@@ -27,7 +27,6 @@ file_update routine.
 
 use FindBin;
 use lib $FindBin::RealBin;
-use bin;
 use Getopt::Long;
 use test_file;
 

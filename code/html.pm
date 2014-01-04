@@ -1,4 +1,16 @@
+package html;
 use strict;
+use export
+	"trimblanks",
+	"remove_nonprintable",
+	"html_quote",
+	"html_semiquote",
+	"html_quote_form",
+	"html_hidden_fields",
+	"html_display_length",
+	"make_url",
+	"top_url",
+	;
 use URI::Escape;
 
 =pod

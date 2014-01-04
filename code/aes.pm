@@ -1,4 +1,12 @@
+package aes;
 use strict;
+use export
+	"aes_new",
+	"aes_blocksize",
+	"aes_reset",
+	"aes_decrypt",
+	"aes_encrypt",
+	;
 use Crypt::Rijndael;
 
 =pod

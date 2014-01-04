@@ -1,4 +1,10 @@
+package page_archive_api;
 use strict;
+use export "page_archive_api_respond";
+use api;
+use context;
+use http;
+use page;
 
 sub page_archive_api_respond
 	{

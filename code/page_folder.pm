@@ -1,14 +1,39 @@
+package page_folder;
 use strict;
+use export
+	"folder_location",
+	"folder_result",
+	"save_folder",
+	"folder_get",
+	"folder_put",
+	"display_value",
+	"map_id_to_nickname",
+	"map_nickname_to_id",
+	"get_sorted_list_loc",
+	"get_sorted_list_loc_enabled",
+	"get_sorted_list_type",
+	"get_sorted_list_type_enabled",
+	"page_folder_value_table",
+	"build_folder_template",
+	"page_folder_respond",
+	;
 use archive;
+use context;
 use crypt_span;
 use diceware;
 use dttm;
 use grid;
+use html;
 use http;
 use id;
+use loom_config;
+use loom_login;
 use loom_qty;
+use page;
 use page_asset;
 use page_contact;
+use page_help;
+use page_wallet; # TODO
 use random;
 
 sub put_mask_if_absent
@@ -1441,6 +1466,10 @@ EOM
 </tr>
 
 </table>
+<p>
+<a target=_new href="/help#where_do_i_get_an_invitation">
+Where do I get an invitation?
+</a>
 EOM
 );
 
@@ -1535,6 +1564,10 @@ EOM
 	}
 	elsif (http_get("usage") eq "")
 	{
+
+	#  NOTE: disabled 11/19/11
+	if (0)
+	{
 	my $url = top_url("help",1, "topic","get_usage_tokens");
 	my $link = qq{<a class=large href="$url">How do I get an invitation?</a>};
 
@@ -1543,6 +1576,8 @@ EOM
 $link
 EOM
 );
+	}
+
 	}
 
 	emit(<<EOM
@@ -1601,7 +1636,7 @@ sub page_login
 
 	if ($error ne "")
 		{
-		$error = " <span class=alarm>$error</span>";
+		$error = "<br><span class=alarm>$error</span>";
 		}
 
 	my $hidden = html_hidden_fields(http_slice(qw(function)));
@@ -1618,6 +1653,8 @@ sub page_login
 
 	need_keyboard();
 
+	if (0)
+	{
 	my $name = loom_config("system_name");
 	my $login_greeting = "<h1>\nWelcome to $name.</h1>";
 
@@ -1625,11 +1662,13 @@ sub page_login
 $login_greeting
 EOM
 );
+	}
 
+#Please enter your passphrase here.  For your security, we highly recommend that
+#you <em>bookmark</em> this site and only come here by clicking that bookmark.
 	emit(<<EOM
 <p>
-Please enter your passphrase here.  For your security, we highly recommend that
-you <em>bookmark</em> this site and only come here by clicking that bookmark.
+Please enter passphrase:
 <p>
 <form method=post action="">
 $hidden
@@ -1645,16 +1684,24 @@ EOM
 	{
 	my $link_folder_new = highlight_link(
 		top_url("function","folder", "new_folder",1),
-		"you may sign up here",
+		#"you may sign up here",
+		"Join today!",
 		0,
 		"Become a brand new user",
 		);
 
+#	my $name = loom_config("system_name");
+#	emit(<<EOM
+#<p>
+#New to $name?  $link_folder_new
+#EOM
+#);
 	emit(<<EOM
 <p>
-If you don't have a passphrase yet, $link_folder_new.
+$link_folder_new
 EOM
 );
+#If you don't have a passphrase yet, $link_folder_new.
 	}
 
 	if (0)
@@ -1835,6 +1882,9 @@ EOM
 #		"News", 0,
 #		"See the latest announcements and other useful information"));
 
+	if (0)
+	{
+	# NOTE: disabled 11/19/11
 	top_link(highlight_link(
 		"/merchants",
 		"Merchants", 0, "See who uses Loom"));
@@ -1842,6 +1892,7 @@ EOM
 	top_link(highlight_link(
 		"/trade",
 		"Trade", 0, "See the products that vendors buy and sell."));
+	}
 
 	top_link(highlight_link(
 		top_url("help",1),

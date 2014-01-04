@@ -1,4 +1,12 @@
+package loom_qty;
 use strict;
+use export
+	"valid_scale",
+	"float_to_int",
+	"twos_complement_float",
+	"ones_complement_float",
+	"multiply_float",
+	;
 use Bit::Vector;
 use int128;
 

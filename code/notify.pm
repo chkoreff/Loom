@@ -1,5 +1,8 @@
+package notify;
 use strict;
+use export "in_maintenance_mode";
 use file;
+use loom_config;
 use sloop_top;
 
 my $g_notify_path;

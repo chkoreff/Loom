@@ -1,4 +1,6 @@
+package array;
 use strict;
+use export "shuffle","intersect","sort_names";
 
 sub shuffle
 	{

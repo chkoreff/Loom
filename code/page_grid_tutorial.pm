@@ -1,4 +1,13 @@
+package page_grid_tutorial;
 use strict;
+use export "page_grid_tutorial_respond";
+use api;
+use context;
+use html;
+use http;
+use loom_config;
+use page;
+use page_help;
 
 sub page_grid_tutorial_links
 	{

@@ -1,4 +1,14 @@
+package signal;
 use strict;
+use export
+	"signal_init",
+	"signal_get_alarm",
+	"signal_get_child",
+	"signal_get_interrupt",
+	"signal_put_alarm",
+	"signal_put_child",
+	"signal_put_interrupt",
+	;
 
 =pod
 

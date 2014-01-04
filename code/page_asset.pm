@@ -1,9 +1,16 @@
+package page_asset;
 use strict;
+use export "page_asset_respond";
 use archive;
+use context;
 use grid;
+use html;
 use http;
 use id;
+use loom_config;
 use loom_qty;
+use page;
+use page_folder; # TODO
 use random;
 use sha256;
 

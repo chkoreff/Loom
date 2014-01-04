@@ -1,4 +1,12 @@
+package random;
 use strict;
+use export
+	"random_id",
+	"random_ulong",
+	"random_byte",
+	"random_tiny_int",
+	"random_dice_roll",
+	;
 use random_stream;
 
 my $g_random;

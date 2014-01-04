@@ -1,4 +1,6 @@
+package test_sha256;
 use strict;
+use export "test_sha256_run";
 use sha256;
 
 =pod

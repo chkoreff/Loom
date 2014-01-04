@@ -1,4 +1,6 @@
+package test_float;
 use strict;
+use export "test_float_all";
 
 use loom_qty;
 

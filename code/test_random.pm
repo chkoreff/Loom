@@ -1,4 +1,6 @@
+package test_random;
 use strict;
+use export "test_random_run";
 use random_stream;
 
 =pod

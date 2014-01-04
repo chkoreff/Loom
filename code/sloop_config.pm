@@ -1,4 +1,9 @@
+package sloop_config;
 use strict;
+use export "sloop_config";
+use context;
+use file;
+use sloop_top;
 
 # Read the configuration file data/conf/sloop if not already read.  This file
 # is optional, so you only have to create it if you want to override the

@@ -1,4 +1,19 @@
+package history;
 use strict;
+use export
+	"show_history",
+	"add_history_entry",
+	"save_history_item",
+	"delete_history_item",
+	;
+use context;
+use dttm;
+use html;
+use http;
+use loom_config;
+use page;
+use page_folder;
+use random;
 
 # Establish scroll position based on id h_pi and row number h_pn.
 

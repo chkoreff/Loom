@@ -1,4 +1,11 @@
+package dttm;
 use strict;
+use export
+	"valid_dttm",
+	"dttm_as_gmt",
+	"dttm_as_local",
+	"dttm_as_cookie",
+	;
 
 =pod
 

@@ -1,4 +1,14 @@
+package loom_login;
 use strict;
+use export
+	"passphrase_location",
+	"passphrase_session",
+	"valid_session",
+	"kill_session",
+	;
+use archive;
+use id;
+use sha256;
 
 # Session and passphrase operations.
 #
