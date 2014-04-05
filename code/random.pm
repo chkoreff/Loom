@@ -1,37 +1,36 @@
 package random;
 use strict;
-use export
-	"random_id",
-	"random_ulong",
-	"random_byte",
-	"random_tiny_int",
-	"random_dice_roll",
-	;
 use random_stream;
 
-my $g_random;
-my $g_random_buffer = "";
+my $g_source;
+my $g_buffer = "";
 
 # Return a 128-bit random quantity (packed binary).
-sub random_id
+sub id
 	{
-	$g_random = random_new() if !defined $g_random;
-	return random_get($g_random);
+	$g_source = random_stream::new() if !defined $g_source;
+	return random_stream::get($g_source);
+	}
+
+# Return a random id in hex format.
+sub hex
+	{
+	return unpack("H*",id());
 	}
 
 # Return a random unsigned long value.
-sub random_ulong
+sub ulong
 	{
-	$g_random = random_new() if !defined $g_random;
-	return random_get_ulong($g_random);
+	$g_source = random_stream::new() if !defined $g_source;
+	return random_stream::get_ulong($g_source);
 	}
 
-sub random_byte
+sub byte
 	{
-	$g_random_buffer = random_id() if $g_random_buffer eq "";
+	$g_buffer = id() if $g_buffer eq "";
 
-	my $byte = substr($g_random_buffer,0,1);
-	$g_random_buffer = substr($g_random_buffer,1);
+	my $byte = substr($g_buffer,0,1);
+	$g_buffer = substr($g_buffer,1);
 
 	return $byte;
 	}
@@ -39,7 +38,7 @@ sub random_byte
 # We make sure that the random byte values mod N result in a
 # true uniform distribution across 0..N-1 so there's no bias.
 
-sub random_tiny_int
+sub tiny_int
 	{
 	my $N = shift;  # the modulus (1..256)
 
@@ -51,7 +50,7 @@ sub random_tiny_int
 
 	while (1)
 		{
-		my $val = ord(random_byte());
+		my $val = ord(byte());
 
 		if ($val <= $top_byte)
 			{
@@ -71,9 +70,9 @@ sub random_tiny_int
 	}
 
 # Return a random number in the range 1 through 6.
-sub random_dice_roll
+sub dice_roll
 	{
-	return 1 + random_tiny_int(6);
+	return 1 + tiny_int(6);
 	}
 
 return 1;

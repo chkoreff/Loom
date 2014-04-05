@@ -1,10 +1,9 @@
 package test_float;
 use strict;
-use export "test_float_all";
 
 use loom_qty;
 
-my $g_trace_test_float = 0;
+my $g_trace = 0;
 
 sub test_format
 	{
@@ -13,7 +12,7 @@ sub test_format
 	my $min_precision = shift;
 	my $expect = shift;
 
-	my $result = ones_complement_float($value,$scale,$min_precision);
+	my $result = loom_qty::ones_complement_float($value,$scale,$min_precision);
 	if ($expect ne $result)
 		{
 		print STDERR <<EOM;
@@ -53,10 +52,10 @@ sub test_mul
 	my $float_factor = shift;
 	my $expect = shift;
 
-	my $str_result = multiply_float($str_val,$float_factor);
+	my $str_result = loom_qty::multiply_float($str_val,$float_factor);
 	my $ok = !defined $expect || $str_result eq $expect;
 
-	my $trace = $g_trace_test_float;
+	my $trace = $g_trace;
 	$trace = 1 if !$ok;
 
 	print <<EOM if $trace;
@@ -644,7 +643,7 @@ sub test_mul_all
 	return;
 	}
 
-sub test_float_all
+sub run
 	{
 	test_format_all();
 	test_mul_all();

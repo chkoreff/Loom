@@ -1,29 +1,28 @@
 package api;
 use strict;
-use export "api_respond";
 use api_archive;
 use api_grid;
 use context;
 
 # This routine takes a context argument and runs the API function from that.
 
-sub api_respond
+sub respond
 	{
 	my $op = shift;
 
-	my $function = op_get($op,"function");
+	my $function = context::get($op,"function");
 
 	if ($function eq "grid")
 		{
-		api_grid_respond($op);
+		api_grid::respond($op);
 		}
 	elsif ($function eq "archive")
 		{
-		api_archive_respond($op);
+		api_archive::respond($op);
 		}
 	else
 		{
-		op_put($op,"error_function","unknown");
+		context::put($op,"error_function","unknown");
 		}
 
 	return $op;

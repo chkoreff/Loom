@@ -1,27 +1,20 @@
 package test_crypt;
 use strict;
-use export "test_crypt_run";
 use crypt_span;
 use random;
 
-=pod
+# Test suite for crypto operations
 
-=head1 NAME
-
-Test suite for crypto operations
-
-=cut
-
-my $g_trace_test_crypt = 0;
+my $g_trace = 0;
 my $g_test_key;
 
-sub test_crypto_case
+sub test_case
 	{
 	my $plain = shift;
 	my $label = shift;
 
-	my $crypt = span_encrypt($g_test_key,$plain);
-	my $test = span_decrypt($g_test_key,$crypt);
+	my $crypt = crypt_span::encrypt($g_test_key,$plain);
+	my $test = crypt_span::decrypt($g_test_key,$crypt);
 
 	if ($test ne $plain)
 		{
@@ -31,35 +24,35 @@ EOM
 		die;
 		}
 
-	print "success: $label\n" if $g_trace_test_crypt;
+	print "success: $label\n" if $g_trace;
 
 	return;
 	}
 
-sub test_crypt_run
+sub run
 	{
-	$g_test_key = random_id();
+	$g_test_key = random::id();
 
 	my $key_len = length($g_test_key);
 	my $q_key = unpack("H*",$g_test_key);
 
-	print <<EOM if $g_trace_test_crypt;
+	print <<EOM if $g_trace;
 Begin crypto test key = $q_key (length $key_len).
 EOM
 
 	# A few miscellaneous tests.
 
-	test_crypto_case("", "null string");
-	test_crypto_case("a", "the letter 'a'");
-	test_crypto_case("abcdefghijklmnopqrstuvwxyz", "the alphabet");
-	test_crypto_case("abcdefghijklmnopqrstuvwxyz" x 18,
+	test_case("", "null string");
+	test_case("a", "the letter 'a'");
+	test_case("abcdefghijklmnopqrstuvwxyz", "the alphabet");
+	test_case("abcdefghijklmnopqrstuvwxyz" x 18,
 		"18 copies of the alphabet");
 
 	# Test many lengths.
 	{
 	for my $count (0 .. 1000)
 		{
-		test_crypto_case("abc" x $count, "$count copies of 'abc'");
+		test_case("abc" x $count, "$count copies of 'abc'");
 		}
 	}
 
@@ -75,21 +68,21 @@ EOM
 
 	my $len_large_string = length($large_string);
 
-	print <<EOM if $g_trace_test_crypt;
+	print <<EOM if $g_trace;
 Begin test of large value round trip with $len_large_string bytes ...
 EOM
 
-	test_crypto_case($large_string,
+	test_case($large_string,
 		"large string of $len_large_string bytes");
 
 	my $elapsed = time - $beg_time;
 
-	print <<EOM if $g_trace_test_crypt;
+	print <<EOM if $g_trace;
 ... That took $elapsed seconds.
 EOM
 	}
 
-	print <<EOM if $g_trace_test_crypt;
+	print <<EOM if $g_trace;
 Finished crypt test
 EOM
 

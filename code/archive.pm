@@ -1,30 +1,17 @@
 package archive;
 use strict;
-use export
-	"archive_buy",
-	"archive_sell",
-	"archive_touch",
-	"archive_look",
-	"archive_get",
-	"archive_write",
-	"archive_is_vacant",
-	"archive_random_vacant_location",
-	"archive_touch_object",
-	"archive_object_text",
-	"archive_write_object",
-	;
 use api;
 use context;
 use id;
 use random;
 
-# LATER unify with split_content
+# LATER unify with page::split_content
 
 sub read_http_headers
 	{
 	my $obj = shift;
 
-	my $content = op_get($obj,"content");
+	my $content = context::get($obj,"content");
 
 	my $pos = 0;
 
@@ -39,7 +26,7 @@ sub read_http_headers
 		if ($line =~ /^(\S+):\s*(\S+)$/)
 			{
 			# Line matches "name: value".  Save in object.
-			op_put($obj,$1,$2);
+			context::put($obj,$1,$2);
 			$pos = $new_pos + 1;
 			}
 		else
@@ -50,16 +37,16 @@ sub read_http_headers
 		}
 
 	$content = substr($content,$pos);
-	op_put($obj,"content",$content);
+	context::put($obj,"content",$content);
 	return;
 	}
 
-sub archive_buy
+sub buy
 	{
 	my $loc = shift;
 	my $usage = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","archive",
 		"action","buy",
@@ -67,15 +54,15 @@ sub archive_buy
 		"usage",$usage
 		);
 
-	return api_respond($op);
+	return api::respond($op);
 	}
 
-sub archive_sell
+sub sell
 	{
 	my $loc = shift;
 	my $usage = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","archive",
 		"action","sell",
@@ -83,55 +70,55 @@ sub archive_sell
 		"usage",$usage
 		);
 
-	return api_respond($op);
+	return api::respond($op);
 	}
 
-sub archive_touch
+sub touch
 	{
 	my $loc = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","archive",
 		"action","touch",
 		"loc",$loc,
 		);
 
-	api_respond($op);
-	return op_get($op,"content");
+	api::respond($op);
+	return context::get($op,"content");
 	}
 
-sub archive_look
+sub look
 	{
 	my $hash = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","archive",
 		"action","look",
 		"hash",$hash,
 		);
 
-	api_respond($op);
-	return op_get($op,"content");
+	api::respond($op);
+	return context::get($op,"content");
 	}
 
-sub archive_get
+sub get
 	{
 	my $loc = shift;  # id or hash
 
-	return archive_touch($loc) if valid_id($loc);
-	return archive_look($loc) if valid_hash($loc);
+	return touch($loc) if id::valid_id($loc);
+	return look($loc) if id::valid_hash($loc);
 	return "";
 	}
 
-sub archive_write
+sub do_write
 	{
 	my $loc = shift;
 	my $content = shift;
 	my $usage = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","archive",
 		"action","write",
@@ -140,34 +127,34 @@ sub archive_write
 		"usage",$usage,
 		);
 
-	return api_respond($op);
+	return api::respond($op);
 	}
 
-sub archive_is_vacant
+sub is_vacant
 	{
 	my $loc = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","archive",
 		"action","touch",
 		"loc",$loc,
 		);
 
-	api_respond($op);
+	api::respond($op);
 
-	return (op_get($op,"status") eq "fail"
-		&& op_get($op,"error_loc") eq "vacant");
+	return (context::get($op,"status") eq "fail"
+		&& context::get($op,"error_loc") eq "vacant");
 	}
 
-sub archive_random_vacant_location
+sub random_vacant_location
 	{
 	my $count = 0;
 
 	while (1)
 		{
-		my $loc = unpack("H*",random_id());
-		return $loc if archive_is_vacant($loc);
+		my $loc = random::hex();
+		return $loc if is_vacant($loc);
 
 		$count++;
 		die if $count >= 1000;
@@ -176,42 +163,42 @@ sub archive_random_vacant_location
 
 # Operations with whole objects.
 
-sub archive_touch_object
+sub touch_object
 	{
 	my $loc = shift;
 
-	my $obj = op_new();
+	my $obj = context::new();
 
-	my $content = archive_touch($loc);
+	my $content = touch($loc);
 	return $obj if $content eq "";
 
-	op_put($obj,"content",$content);  # LATER still needed in read_http_headers
+	context::put($obj,"content",$content);  # LATER still needed in read_http_headers
 	read_http_headers($obj);
 
 	# Here we truncate the content to the text after the headers.
 
-	my $text = op_get($obj,"content");
-	op_put($obj,"content","");  # don't need raw content any more
+	my $text = context::get($obj,"content");
+	context::put($obj,"content","");  # don't need raw content any more
 
-	op_read_kv($obj,$text);
+	context::read_kv($obj,$text);
 
 	return $obj;
 	}
 
-sub archive_object_text
+sub object_text
 	{
 	my $obj = shift;
 
-	my $content_type = op_get($obj,"Content-Type");
-	$content_type = op_get($obj,"Content-type") if $content_type eq "";
+	my $content_type = context::get($obj,"Content-Type");
+	$content_type = context::get($obj,"Content-type") if $content_type eq "";
 
 	# Force Content-Type to be first line in HTTP format.
 
-	my $copy = op_new(op_pairs($obj));
-	op_put($copy,"Content-Type","");
-	op_put($copy,"Content-type","");
+	my $copy = context::new(context::pairs($obj));
+	context::put($copy,"Content-Type","");
+	context::put($copy,"Content-type","");
 
-	my $obj_str = op_write_kv($copy);
+	my $obj_str = context::write_kv($copy);
 
 	my $content = <<EOM;
 Content-Type: $content_type
@@ -222,14 +209,14 @@ EOM
 	return $content;
 	}
 
-sub archive_write_object
+sub write_object
 	{
 	my $loc = shift;
 	my $obj = shift;
 	my $usage = shift;
 
-	my $content = archive_object_text($obj);
-	return archive_write($loc,$content,$usage);
+	my $content = object_text($obj);
+	return do_write($loc,$content,$usage);
 	}
 
 return 1;

@@ -1,9 +1,5 @@
 package api_grid;
 use strict;
-use export
-	"api_grid_charge_usage",
-	"api_grid_respond",
-	;
 use context;
 use id;
 use int128;
@@ -22,7 +18,7 @@ my $g_zero = "\000" x 16;
 # that at all times, the sum of the balances at all locations must equal -1.
 # This is no longer true of asset type zero.
 
-sub api_grid_charge_usage
+sub charge_usage
 	{
 	my $op = shift;
 	my $loc = shift;
@@ -30,25 +26,25 @@ sub api_grid_charge_usage
 
 	die if length($loc) != 16;
 
-	my $bv_amount = int128_from_dec($amount);
+	my $bv_amount = int128::from_dec($amount);
 	die if !defined $bv_amount;
 
 	my $ok = 0;
 
-	my $usage_hash = sha256($g_zero.$loc);
-	my $val_orig = loom_db_get("grid_V$g_zero$usage_hash");
+	my $usage_hash = sha256::bin($g_zero.$loc);
+	my $val_orig = loom_db::get("grid_V$g_zero$usage_hash");
 
 	if ($val_orig eq "")
 		{
 		# Vacant usage location.  This is valid only if the usage location is
 		# zero and the the issuer location is null, which is effectively zero.
 
-		$ok = ($loc eq $g_zero && loom_db_get("grid_I$g_zero") eq "");
+		$ok = ($loc eq $g_zero && loom_db::get("grid_I$g_zero") eq "");
 		}
 	else
 		{
-		my $bv_orig = int128_from_dec($val_orig);
-		my $old_sign_orig = int128_sign($bv_orig);
+		my $bv_orig = int128::from_dec($val_orig);
+		my $old_sign_orig = int128::sign($bv_orig);
 
 		if ($old_sign_orig == 0)
 			{
@@ -56,15 +52,15 @@ sub api_grid_charge_usage
 			# by subtracting the charge amount from it and seeing if the sign
 			# changes.
 
-			int128_sub($bv_orig,$bv_amount);
-			my $new_sign_orig = int128_sign($bv_orig);
+			int128::subtract($bv_orig,$bv_amount);
+			my $new_sign_orig = int128::sign($bv_orig);
 			$ok = ($new_sign_orig == $old_sign_orig);
 
 			if ($ok)
 				{
 				# Sign was unchanged, so update the usage balance.
-				$val_orig = int128_to_dec($bv_orig);
-				loom_db_put("grid_V$g_zero$usage_hash", $val_orig);
+				$val_orig = int128::to_dec($bv_orig);
+				loom_db::put("grid_V$g_zero$usage_hash", $val_orig);
 				}
 			}
 		else
@@ -74,83 +70,83 @@ sub api_grid_charge_usage
 			}
 		}
 
-	op_put($op,"usage_balance",$val_orig);
+	context::put($op,"usage_balance",$val_orig);
 
 	if (!$ok)
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_usage","insufficient");
+		context::put($op,"status","fail");
+		context::put($op,"error_usage","insufficient");
 		}
 
 	return;
 	}
 
-sub api_grid_check_buy
+sub check_buy
 	{
 	my $op = shift;
 
-	if (!valid_id(op_get($op,"type")))
+	if (!id::valid_id(context::get($op,"type")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_type","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_type","not_valid_id");
 		}
 
-	if (!valid_id(op_get($op,"loc")))
+	if (!id::valid_id(context::get($op,"loc")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_loc","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_loc","not_valid_id");
 		}
 
-	if (!valid_id(op_get($op,"usage")))
+	if (!id::valid_id(context::get($op,"usage")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_usage","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_usage","not_valid_id");
 		}
 
 	return;
 	}
 
-sub api_grid_buy
+sub buy
 	{
 	my $op = shift;
 
-	api_grid_check_buy($op);
-	return if op_get($op,"status") ne "";
+	check_buy($op);
+	return if context::get($op,"status") ne "";
 
 	# Convert the hex strings to packed hex values for internal use.
 
-	my $type = pack("H*",op_get($op,"type"));
-	my $loc = pack("H*",op_get($op,"loc"));
-	my $usage = pack("H*",op_get($op,"usage"));
+	my $type = pack("H*",context::get($op,"type"));
+	my $loc = pack("H*",context::get($op,"loc"));
+	my $usage = pack("H*",context::get($op,"usage"));
 
-	my $hash = sha256($type.$loc);
+	my $hash = sha256::bin($type.$loc);
 
-	op_put($op,"hash",unpack("H*",$hash));
+	context::put($op,"hash",unpack("H*",$hash));
 
-	my $val = loom_db_get("grid_V$type$hash");
+	my $val = loom_db::get("grid_V$type$hash");
 
-	op_put($op,"value",$val);
+	context::put($op,"value",$val);
 
 	if ($val ne "")
 		{
 		# Location is occupied:  NOT OK.
-		op_put($op,"status","fail");
-		op_put($op,"error_loc","occupied");
+		context::put($op,"status","fail");
+		context::put($op,"error_loc","occupied");
 		}
 
-	return if op_get($op,"status") ne "";
+	return if context::get($op,"status") ne "";
 
 	# Now see if we can charge usage.
 
-	api_grid_charge_usage($op,$usage,1);
-	return if op_get($op,"status") ne "";
+	charge_usage($op,$usage,1);
+	return if context::get($op,"status") ne "";
 
-	if ($hash eq sha256($type.$g_zero)
-		&& loom_db_get("grid_I$type") eq "")
+	if ($hash eq sha256::bin($type.$g_zero)
+		&& loom_db::get("grid_I$type") eq "")
 		{
 		# Buying issuer location for new type:  OK.
 		$val = -1;
-		loom_db_put("grid_I$type", $hash);
+		loom_db::put("grid_I$type", $hash);
 		}
 	else
 		{
@@ -158,39 +154,39 @@ sub api_grid_buy
 		$val = 0;
 		}
 
-	loom_db_put("grid_V$type$hash", $val);
-	op_put($op,"status","success");
-	op_put($op,"value",$val);
+	loom_db::put("grid_V$type$hash", $val);
+	context::put($op,"status","success");
+	context::put($op,"value",$val);
 
 	return;
 	}
 
-sub api_grid_sell
+sub sell
 	{
 	my $op = shift;
 
-	api_grid_check_buy($op);
-	return if op_get($op,"status") ne "";
+	check_buy($op);
+	return if context::get($op,"status") ne "";
 
 	# Convert the hex strings to packed hex values for internal use.
 
-	my $type = pack("H*",op_get($op,"type"));
-	my $loc = pack("H*",op_get($op,"loc"));
-	my $usage = pack("H*",op_get($op,"usage"));
+	my $type = pack("H*",context::get($op,"type"));
+	my $loc = pack("H*",context::get($op,"loc"));
+	my $usage = pack("H*",context::get($op,"usage"));
 
-	my $hash = sha256($type.$loc);
+	my $hash = sha256::bin($type.$loc);
 
-	op_put($op,"hash",unpack("H*",$hash));
+	context::put($op,"hash",unpack("H*",$hash));
 
-	my $val = loom_db_get("grid_V$type$hash");
+	my $val = loom_db::get("grid_V$type$hash");
 
-	op_put($op,"value",$val);
+	context::put($op,"value",$val);
 
 	if ($val eq "")
 		{
 		# Location is already vacant:  NOT OK.
-		op_put($op,"status","fail");
-		op_put($op,"error_loc","vacant");
+		context::put($op,"status","fail");
+		context::put($op,"error_loc","vacant");
 		}
 	elsif ($val eq "0")
 		{
@@ -201,104 +197,104 @@ sub api_grid_sell
 			# Cannot sell a usage token location if we're trying to receive the
 			# refund in that same location.
 
-			op_put($op,"status","fail");
-			op_put($op,"error_loc","cannot_refund");
+			context::put($op,"status","fail");
+			context::put($op,"error_loc","cannot_refund");
 			}
 		}
-	elsif ($val eq "-1" && $hash eq sha256($type.$g_zero))
+	elsif ($val eq "-1" && $hash eq sha256::bin($type.$g_zero))
 		{
 		# Value is -1 and location is zero:  OK.
 		# Delete the issue location tracking entry.
 
-		loom_db_put("grid_I$type", "");
+		loom_db::put("grid_I$type", "");
 		}
 	else
 		{
 		# Location has non-empty value:  NOT OK.
-		op_put($op,"status","fail");
-		op_put($op,"error_loc","non_empty");
+		context::put($op,"status","fail");
+		context::put($op,"error_loc","non_empty");
 		}
 
-	return if op_get($op,"status") ne "";
+	return if context::get($op,"status") ne "";
 
 	# Refund the usage token and delete the location.
 
-	api_grid_charge_usage($op,$usage,-1);
-	return if op_get($op,"status") ne "";
+	charge_usage($op,$usage,-1);
+	return if context::get($op,"status") ne "";
 
-	loom_db_put("grid_V$type$hash", "");
-	op_put($op,"status","success");
+	loom_db::put("grid_V$type$hash", "");
+	context::put($op,"status","success");
 
 	return;
 	}
 
-sub api_grid_look
+sub look
 	{
 	my $op = shift;
 
-	if (!valid_id(op_get($op,"type")))
+	if (!id::valid_id(context::get($op,"type")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_type","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_type","not_valid_id");
 		}
 
-	if (!valid_hash(op_get($op,"hash")))
+	if (!id::valid_hash(context::get($op,"hash")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_hash","not_valid_hash");
+		context::put($op,"status","fail");
+		context::put($op,"error_hash","not_valid_hash");
 		}
 
-	return if op_get($op,"status") ne "";
+	return if context::get($op,"status") ne "";
 
-	my $type = pack("H*",op_get($op,"type"));
-	my $hash = pack("H*",op_get($op,"hash"));
+	my $type = pack("H*",context::get($op,"type"));
+	my $hash = pack("H*",context::get($op,"hash"));
 
-	my $val = loom_db_get("grid_V$type$hash");
+	my $val = loom_db::get("grid_V$type$hash");
 
 	if ($val eq "")
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_loc","vacant");
+		context::put($op,"status","fail");
+		context::put($op,"error_loc","vacant");
 		}
 
-	return if op_get($op,"status") ne "";
+	return if context::get($op,"status") ne "";
 
-	op_put($op,"status","success");
-	op_put($op,"value",$val);
+	context::put($op,"status","success");
+	context::put($op,"value",$val);
 
 	return;
 	}
 
-sub api_grid_touch
+sub touch
 	{
 	my $op = shift;
 
-	if (!valid_id(op_get($op,"type")))
+	if (!id::valid_id(context::get($op,"type")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_type","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_type","not_valid_id");
 		}
 
-	if (!valid_id(op_get($op,"loc")))
+	if (!id::valid_id(context::get($op,"loc")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_loc","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_loc","not_valid_id");
 		}
 
-	return if op_get($op,"status") ne "";
+	return if context::get($op,"status") ne "";
 
-	my $type = pack("H*",op_get($op,"type"));
-	my $loc = pack("H*",op_get($op,"loc"));
+	my $type = pack("H*",context::get($op,"type"));
+	my $loc = pack("H*",context::get($op,"loc"));
 
-	op_put($op,"hash", unpack("H*",sha256($type.$loc)));
+	context::put($op,"hash", unpack("H*",sha256::bin($type.$loc)));
 
-	api_grid_look($op);
+	look($op);
 
 	return;
 	}
 
 # This is the low-level routine which changes issuer based on hashed locations.
-sub api_grid_inner_issuer
+sub inner_issuer
 	{
 	my $op = shift;
 	my $type = shift;
@@ -309,100 +305,100 @@ sub api_grid_inner_issuer
 	die if length($hash_orig) != 32;
 	die if length($hash_dest) != 32;
 
-	my $val_orig = loom_db_get("grid_V$type$hash_orig");
-	my $val_dest = loom_db_get("grid_V$type$hash_dest");
+	my $val_orig = loom_db::get("grid_V$type$hash_orig");
+	my $val_dest = loom_db::get("grid_V$type$hash_dest");
 
-	op_put($op,"value_orig",$val_orig);
-	op_put($op,"value_dest",$val_dest);
+	context::put($op,"value_orig",$val_orig);
+	context::put($op,"value_dest",$val_dest);
 
 	return 0 if $hash_orig eq $hash_dest; # Locations cannot be identical.
 
 	return 0 if $val_orig eq "";
 	return 0 if $val_dest eq "";
 
-	my $bv_orig = int128_from_dec($val_orig);
-	my $bv_dest = int128_from_dec($val_dest);
+	my $bv_orig = int128::from_dec($val_orig);
+	my $bv_dest = int128::from_dec($val_dest);
 
 	die if !defined $bv_orig;
 	die if !defined $bv_dest;
 
 	# Origin must have negative value and destination must be zero.
 
-	return if int128_sign($bv_orig) == 0;  # orig not negative!
-	return if !int128_is_zero($bv_dest);  # dest not zero!
+	return if int128::sign($bv_orig) == 0;  # orig not negative!
+	return if !int128::is_zero($bv_dest);  # dest not zero!
 
-	die unless int128_sign($bv_orig) && int128_is_zero($bv_dest);  # paranoid
+	die unless int128::sign($bv_orig) && int128::is_zero($bv_dest);  # paranoid
 
 	# Update the issuer location for this type.
 
-	loom_db_put("grid_I$type",$hash_dest);
+	loom_db::put("grid_I$type",$hash_dest);
 
 	# Swap the two values and return success.
 
-	$val_orig = int128_to_dec($bv_dest);
-	$val_dest = int128_to_dec($bv_orig);
+	$val_orig = int128::to_dec($bv_dest);
+	$val_dest = int128::to_dec($bv_orig);
 
-	op_put($op,"value_orig",$val_orig);
-	op_put($op,"value_dest",$val_dest);
+	context::put($op,"value_orig",$val_orig);
+	context::put($op,"value_dest",$val_dest);
 
-	loom_db_put("grid_V$type$hash_orig", $val_orig);
-	loom_db_put("grid_V$type$hash_dest", $val_dest);
+	loom_db::put("grid_V$type$hash_orig", $val_orig);
+	loom_db::put("grid_V$type$hash_dest", $val_dest);
 
 	return 1;
 	}
 
-sub api_grid_issuer
+sub issuer
 	{
 	my $op = shift;
 
-	if (!valid_id(op_get($op,"type")))
+	if (!id::valid_id(context::get($op,"type")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_type","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_type","not_valid_id");
 		}
 
-	if (!valid_id(op_get($op,"orig")))
+	if (!id::valid_id(context::get($op,"orig")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_orig","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_orig","not_valid_id");
 		}
 
-	if (!valid_id(op_get($op,"dest")))
+	if (!id::valid_id(context::get($op,"dest")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_dest","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_dest","not_valid_id");
 		}
 
-	return if op_get($op,"status") ne "";
-	die if op_get($op,"status") ne "";
+	return if context::get($op,"status") ne "";
+	die if context::get($op,"status") ne "";
 
-	my $type = pack("H*",op_get($op,"type"));
-	my $orig = pack("H*",op_get($op,"orig"));
-	my $dest = pack("H*",op_get($op,"dest"));
+	my $type = pack("H*",context::get($op,"type"));
+	my $orig = pack("H*",context::get($op,"orig"));
+	my $dest = pack("H*",context::get($op,"dest"));
 
-	my $hash_orig = sha256($type.$orig);
-	my $hash_dest = sha256($type.$dest);
+	my $hash_orig = sha256::bin($type.$orig);
+	my $hash_dest = sha256::bin($type.$dest);
 
-	op_put($op,"hash_orig",unpack("H*",$hash_orig));
-	op_put($op,"hash_dest",unpack("H*",$hash_dest));
+	context::put($op,"hash_orig",unpack("H*",$hash_orig));
+	context::put($op,"hash_dest",unpack("H*",$hash_dest));
 
-	my $ok = api_grid_inner_issuer($op,$type,$hash_orig,$hash_dest);
+	my $ok = inner_issuer($op,$type,$hash_orig,$hash_dest);
 
 	if ($ok)
 		{
-		op_put($op,"status","success");
+		context::put($op,"status","success");
 		}
 	else
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_qty","insufficient");
+		context::put($op,"status","fail");
+		context::put($op,"error_qty","insufficient");
 		}
 
 	return;
 	}
 
 # This is the low-level routine which moves based on hashed locations.
-sub api_grid_inner_move
+sub inner_move
 	{
 	my $op = shift;
 	my $type = shift;
@@ -415,31 +411,31 @@ sub api_grid_inner_move
 	die if length($hash_orig) != 32;
 	die if length($hash_dest) != 32;
 
-	my $val_orig = loom_db_get("grid_V$type$hash_orig");
-	my $val_dest = loom_db_get("grid_V$type$hash_dest");
+	my $val_orig = loom_db::get("grid_V$type$hash_orig");
+	my $val_dest = loom_db::get("grid_V$type$hash_dest");
 
-	op_put($op,"value_orig",$val_orig);
-	op_put($op,"value_dest",$val_dest);
+	context::put($op,"value_orig",$val_orig);
+	context::put($op,"value_dest",$val_dest);
 
 	return 0 if $hash_orig eq $hash_dest; # Locations cannot be identical.
 
 	return 0 if $val_orig eq "";
 	return 0 if $val_dest eq "";
 
-	my $bv_orig = int128_from_dec($val_orig);
-	my $bv_dest = int128_from_dec($val_dest);
+	my $bv_orig = int128::from_dec($val_orig);
+	my $bv_dest = int128::from_dec($val_dest);
 
 	die if !defined $bv_orig;
 	die if !defined $bv_dest;
 
-	my $old_sign_orig = int128_sign($bv_orig);
-	my $old_sign_dest = int128_sign($bv_dest);
+	my $old_sign_orig = int128::sign($bv_orig);
+	my $old_sign_dest = int128::sign($bv_dest);
 
-	int128_sub($bv_orig,$bv_amount);
-	int128_add($bv_dest,$bv_amount);
+	int128::subtract($bv_orig,$bv_amount);
+	int128::add($bv_dest,$bv_amount);
 
-	my $new_sign_orig = int128_sign($bv_orig);
-	my $new_sign_dest = int128_sign($bv_dest);
+	my $new_sign_orig = int128::sign($bv_orig);
+	my $new_sign_dest = int128::sign($bv_dest);
 
 	if ($new_sign_orig == $old_sign_orig
 		&& $new_sign_dest == $old_sign_dest)
@@ -455,71 +451,71 @@ sub api_grid_inner_move
 
 	# Update the two values and return success.
 
-	$val_orig = int128_to_dec($bv_orig);
-	$val_dest = int128_to_dec($bv_dest);
+	$val_orig = int128::to_dec($bv_orig);
+	$val_dest = int128::to_dec($bv_dest);
 
-	loom_db_put("grid_V$type$hash_orig", $val_orig);
-	loom_db_put("grid_V$type$hash_dest", $val_dest);
+	loom_db::put("grid_V$type$hash_orig", $val_orig);
+	loom_db::put("grid_V$type$hash_dest", $val_dest);
 
-	op_put($op,"value_orig",$val_orig);
-	op_put($op,"value_dest",$val_dest);
+	context::put($op,"value_orig",$val_orig);
+	context::put($op,"value_dest",$val_dest);
 
 	return 1;
 	}
 
-sub api_grid_move
+sub move
 	{
 	my $op = shift;
 
-	if (!valid_id(op_get($op,"type")))
+	if (!id::valid_id(context::get($op,"type")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_type","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_type","not_valid_id");
 		}
 
-	if (!valid_id(op_get($op,"orig")))
+	if (!id::valid_id(context::get($op,"orig")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_orig","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_orig","not_valid_id");
 		}
 
-	if (!valid_id(op_get($op,"dest")))
+	if (!id::valid_id(context::get($op,"dest")))
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_dest","not_valid_id");
+		context::put($op,"status","fail");
+		context::put($op,"error_dest","not_valid_id");
 		}
 
-	my $bv_amount = int128_from_dec(op_get($op,"qty"));
+	my $bv_amount = int128::from_dec(context::get($op,"qty"));
 
 	if (!defined $bv_amount)
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_qty","not_valid_int");
+		context::put($op,"status","fail");
+		context::put($op,"error_qty","not_valid_int");
 		}
 
-	return if op_get($op,"status") ne "";
-	die if op_get($op,"status") ne "";
+	return if context::get($op,"status") ne "";
+	die if context::get($op,"status") ne "";
 
-	my $type = pack("H*",op_get($op,"type"));
-	my $orig = pack("H*",op_get($op,"orig"));
-	my $dest = pack("H*",op_get($op,"dest"));
+	my $type = pack("H*",context::get($op,"type"));
+	my $orig = pack("H*",context::get($op,"orig"));
+	my $dest = pack("H*",context::get($op,"dest"));
 
-	my $hash_orig = sha256($type.$orig);
-	my $hash_dest = sha256($type.$dest);
+	my $hash_orig = sha256::bin($type.$orig);
+	my $hash_dest = sha256::bin($type.$dest);
 
-	op_put($op,"hash_orig",unpack("H*",$hash_orig));
-	op_put($op,"hash_dest",unpack("H*",$hash_dest));
+	context::put($op,"hash_orig",unpack("H*",$hash_orig));
+	context::put($op,"hash_dest",unpack("H*",$hash_dest));
 
-	my $ok = api_grid_inner_move($op,$type,$bv_amount,$hash_orig,$hash_dest);
+	my $ok = inner_move($op,$type,$bv_amount,$hash_orig,$hash_dest);
 
 	if ($ok)
 		{
-		op_put($op,"status","success");
+		context::put($op,"status","success");
 		}
 	else
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_qty","insufficient");
+		context::put($op,"status","fail");
+		context::put($op,"error_qty","insufficient");
 		}
 
 	return;
@@ -531,15 +527,15 @@ sub api_grid_move
 # LATER test scan with hashes
 # LATER put some scan regression tests in qualify
 
-sub api_grid_scan
+sub scan
 	{
 	my $op = shift;
 
 	my $max_scan_count = 2048;
 
-	my $zeroes = op_get($op,"zeroes");
-	my @locs = split(" ",op_get($op,"locs"));
-	my @types = split(" ",op_get($op,"types"));
+	my $zeroes = context::get($op,"zeroes");
+	my @locs = split(" ",context::get($op,"locs"));
+	my @types = split(" ",context::get($op,"types"));
 
 	my $scan_count = 0;
 	my $excessive = 0;
@@ -558,7 +554,7 @@ sub api_grid_scan
 
 			if (length($loc) == 32)
 				{
-				my $touch = op_new
+				my $touch = context::new
 					(
 					"function","grid",
 					"action","touch",
@@ -566,12 +562,12 @@ sub api_grid_scan
 					"loc",$loc,
 					);
 
-				api_grid_touch($touch);
-				$value = op_get($touch,"value");
+				touch($touch);
+				$value = context::get($touch,"value");
 				}
 			elsif (length($loc) == 64)
 				{
-				my $look = op_new
+				my $look = context::new
 					(
 					"function","grid",
 					"action","look",
@@ -579,8 +575,8 @@ sub api_grid_scan
 					"hash",$loc,
 					);
 
-				api_grid_touch($look);
-				$value = op_get($look,"value");
+				touch($look);
+				$value = context::get($look,"value");
 				}
 
 			next if $value eq "";
@@ -589,60 +585,60 @@ sub api_grid_scan
 			push @pairs, "$value:$type";
 			}
 
-		op_put($op,"loc/$loc",join(" ",@pairs));
+		context::put($op,"loc/$loc",join(" ",@pairs));
 
 		last if $excessive;
 		}
 
 	if ($excessive)
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error","excessive");
-		op_put($op,"error_max",$max_scan_count);
+		context::put($op,"status","fail");
+		context::put($op,"error","excessive");
+		context::put($op,"error_max",$max_scan_count);
 		}
 
 	return;
 	}
 
 # API entry point
-sub api_grid_respond
+sub respond
 	{
 	my $op = shift;
 
-	my $action = op_get($op,"action");
+	my $action = context::get($op,"action");
 
 	if ($action eq "buy")
 		{
-		api_grid_buy($op);
+		buy($op);
 		}
 	elsif ($action eq "sell")
 		{
-		api_grid_sell($op);
+		sell($op);
 		}
 	elsif ($action eq "issuer")
 		{
-		api_grid_issuer($op);
+		issuer($op);
 		}
 	elsif ($action eq "touch")
 		{
-		api_grid_touch($op);
+		touch($op);
 		}
 	elsif ($action eq "look")
 		{
-		api_grid_look($op);
+		look($op);
 		}
 	elsif ($action eq "move")
 		{
-		api_grid_move($op);
+		move($op);
 		}
 	elsif ($action eq "scan")
 		{
-		api_grid_scan($op);
+		scan($op);
 		}
 	else
 		{
-		op_put($op,"status","fail");
-		op_put($op,"error_action","unknown");
+		context::put($op,"status","fail");
+		context::put($op,"error_action","unknown");
 		}
 
 	return;

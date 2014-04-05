@@ -1,37 +1,36 @@
 package loom_config;
 use strict;
-use export "loom_config";
 use archive;
 use context;
 use file;
 use sloop_top;
 
-my $g_loom_config;
+my $g_config;
 
 # Read the basic system configuration from the data/conf/loom file.   That will
 # point to a place in the archive, and we read that in KV format.
 
-sub loom_init_config
+sub init
 	{
-	my $text = file_get_by_name(sloop_top(),"data/conf/loom");
+	my $text = file::get_by_name(sloop_top::dir(),"data/conf/loom");
 
-	my $top_config = op_read_kv(op_new(),$text);
-	my $config_id = op_get($top_config,"config_id");
+	my $top_config = context::read_kv(context::new(),$text);
+	my $config_id = context::get($top_config,"config_id");
 
-	$g_loom_config = op_read_kv(op_new(),archive_get($config_id));
+	$g_config = context::read_kv(context::new(),archive::get($config_id));
 
-	op_default($g_loom_config,"odd_row_color","#ffffff");
-	op_default($g_loom_config,"even_row_color","#e8f8fe");
+	context::default($g_config,"odd_row_color","#ffffff");
+	context::default($g_config,"even_row_color","#e8f8fe");
 
 	return;
 	}
 
-sub loom_config
+sub get
 	{
 	my $key = shift;
 
-	loom_init_config() if !defined $g_loom_config;
-	return op_get($g_loom_config,$key);
+	init() if !defined $g_config;
+	return context::get($g_config,$key);
 	}
 
 return 1;

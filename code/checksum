@@ -21,11 +21,11 @@ sub file_content_hash
 	{
 	my $file = shift;
 
-	file_open_read($file);
-	my $text = file_get_content($file);
+	file::open_read($file);
+	my $text = file::get_content($file);
 	$text = "" if !defined $text;
 
-	return unpack("H*",sha256($text));
+	return unpack("H*",sha256::bin($text));
 	}
 
 # Compute readable checksum of a file or directory.
@@ -37,7 +37,7 @@ sub file_hash
 	my $result = "";
 	my $listing = "";
 
-	my $type = file_type($dir);
+	my $type = file::type($dir);
 
 	if ($type eq "")
 		{
@@ -46,7 +46,7 @@ sub file_hash
 	elsif ($type eq "f")
 		{
 		# It's a file.
-		my $name = file_name($dir);
+		my $name = file::name($dir);
 		my $sum = file_content_hash($dir);
 
 		$listing .= "$sum $name\n";
@@ -57,15 +57,15 @@ sub file_hash
 	elsif ($type eq "d")
 		{
 		# It's a directory.
-		for my $name (file_deep_names($dir))
+		for my $name (file::deep_names($dir))
 			{
-			my $sum = file_content_hash(file_child($dir,$name));
+			my $sum = file_content_hash(file::child($dir,$name));
 			$listing .= "$sum $name\n";
 			}
 
 		if ($listing ne "")
 			{
-			my $sum = unpack("H*",sha256($listing));
+			my $sum = unpack("H*",sha256::bin($listing));
 			$result .= $listing if $long;
 			$result .= "$sum\n";
 			}
@@ -99,7 +99,7 @@ EOM
 
 	for my $path (@ARGV)
 		{
-		my $file = file_new($path);
+		my $file = file::new($path);
 		my $result = file_hash($file,$opt->{l});
 		print $result;
 		}

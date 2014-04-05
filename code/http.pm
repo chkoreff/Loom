@@ -1,18 +1,5 @@
 package http;
 use strict;
-use export
-	"http_path",
-	"http_split_path",
-	"http_op",
-	"http_slice",
-	"http_names",
-	"http_get",
-	"http_put",
-	"http_header",
-	"http_upload",
-	"http_clear",
-	"http_read_message",
-	;
 use context;
 use sloop_io;
 use URI::Escape;
@@ -77,7 +64,7 @@ my $g_query;
 # The following methods should be called after read_message.
 
 # Return the path string.
-sub http_path
+sub path
 	{
 	return $g_path;
 	}
@@ -88,7 +75,7 @@ sub http_path
 # This allows the use of bizarre paths, allowing the encoding of somewhat
 # arbitrary data.  For an example see page_test.
 
-sub http_split_path
+sub split_path
 	{
 	my $path = shift;
 
@@ -103,52 +90,52 @@ sub http_split_path
 	}
 
 # Return the key-value map of the query and post parameters.
-sub http_op
+sub op
 	{
 	return $g_op;
 	}
 
-sub http_slice
+sub slice
 	{
-	return op_slice($g_op,@_);
+	return context::slice($g_op,@_);
 	}
 
-sub http_names
+sub names
 	{
-	return op_names($g_op);
+	return context::names($g_op);
 	}
 
-sub http_get
+sub get
 	{
 	my $key = shift;
-	return op_get($g_op,$key);
+	return context::get($g_op,$key);
 	}
 
-sub http_put
+sub put
 	{
 	my $key = shift;
 	my $val = shift;
 
-	op_put($g_op,$key,$val);
+	context::put($g_op,$key,$val);
 	return;
 	}
 
 # Return the value of a named HTTP header.
-sub http_header
+sub header
 	{
 	my $name = shift;
-	return op_get($g_header,$name);
+	return context::get($g_header,$name);
 	}
 
 # Return the content of a named uploaded file.
-sub http_upload
+sub upload
 	{
 	my $name = shift;
-	return op_get($g_upload,$name);
+	return context::get($g_upload,$name);
 	}
 
 # Clear the input buffer.
-sub http_clear
+sub clear
 	{
 	$g_buffer = "";
 	return;
@@ -170,7 +157,7 @@ sub http_parse_urlencoded_body
 		$name = uri_unescape($name);
 		$value = uri_unescape($value);
 
-		op_put($g_op,$name,$value);
+		context::put($g_op,$name,$value);
 		}
 
 	return;
@@ -268,12 +255,12 @@ sub http_parse_multipart_body
 
 			if (defined $filename)
 				{
-				op_put($g_op,$name,$filename);
-				op_put($g_upload,$name,$value);
+				context::put($g_op,$name,$filename);
+				context::put($g_upload,$name,$value);
 				}
 			else
 				{
-				op_put($g_op,$name,$value);
+				context::put($g_op,$name,$value);
 				}
 			}
 		}
@@ -292,11 +279,11 @@ sub http_receive
 
 	if ($max_read <= 0)
 		{
-		sloop_disconnect();
+		sloop_io::disconnect();
 		return 0;
 		}
 
-	my $num_read = sloop_receive($g_buffer,$max_read);
+	my $num_read = sloop_io::receive($g_buffer,$max_read);
 	$g_bytes_read += $num_read;
 
 	return $num_read;
@@ -306,7 +293,7 @@ sub http_read_line
 	{
 	while (1)
 		{
-		return if sloop_exiting();
+		return if sloop_io::exiting();
 
 		my $index = index($g_buffer,"\012",$g_offset);
 		if ($index < 0)
@@ -315,7 +302,7 @@ sub http_read_line
 
 			if ($len_line > $g_max_line)
 				{
-				sloop_disconnect();
+				sloop_io::disconnect();
 				return;
 				}
 
@@ -359,7 +346,7 @@ sub http_read_header
 		my $key = $1;
 		my $val = $2;
 
-		op_put($g_header,$key,$val);
+		context::put($g_header,$key,$val);
 
 		if ($key eq "Content-Length")
 			{
@@ -380,7 +367,7 @@ sub http_read_header
 	else
 		{
 		# Disconnect on unrecognized line.
-		sloop_disconnect();
+		sloop_io::disconnect();
 		return 2;
 		}
 	}
@@ -402,11 +389,11 @@ sub http_read_content
 	}
 
 # Read a complete HTTP message and return true if successful.  Note that if you
-# don't call http_clear before this, it will re-parse the last message we read
+# don't call clear before this, it will re-parse the last message we read
 # into the buffer.   This is actually useful behavior which we use to replay a
 # request upon database commit failure.
 
-sub http_read_message
+sub read_message
 	{
 	$g_offset = 0;   # Reset offset to beginning of buffer.
 
@@ -430,9 +417,9 @@ sub http_read_message
 	$g_content_type = "";
 	$g_connection = "";
 
-	$g_header = op_new();    # headers go here
-	$g_op = op_new();        # params go here
-	$g_upload = op_new();    # uploads go here
+	$g_header = context::new();    # headers go here
+	$g_op = context::new();        # params go here
+	$g_upload = context::new();    # uploads go here
 
 	{
 	# Read the request line, which should look something like:
@@ -471,7 +458,7 @@ sub http_read_message
 		# limiting *how many* to forgive.  So I've decided not to tolerate
 		# sloppy browsers until I see a compelling case.
 
-		sloop_disconnect();
+		sloop_io::disconnect();
 		return;
 		}
 	}
@@ -498,7 +485,7 @@ sub http_read_message
 
 	while (1)
 		{
-		return if sloop_exiting();
+		return if sloop_io::exiting();
 		last if !http_read_content();
 		}
 	}
@@ -533,7 +520,7 @@ sub http_read_message
 		if ($type eq "close")
 			{
 			# Disconnect if the connection type is "close".
-			sloop_disconnect();
+			sloop_io::disconnect();
 			}
 		else
 			{

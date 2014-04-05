@@ -1,12 +1,5 @@
 package sloop_io;
 use strict;
-use export
-	"sloop_io_init",
-	"sloop_receive",
-	"sloop_send",
-	"sloop_disconnect",
-	"sloop_exiting",
-	;
 use signal;
 use sloop_status;
 
@@ -19,7 +12,7 @@ my $g_max_life;
 my $g_min_life;
 my $g_exiting;
 
-sub sloop_io_init
+sub init
 	{
 	die if defined $g_client_socket;
 
@@ -48,7 +41,7 @@ sub sloop_io_init
 
 sub sloop_check_lifespan
 	{
-	my ($ppid,$num_children,$max_children) = sloop_info();
+	my ($ppid,$num_children,$max_children) = sloop_status::info();
 
 	my $elapse = time - $g_beg_time;
 
@@ -75,7 +68,7 @@ sub sloop_check_lifespan
 # reason, e.g. the remote end disconnects, the server is shut down with an
 # interrupt, the client has exceeded its lifespan, or a system error occurs.
 
-sub sloop_receive
+sub receive
 	{
 	my $buffer = \shift;   # reference to buffer string
 	my $max_read = shift;
@@ -89,14 +82,14 @@ sub sloop_receive
 		# it's probably just inheriting the parent's memory image.  Perhaps
 		# the child should reset the signal handler.
 
-		$g_exiting = 1 if signal_get_interrupt();
+		$g_exiting = 1 if signal::get_interrupt();
 		return 0 if $g_exiting;
 
 		sloop_check_lifespan();
 		return 0 if $g_exiting;
 
-		signal_put_child(0);
-		signal_put_alarm(0);
+		signal::put_child(0);
+		signal::put_alarm(0);
 
 		alarm(10);
 
@@ -111,11 +104,11 @@ sub sloop_receive
 			{
 			# No data available.
 
-			if (signal_get_alarm())
+			if (signal::get_alarm())
 				{
 				# Ignore alarm signal (timeout on read).
 				}
-			elsif (signal_get_child())
+			elsif (signal::get_child())
 				{
 				# Ignore child exit signal.
 				}
@@ -153,7 +146,7 @@ sub sloop_receive
 # case the remote client process causes us to block indefinitely, perhaps by
 # stubbornly neglecting to receive data.
 
-sub sloop_send
+sub send
 	{
 	my $data = shift;
 
@@ -166,7 +159,7 @@ sub sloop_send
 	send $g_client_socket, $data, 0;
 	alarm(0);
 
-	if (signal_get_alarm())
+	if (signal::get_alarm())
 		{
 		# Timeout on send, let's exit.
 		$g_exiting = 1;
@@ -176,13 +169,13 @@ sub sloop_send
 	}
 
 # Set a flag to disconnect from the client.
-sub sloop_disconnect
+sub disconnect
 	{
 	$g_exiting = 1;
 	return;
 	}
 
-sub sloop_exiting
+sub exiting
 	{
 	return $g_exiting;
 	}

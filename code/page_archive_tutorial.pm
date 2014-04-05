@@ -1,6 +1,5 @@
 package page_archive_tutorial;
 use strict;
-use export "page_archive_tutorial_respond";
 use api;
 use context;
 use html;
@@ -10,43 +9,41 @@ use page;
 use page_help;
 use sha256;
 
-sub page_archive_tutorial_links
+sub links
 	{
-	my $function = http_get("function");
+	my $function = http::get("function");
 
-	top_link(highlight_link(top_url(),"Home"));
-	top_link(highlight_link(top_url("help",1),"Advanced"));
+	page::top_link(page::highlight_link(html::top_url(),"Home"));
+	page::top_link(page::highlight_link(html::top_url("help",1),"Advanced"));
 
 	my $link_tutorial =
-		highlight_link
-		(
-		top_url("function","archive_tutorial"),
+		page::highlight_link(
+		html::top_url("function","archive_tutorial"),
 		"Archive Tutorial",
-		($function eq "archive_tutorial" && !http_get("help"))
+		($function eq "archive_tutorial" && !http::get("help"))
 		);
 
 	my $link_api =
-		highlight_link
-		(
-		top_url("function","archive_tutorial", "help",1),
+		page::highlight_link(
+		html::top_url("function","archive_tutorial", "help",1),
 		"Archive API",
-		($function eq "archive_tutorial" && http_get("help"))
+		($function eq "archive_tutorial" && http::get("help"))
 		);
 
-	top_link($link_api);
-	top_link($link_tutorial);
+	page::top_link($link_api);
+	page::top_link($link_tutorial);
 
 	return;
 	}
 
-sub page_archive_tutorial_respond
+sub respond
 	{
-	set_title("Archive Tutorial");
-	page_archive_tutorial_links();
+	page::set_title("Archive Tutorial");
+	links();
 
-	if (http_get("help"))
+	if (http::get("help"))
 		{
-		help_topic("archive");
+		page_help::topic("archive");
 		return;
 		}
 
@@ -55,73 +52,73 @@ sub page_archive_tutorial_respond
 	$q->{dsp_error} = "";
 	$q->{dsp_cost} = "";
 
-	my $api = op_new();
-	op_put($api,"function","archive");
+	my $api = context::new();
+	context::put($api,"function","archive");
 
-	if (http_get("look") ne "")
+	if (http::get("look") ne "")
 		{
-		op_put($api,"action","look");
-		op_put($api,"hash",http_get("hash"));
+		context::put($api,"action","look");
+		context::put($api,"hash",http::get("hash"));
 		}
-	elsif (http_get("touch") ne "")
+	elsif (http::get("touch") ne "")
 		{
-		op_put($api,"action","touch");
-		op_put($api,"loc",http_get("loc"));
+		context::put($api,"action","touch");
+		context::put($api,"loc",http::get("loc"));
 		}
-	elsif (http_get("write") ne "")
+	elsif (http::get("write") ne "")
 		{
-		my $content = http_get("content");
+		my $content = http::get("content");
 		$content =~ s/\015//g;
-		http_put("content",$content);
+		http::put("content",$content);
 
-		op_put($api,"action","write");
-		op_put($api,"usage",http_get("usage"));
-		op_put($api,"loc",http_get("loc"));
-		op_put($api,"content",http_get("content"));
-		op_put($api,"guard",http_get("guard"));
+		context::put($api,"action","write");
+		context::put($api,"usage",http::get("usage"));
+		context::put($api,"loc",http::get("loc"));
+		context::put($api,"content",http::get("content"));
+		context::put($api,"guard",http::get("guard"));
 		}
-	elsif (http_get("buy") ne "")
+	elsif (http::get("buy") ne "")
 		{
-		op_put($api,"action","buy");
-		op_put($api,"usage",http_get("usage"));
-		op_put($api,"loc",http_get("loc"));
+		context::put($api,"action","buy");
+		context::put($api,"usage",http::get("usage"));
+		context::put($api,"loc",http::get("loc"));
 		}
-	elsif (http_get("sell") ne "")
+	elsif (http::get("sell") ne "")
 		{
-		op_put($api,"action","sell");
-		op_put($api,"usage",http_get("usage"));
-		op_put($api,"loc",http_get("loc"));
+		context::put($api,"action","sell");
+		context::put($api,"usage",http::get("usage"));
+		context::put($api,"loc",http::get("loc"));
 		}
 
 	my $orig_api;
 
-	if (op_get($api,"action") ne "")
+	if (context::get($api,"action") ne "")
 		{
 		# First make a copy of the $api object so we can show the url below.
 
-		$orig_api = op_new(op_pairs($api));
+		$orig_api = context::new(context::pairs($api));
 
-		api_respond($api);
+		api::respond($api);
 		}
 
 	$q->{enable_write} = 1;
 
-	my $action = op_get($api,"action");
+	my $action = context::get($api,"action");
 
 	if ($action ne "")
 		{
-		my $status = op_get($api,"status");
+		my $status = context::get($api,"status");
 
 		if ($action eq "look" || $action eq "touch"
 			|| $action eq "buy" || $action eq "sell")
 			{
-			http_put("content",op_get($api,"content"));
+			http::put("content",context::get($api,"content"));
 			}
 
 		if ($action eq "touch" || $action eq "write"
 			|| $action eq "buy" || $action eq "sell")
 			{
-			http_put("hash",op_get($api,"hash"));
+			http::put("hash",context::get($api,"hash"));
 			}
 
 		if ($action eq "look")
@@ -143,7 +140,7 @@ sub page_archive_tutorial_respond
 
 		if ($status eq "fail")
 			{
-			$q->{dsp_error} = op_get($api,"error_loc");
+			$q->{dsp_error} = context::get($api,"error_loc");
 			$q->{dsp_error} = "<span class=alarm>$q->{dsp_error}</span>"
 				if $q->{dsp_error} ne "";
 			}
@@ -151,11 +148,11 @@ sub page_archive_tutorial_respond
 
 	for my $field (qw(usage hash loc))
 		{
-		$q->{$field} = html_quote(http_get($field));
+		$q->{$field} = html::quote(http::get($field));
 		}
 
 	{
-	my $entered_content = http_get("content");
+	my $entered_content = http::get("content");
 
 	my @lines = split("\n",$entered_content);
 
@@ -165,16 +162,16 @@ sub page_archive_tutorial_respond
 	$num_rows = 20 if $num_rows < 20;
 	$num_rows = 40 if $num_rows > 40;
 
-	$q->{content} = html_quote($entered_content);
+	$q->{content} = html::quote($entered_content);
 	$q->{num_content_rows} = $num_rows;
 	}
 
 	my $input_size_id = 32 + 2;
 	my $input_size_hash = 2 * $input_size_id;
 
-	my $hidden = html_hidden_fields(http_slice(qw(function)));
+	my $hidden = html::hidden_fields(http::slice(qw(function)));
 
-	emit(<<EOM
+	page::emit(<<EOM
 <form method=post action="" autocomplete=off>
 $hidden
 
@@ -193,16 +190,16 @@ EOM
 	}
 
 	{
-	my $action = op_get($api,"action");
+	my $action = context::get($api,"action");
 
 	if ($action eq "write" || $action eq "buy" || $action eq "sell")
 		{
-		my $status = op_get($api,"status");
+		my $status = context::get($api,"status");
 		my $color = $status eq "success" ? "green" : "red";
 		my $dsp_status = "<span style='color:$color'>$status</span>";
 
-		my $cost = op_get($api,"cost");
-		my $bal = op_get($api,"usage_balance");
+		my $cost = context::get($api,"cost");
+		my $bal = context::get($api,"usage_balance");
 		if ($cost ne "")
 			{
 			$dsp_status .= " (cost $cost, bal $bal)";
@@ -212,8 +209,8 @@ EOM
 		}
 	}
 
-	my $link_view = highlight_link(
-		top_url("function","view", "hash",http_get("hash")),
+	my $link_view = page::highlight_link(
+		html::top_url("function","view", "hash",http::get("hash")),
 		"View", 0, "View as web page",
 		);
 
@@ -231,7 +228,7 @@ EOM
 
 	if ($q->{enable_write})
 	{
-	my $guard = unpack("H*",sha256(http_get("content")));
+	my $guard = unpack("H*",sha256::bin(http::get("content")));
 
 	$dsp_content .= <<EOM;
 <tr>
@@ -250,7 +247,7 @@ EOM
 	# don't set the width, Firefox hides the text input fields (e.g. hash,
 	# loc, usage).
 
-	my $color = loom_config("odd_row_color");
+	my $color = loom_config::get("odd_row_color");
 
 	$dsp_content .= <<EOM;
 <tr>
@@ -309,7 +306,7 @@ $dsp_content
 </table>
 EOM
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 This is an interactive tutorial to help you set up and test Archive API operations.
 Be careful using sensitive locations in this tutorial, since they do show
@@ -320,20 +317,20 @@ $archive_table
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 
 </form>
 EOM
 );
 
-	if (op_get($api,"action") ne "")
+	if (context::get($api,"action") ne "")
 	{
-	my $q_result = html_quote(op_write_kv($api));
-	my $url = top_url(op_pairs($orig_api));
+	my $q_result = html::quote(context::write_kv($api));
+	my $url = html::top_url(context::pairs($orig_api));
 
-	my $this_url = loom_config("this_url");
+	my $this_url = loom_config::get("this_url");
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h2>URL</h2>
 <p>
 <a href="$url">$this_url$url</a>

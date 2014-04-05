@@ -1,6 +1,5 @@
 package page_help;
 use strict;
-use export "help_context_table","help_topic";
 use archive;
 use help_archive;
 use help_grid;
@@ -11,7 +10,7 @@ use page;
 
 sub get_email_support
 	{
-	my $email_support = loom_config("email_support");
+	my $email_support = loom_config::get("email_support");
 
 	my @email_links = ();
 
@@ -26,71 +25,71 @@ sub get_email_support
 
 sub help_index
 	{
-	set_title("Advanced");
+	page::set_title("Advanced");
 
-	top_link(highlight_link(top_url(),"Home"));
+	page::top_link(page::highlight_link(html::top_url(),"Home"));
 
-	my $topic = http_get("topic");
+	my $topic = http::get("topic");
 
 	if ($topic eq "contact_info" || $topic eq "pgp")
 		{
-		top_link(highlight_link(
-			top_url("help",1, "topic","contact_info"),
+		page::top_link(page::highlight_link(
+			html::top_url("help",1, "topic","contact_info"),
 			"Contact", $topic eq "contact_info"));
 
-		top_link("") if $topic eq "contact_info";
+		page::top_link("") if $topic eq "contact_info";
 
-		top_link(highlight_link(
-			top_url("help",1, "topic","pgp"),
+		page::top_link(page::highlight_link(
+			html::top_url("help",1, "topic","pgp"),
 			"PGP", $topic eq "pgp"));
 		}
 	else
 		{
-		top_link(highlight_link(top_url("help",1),"Advanced", 1));
+		page::top_link(page::highlight_link(html::top_url("help",1),"Advanced", 1));
 
-		my $link_grid_api = highlight_link(
-			top_url("function","grid_tutorial", "help",1),
+		my $link_grid_api = page::highlight_link(
+			html::top_url("function","grid_tutorial", "help",1),
 			"Grid");
 
-		my $link_archive_api = highlight_link(
-			top_url("function","archive_tutorial", "help",1),
+		my $link_archive_api = page::highlight_link(
+			html::top_url("function","archive_tutorial", "help",1),
 			"Archive");
 
-		my $link_cms = highlight_link(
-			top_url("function","edit"),
+		my $link_cms = page::highlight_link(
+			html::top_url("function","edit"),
 			"CMS");
 
-		my $link_tools = highlight_link(
-			top_url("function","folder_tools"),
+		my $link_tools = page::highlight_link(
+			html::top_url("function","folder_tools"),
 			"Tools");
 
-		my $link_source = highlight_link(
+		my $link_source = page::highlight_link(
 			"/source",
 			"Source Code", 0, "Source code for the Loom server");
 
-		top_link("");
-		top_link($link_grid_api);
-		top_link($link_archive_api);
-		top_link($link_cms);
-		top_link($link_tools);
-		top_link($link_source);
+		page::top_link("");
+		page::top_link($link_grid_api);
+		page::top_link($link_archive_api);
+		page::top_link($link_cms);
+		page::top_link($link_tools);
+		page::top_link($link_source);
 		}
 
 	if ($topic eq "contact_info")
 		{
 		my $dsp_email = get_email_support();
 
-		emit(<<EOM
+		page::emit(<<EOM
 <h1>Contact Information</h1>
 <p>
 If you have any questions please send an email to $dsp_email.
 EOM
 );
-		my $pgp_key = archive_get(loom_config("support_pgp_key"));
+		my $pgp_key = archive::get(loom_config::get("support_pgp_key"));
 		if ($pgp_key ne "")
 		{
-		my $url = top_url("help",1, "topic","pgp");
-		emit(<<EOM
+		my $url = html::top_url("help",1, "topic","pgp");
+		page::emit(<<EOM
 We encourage you to send us an <a href="$url">encrypted email</a>
 using PGP.
 EOM
@@ -102,12 +101,12 @@ EOM
 
 	if ($topic eq "pgp")
 		{
-		my $pgp_key = archive_get(loom_config("support_pgp_key"));
+		my $pgp_key = archive::get(loom_config::get("support_pgp_key"));
 		return if $pgp_key eq "";
 
 		my $dsp_email = get_email_support();
 
-		emit(<<EOM
+		page::emit(<<EOM
 <h1>How to send us an encrypted email</h1>
 <p>
 Please end an email to $dsp_email encrypted to this PGP key:
@@ -121,29 +120,29 @@ EOM
 
 	if ($topic eq "get_usage_tokens")
 		{
-		my $loc = loom_config("exchanger_page");
-		my $page = archive_get($loc);
-		emit($page);
+		my $loc = loom_config::get("exchanger_page");
+		my $page = archive::get($loc);
+		page::emit($page);
 		return;
 		}
 
-	my $link_grid_api = highlight_link(
-		top_url("function","grid_tutorial", "help",1),
+	my $link_grid_api = page::highlight_link(
+		html::top_url("function","grid_tutorial", "help",1),
 		"Grid");
 
-	my $link_archive_api = highlight_link(
-		top_url("function","archive_tutorial", "help",1),
+	my $link_archive_api = page::highlight_link(
+		html::top_url("function","archive_tutorial", "help",1),
 		"Archive");
 
-	my $link_cms = highlight_link(
-		top_url("function","edit"),
+	my $link_cms = page::highlight_link(
+		html::top_url("function","edit"),
 		"Content Management System");
 
-	my $link_tools = highlight_link(
-		top_url("function","folder_tools"),
+	my $link_tools = page::highlight_link(
+		html::top_url("function","folder_tools"),
 		"Tools");
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1> Application Programming Interface (API) </h1>
 <p>
 The entire Loom system is built upon a very solid Application Programmer
@@ -175,7 +174,7 @@ EOM
 
 # Note that this routine deliberately does not quote the keys and values.
 
-sub help_context_table
+sub context_table
 	{
 	my $table = "";
 
@@ -212,7 +211,7 @@ EOM
 </div>
 EOM
 
-	emit(<<EOM
+	page::emit(<<EOM
 
 $table
 EOM
@@ -220,11 +219,11 @@ EOM
 	return;
 	}
 
-sub help_topic
+sub topic
 	{
 	my $topic = shift;
 
-	set_title("Advanced");
+	page::set_title("Advanced");
 
 	if ($topic eq "index")
 		{
@@ -234,17 +233,17 @@ sub help_topic
 
 	if ($topic eq "grid" || $topic eq "grid_tutorial")
 		{
-		help_grid();
+		help_grid::respond();
 		return;
 		}
 
 	if ($topic eq "archive" || $topic eq "archive_tutorial")
 		{
-		help_archive();
+		help_archive::respond();
 		return;
 		}
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 No help is available on this topic.
 EOM

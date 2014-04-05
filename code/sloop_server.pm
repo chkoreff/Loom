@@ -1,6 +1,5 @@
 package sloop_server;
 use strict;
-use export "sloop_respond";
 use file;
 use signal;
 use sloop_client;
@@ -35,9 +34,9 @@ Continue doing this until the process sees a TERM or INT interrupt signal.
 
 sub sloop_listen
 	{
-	my $host_port = sloop_config("host_port");
-	my $host_ip = sloop_config("host_ip");
-	my $max_children = sloop_config("max_children");
+	my $host_port = sloop_config::get("host_port");
+	my $host_ip = sloop_config::get("host_ip");
+	my $max_children = sloop_config::get("max_children");
 
 	# Create the server listener socket.
 
@@ -68,7 +67,7 @@ sub sloop_listen
 
 	while (1)
 		{
-		if (signal_get_child())
+		if (signal::get_child())
 			{
 			# CHLD signal:  At least one child process exited.  Wait for all
 			# children to exit to avoid zombies.
@@ -84,7 +83,7 @@ sub sloop_listen
 					# The $child process actually exited.
 					# my $exit_code = ($? >> 8);  # if you're interested
 
-					sloop_child_exits($child);
+					sloop_status::child_exits($child);
 					}
 				else
 					{
@@ -96,25 +95,25 @@ sub sloop_listen
 					}
 				}
 
-			signal_put_child(0);
+			signal::put_child(0);
 			}
 
 		my $client_socket;
 		my $remote_addr = accept($client_socket, $server_socket);
 
-		last if signal_get_interrupt();
+		last if signal::get_interrupt();
 			# INT or TERM signal:  Exit immediately.
 
 		if (!$remote_addr)
 			{
-			print STDERR "error in accept : $!\n" if !signal_get_child();
+			print STDERR "error in accept : $!\n" if !signal::get_child();
 			next;
 			}
 
 		# Received new inbound connection.  Fork a handler process if we
 		# have the capacity.
 
-		if (sloop_num_children() >= $max_children)
+		if (sloop_status::num_children() >= $max_children)
 			{
 			close($client_socket);
 			next;
@@ -131,15 +130,15 @@ sub sloop_listen
 		elsif ($child != 0)
 			{
 			# This is the parent process.
-			sloop_child_enters($child);
+			sloop_status::child_enters($child);
 			close($client_socket);
 			}
 		else
 			{
 			# This is the child process.
 			close($server_socket);
-			sloop_io_init($client_socket);
-			sloop_client_respond();
+			sloop_io::init($client_socket);
+			sloop_client::respond();
 			close($client_socket);
 
 			exit;
@@ -150,7 +149,7 @@ sub sloop_listen
 
 	# Now send a TERM signal to all the children to terminate them.
 
-	kill 'TERM', sloop_children();
+	kill 'TERM', sloop_status::children();
 
 	return;
 	}
@@ -163,7 +162,7 @@ sub sloop_listen
 
 sub sloop_stop
 	{
-	my ($curr_pid) = sloop_info();
+	my ($curr_pid) = sloop_status::info();
 	return 1 if $curr_pid eq "";
 
 	system("kill $curr_pid");
@@ -237,9 +236,9 @@ sub sloop_start
 	# This is the child process, which runs in the background and implements
 	# the server.
 
-	sloop_status_start();
+	sloop_status::start();
 	sloop_listen();
-	sloop_status_stop();
+	sloop_status::stop();
 
 	return;
 	}
@@ -247,12 +246,12 @@ sub sloop_start
 # Run the listener loop.  The listener accepts inbound connections and forks a
 # child process to handle them.
 
-sub sloop_respond
+sub respond
 	{
 	my $do_start = shift;
 
-	signal_init();
-	sloop_status_init();
+	signal::init();
+	sloop_status::init();
 
 	return if !sloop_stop();  # Stop the server if already running.
 	sloop_start() if $do_start;

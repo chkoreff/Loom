@@ -1,25 +1,8 @@
 package html;
 use strict;
-use export
-	"trimblanks",
-	"remove_nonprintable",
-	"html_quote",
-	"html_semiquote",
-	"html_quote_form",
-	"html_hidden_fields",
-	"html_display_length",
-	"make_url",
-	"top_url",
-	;
 use URI::Escape;
 
-=pod
-
-=head1 NAME
-
-HTML utilities including safe quoting
-
-=cut
+# HTML utilities including safe quoting
 
 sub trimblanks
 	{
@@ -47,7 +30,7 @@ sub remove_nonprintable
 	return $str;
 	}
 
-sub html_quote
+sub quote
 	{
 	my $str = shift;
 
@@ -64,7 +47,7 @@ sub html_quote
 # HTML character entities, such as Russian &#1059;&#1089;&#1083;&#1086;
 # We use this in memo fields.
 
-sub html_semiquote
+sub semiquote
 	{
 	my $str = shift;
 
@@ -80,7 +63,7 @@ sub html_semiquote
 # LATER : the Test link with the Form post still doesn't quite work with
 # newline embedded in hidden field.
 
-sub html_quote_form
+sub quote_form
 	{
 	my $str = shift;
 
@@ -98,7 +81,7 @@ sub html_quote_form
 	return $str;
 	}
 
-sub html_hidden_fields
+sub hidden_fields
 	{
 	my $str = "";
 
@@ -109,8 +92,8 @@ sub html_hidden_fields
 
 		next if $val eq "";
 
-		my $q_key = html_quote_form($key);
-		my $q_val = html_quote_form($val);
+		my $q_key = quote_form($key);
+		my $q_val = quote_form($val);
 
 		$str .= qq{<input type=hidden name="$q_key" value="$q_val">\n};
 		}
@@ -121,9 +104,9 @@ sub html_hidden_fields
 	}
 
 # Returns the effective display length of an HTML-quoted string.
-# For example, html_display_length("&amp;foo&lt;") == 3
+# For example, display_length("&amp;foo&lt;") == 3
 
-sub html_display_length
+sub display_length
 	{
 	my $str = shift;
 

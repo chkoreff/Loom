@@ -1,6 +1,5 @@
 package page_data;
 use strict;
-use export "page_data_respond";
 use http;
 use page;
 
@@ -841,18 +840,17 @@ sub data_get
 	return undef;
 	}
 
-sub page_data_respond
+sub respond
 	{
-	my $response = data_get(http_get("name"));
+	my $response = data_get(http::get("name"));
 
 	if (!defined $response)
 		{
-		page_not_found();
+		page::not_found();
 		return;
 		}
 
-	page_ok($response);
-
+	page::ok($response);
 	return;
 	}
 

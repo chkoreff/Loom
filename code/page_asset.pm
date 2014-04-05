@@ -1,6 +1,5 @@
 package page_asset;
 use strict;
-use export "page_asset_respond";
 use archive;
 use context;
 use grid;
@@ -16,9 +15,9 @@ use sha256;
 
 sub help_asset
 	{
-	printer_friendly() if http_get("print");
+	page::printer_friendly() if http::get("print");
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1> Assets </h1>
 An asset is a type of value that can be moved around in the Loom system.
 Before you can transact in a particular asset, you must explicitly accept it
@@ -98,28 +97,28 @@ sub page_asset_list
 	{
 	# LATER use CSS style sheet
 
-	my $odd_color = loom_config("odd_row_color");
-	my $even_color = loom_config("even_row_color");
+	my $odd_color = loom_config::get("odd_row_color");
+	my $even_color = loom_config::get("even_row_color");
 
 	my $odd_row = 1;  # for odd-even coloring
 
-	my $loc_folder = folder_location();
+	my $loc_folder = page_folder::current_location();
 
-	my @list_type = get_sorted_list_type();
+	my @list_type = page_folder::get_sorted_list_type();
 
 	my $table = "";
 
-	my $link_accept = highlight_link(
-		top_url(http_slice("function"), "action","accept",
-			http_slice("session")),
+	my $link_accept = page::highlight_link(
+		html::top_url(http::slice("function"), "action","accept",
+			http::slice("session")),
 		"Accept an existing asset into your wallet.");
 
-	my $link_create = highlight_link(
-		top_url(http_slice("function"), "action","create",
-			http_slice("session")),
+	my $link_create = page::highlight_link(
+		html::top_url(http::slice("function"), "action","create",
+			http::slice("session")),
 		"Create a brand new asset which you issue.");
 
-	my $hidden = html_hidden_fields(http_slice(qw(function session)));
+	my $hidden = html::hidden_fields(http::slice(qw(function session)));
 
 	$table .= <<EOM;
 <h1> Asset List </h1>
@@ -146,17 +145,17 @@ Name
 </tr>
 EOM
 
-	my $context = op_new(http_slice(qw(function session)));
+	my $context = context::new(http::slice(qw(function session)));
 
-	my $save_enabled = http_get("save_enabled") ne "";
+	my $save_enabled = http::get("save_enabled") ne "";
 
 	for my $type (@list_type)
 	{
-	my $type_name = map_id_to_nickname("type",$type);
-	my $q_type_name = html_quote($type_name);
+	my $type_name = page_folder::map_id_to_nickname("type",$type);
+	my $q_type_name = html::quote($type_name);
 
-	my $url = top_url("function",http_get("function"),
-		"name",$type_name, "session",http_get("session"));
+	my $url = html::top_url("function",http::get("function"),
+		"name",$type_name, "session",http::get("session"));
 
 	$q_type_name =
 	qq{<a href="$url" title="View or edit this asset.">$q_type_name</a>};
@@ -164,14 +163,14 @@ EOM
 	my $row_color = $odd_row ? $odd_color : $even_color;
 	$odd_row = 1 - $odd_row;
 
-	my $is_disabled = folder_get("type_disable.$type");
+	my $is_disabled = page_folder::get("type_disable.$type");
 	my $is_enabled = !$is_disabled;
 
 	if ($save_enabled)
 		{
-		$is_enabled = http_get("enable_$type") ne "";
+		$is_enabled = http::get("enable_$type") ne "";
 		my $disable_flag = $is_enabled ? "" : "1";
-		folder_put("type_disable.$type",$disable_flag);
+		page_folder::put("type_disable.$type",$disable_flag);
 		}
 
 	my $checked = $is_enabled ? " checked" : "";
@@ -198,10 +197,10 @@ EOM
 
 	if ($save_enabled)
 		{
-		save_folder();
+		page_folder::save();
 		}
 
-	emit($table);
+	page::emit($table);
 
 	return;
 	}
@@ -216,24 +215,24 @@ sub add_asset
 	my $result = {};
 	$result->{error} = "";
 
-	my $loc_folder = folder_location();
+	my $loc_folder = page_folder::current_location();
 
-	my $list_type = folder_get("list_type");
+	my $list_type = page_folder::get("list_type");
 	my @list_type = split(" ",$list_type);
 	push @list_type, $type;
 
 	$list_type = join(" ",@list_type);
 
-	folder_put("list_type",$list_type);
-	folder_put("type_name.$type", $name);
-	folder_put("type_scale.$type", $scale);
-	folder_put("type_min_precision.$type", $min_precision);
+	page_folder::put("list_type",$list_type);
+	page_folder::put("type_name.$type", $name);
+	page_folder::put("type_scale.$type", $scale);
+	page_folder::put("type_min_precision.$type", $min_precision);
 
 	# Clear the deleted flag if any.
-	folder_put("type_del.$type","");
+	page_folder::put("type_del.$type","");
 
-	my $write = save_folder();
-	if (op_get($write,"status") ne "success")
+	my $write = page_folder::save();
+	if (context::get($write,"status") ne "success")
 		{
 		$result->{error} = "insufficient_usage";
 		}
@@ -245,10 +244,10 @@ sub add_asset
 		# LATER perhaps ONLY with Create.  If you Accept an asset, just add it?
 
 		my $loc_zero = "0" x 32;
-		grid_buy($type, $loc_zero, $loc_folder);
-		grid_buy($type, $loc_folder, $loc_folder);
-		grid_issuer($type,$loc_zero,$loc_folder);
-		grid_sell($type,$loc_zero,$loc_folder);
+		grid::buy($type, $loc_zero, $loc_folder);
+		grid::buy($type, $loc_folder, $loc_folder);
+		grid::issuer($type,$loc_zero,$loc_folder);
+		grid::sell($type,$loc_zero,$loc_folder);
 		}
 
 	return $result;
@@ -277,21 +276,21 @@ sub asset_edit_form
 
 	if ($flavor eq "edit")
 		{
-		$type_name = http_get("name");
-		$type = map_nickname_to_id("type",$type_name);
+		$type_name = http::get("name");
+		$type = page_folder::map_nickname_to_id("type",$type_name);
 
 		die if $type eq "";
 
-		$scale = folder_get("type_scale.$type");
-		$precision = folder_get("type_min_precision.$type");
+		$scale = page_folder::get("type_scale.$type");
+		$precision = page_folder::get("type_min_precision.$type");
 		}
 	else
 		{
-		$type = http_get("new_id");
-		$type = trimblanks($type);
+		$type = http::get("new_id");
+		$type = html::trimblanks($type);
 		if ($type eq "")
 			{
-			$type = unpack("H*",random_id());
+			$type = random::hex();
 			}
 
 		$type_name = "";
@@ -299,13 +298,13 @@ sub asset_edit_form
 		$precision = "";
 		}
 
-	my $new_name = http_get("new_name");
-	my $new_scale = http_get("new_scale");
-	my $new_precision = http_get("new_precision");
+	my $new_name = http::get("new_name");
+	my $new_scale = http::get("new_scale");
+	my $new_precision = http::get("new_precision");
 
 	my $submitted_form =
 		(
-		http_get("save") ne ""
+		http::get("save") ne ""
 		|| $new_name ne ""
 		|| $new_scale ne ""
 		|| $new_precision ne ""
@@ -323,7 +322,7 @@ sub asset_edit_form
 			{
 			# Check the ID if creating a new asset.
 
-			if (!valid_id($type))
+			if (!id::valid_id($type))
 				{
 				$q_error_id = "Invalid ID";
 				$q_error_stanza .= <<EOM;
@@ -335,7 +334,7 @@ EOM
 			else
 				{
 				# Make sure the ID is not already used in this folder.
-				my $other_name = map_id_to_nickname("type",$type);
+				my $other_name = page_folder::map_id_to_nickname("type",$type);
 				if ($other_name ne "")
 					{
 					$q_error_id = "Already used";
@@ -357,7 +356,7 @@ EOM
 			}
 		else
 			{
-			my $other_type = map_nickname_to_id("type",$new_name);
+			my $other_type = page_folder::map_nickname_to_id("type",$new_name);
 
 			if ($other_type ne "" && $other_type ne $type)
 				{
@@ -374,9 +373,9 @@ EOM
 			}
 
 		{
-		$new_scale = trimblanks($new_scale);
+		$new_scale = html::trimblanks($new_scale);
 
-		if (!valid_scale($new_scale))
+		if (!loom_qty::valid_scale($new_scale))
 			{
 			$q_error_scale = "Only integers from 0 to 99 are allowed";
 			$q_error_stanza .= <<EOM;
@@ -391,9 +390,9 @@ EOM
 		}
 
 		{
-		$new_precision = trimblanks($new_precision);
+		$new_precision = html::trimblanks($new_precision);
 
-		if (!valid_scale($new_precision))
+		if (!loom_qty::valid_scale($new_precision))
 			{
 			$q_error_precision = "Only integers from 0 to 99 are allowed";
 			$q_error_stanza .= <<EOM;
@@ -413,15 +412,15 @@ EOM
 			{
 			# Everything is good, save the changes.
 
-			http_put("name",$new_name);
+			http::put("name",$new_name);
 
 			if ($flavor eq "edit")
 			{
-			folder_put("type_name.$type",$new_name);
-			folder_put("type_scale.$type",$new_scale);
-			folder_put("type_min_precision.$type",$new_precision);
+			page_folder::put("type_name.$type",$new_name);
+			page_folder::put("type_scale.$type",$new_scale);
+			page_folder::put("type_min_precision.$type",$new_precision);
 
-			save_folder();
+			page_folder::save();
 			}
 			else
 			{
@@ -445,12 +444,12 @@ EOM
 			}
 		}
 
-	my $hidden = html_hidden_fields(
-		http_slice(qw(function name action session)));
+	my $hidden = html::hidden_fields(
+		http::slice(qw(function name action session)));
 
-	my $q_new_name = html_quote($new_name);
-	my $q_new_scale = html_quote($new_scale);
-	my $q_new_precision = html_quote($new_precision);
+	my $q_new_name = html::quote($new_name);
+	my $q_new_scale = html::quote($new_scale);
+	my $q_new_precision = html::quote($new_precision);
 
 	$q_error_id = qq{<span class=alarm>$q_error_id</span>}
 		if $q_error_id ne "";
@@ -461,11 +460,11 @@ EOM
 	$q_error_precision = qq{<span class=alarm>$q_error_precision</span>}
 		if $q_error_precision ne "";
 
-	set_focus("new_name");
-	set_focus("new_precision") if $q_error_precision ne "";
-	set_focus("new_scale") if $q_error_scale ne "";
-	set_focus("new_name") if $q_error_name ne "";
-	set_focus("new_id") if $q_error_id ne "";
+	page::set_focus("new_name");
+	page::set_focus("new_precision") if $q_error_precision ne "";
+	page::set_focus("new_scale") if $q_error_scale ne "";
+	page::set_focus("new_name") if $q_error_name ne "";
+	page::set_focus("new_id") if $q_error_id ne "";
 
 	if ($flavor eq "edit")
 	{
@@ -497,7 +496,7 @@ EOM
 
 	my $link_cancel;
 	{
-	my $url = top_url(http_slice("function","name","session"));
+	my $url = html::top_url(http::slice("function","name","session"));
 	$link_cancel = qq{<a class=large style='padding-left:20px' href="$url">Cancel</a>};
 	}
 
@@ -510,7 +509,7 @@ EOM
 	else
 		{
 		my $input_size_id = 32 + 4;
-		my $q_type = html_quote($type);
+		my $q_type = html::quote($type);
 		$dsp_id = <<EOM;
 <td>
 <input type=text class=mono name=new_id size=$input_size_id value="$q_type">
@@ -626,15 +625,15 @@ EOM
 
 sub page_zoom_asset_heading
 	{
-	my $type_name = http_get("name");
-	my $type = map_nickname_to_id("type",$type_name);
-	my $q_type_name = html_quote($type_name);
+	my $type_name = http::get("name");
+	my $type = page_folder::map_nickname_to_id("type",$type_name);
+	my $q_type_name = html::quote($type_name);
 
 	my $q_title = qq{ title="Send to recipient of payment."};
 
 	my $q_description = asset_description($type);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1> Asset : $q_type_name </h1>
 <p> Description :
 <span class=tiny_mono style='color:green; font-weight:bold'$q_title>
@@ -649,15 +648,15 @@ sub asset_description
 	{
 	my $type = shift;
 
-	my $type_name = folder_get("type_name.$type");
-	my $scale = folder_get("type_scale.$type");
-	my $precision = folder_get("type_min_precision.$type");
+	my $type_name = page_folder::get("type_name.$type");
+	my $scale = page_folder::get("type_scale.$type");
+	my $precision = page_folder::get("type_min_precision.$type");
 
 	my $hex_name = unpack("H*",$type_name);
 	my $description = $type."x".$scale."x".$precision."x".$hex_name;
 
 	# Now append a hash checksum of the main description.
-	my $checksum = substr(unpack("H*",sha256($description)),0,8);
+	my $checksum = substr(unpack("H*",sha256::bin($description)),0,8);
 
 	$description .= "x$checksum";
 
@@ -666,38 +665,38 @@ sub asset_description
 
 sub page_zoom_asset
 	{
-	my $type_name = http_get("name");
-	my $q_type_name = html_quote($type_name);
+	my $type_name = http::get("name");
+	my $q_type_name = html::quote($type_name);
 
-	my $type = map_nickname_to_id("type",$type_name);
+	my $type = page_folder::map_nickname_to_id("type",$type_name);
 	if ($type eq "")
 		{
 		page_asset_list();
 		return;
 		}
 
-	my $action = http_get("action");
+	my $action = http::get("action");
 
 	my $edit_form = "";
 
-	my $scale = folder_get("type_scale.$type");
-	my $precision = folder_get("type_min_precision.$type");
+	my $scale = page_folder::get("type_scale.$type");
+	my $precision = page_folder::get("type_min_precision.$type");
 
 	if ($action eq "rename")
 		{
-		my $length = html_display_length($q_type_name);
+		my $length = html::display_length($q_type_name);
 		my $size = $length + 3;
 		$size = 25 if $size < 25;
 		$size = 70 if $size > 70;
 
-		set_focus("new_name");
+		page::set_focus("new_name");
 
-		my $hidden = html_hidden_fields(
-			http_slice(qw(function name action session)));
+		my $hidden = html::hidden_fields(
+			http::slice(qw(function name action session)));
 
 		my $q_new_name = $q_type_name;
 
-		my $new_name = http_get("new_name");
+		my $new_name = http::get("new_name");
 
 		my $error = "";
 
@@ -705,7 +704,7 @@ sub page_zoom_asset
 
 		if ($new_name ne "")
 		{
-		$q_new_name = html_quote($new_name);
+		$q_new_name = html::quote($new_name);
 
 		if ($new_name eq $type_name)
 			{
@@ -715,20 +714,20 @@ sub page_zoom_asset
 		else
 			{
 			# Make sure the new name is not already used in the folder.
-			my $new_type = map_nickname_to_id("type",$new_name);
+			my $new_type = page_folder::map_nickname_to_id("type",$new_name);
 
 			if ($new_type eq "")
 				{
 				# OK, we're good to go, let's save the new name.
 
-				folder_put("type_name.$type",$new_name);
+				page_folder::put("type_name.$type",$new_name);
 
-				save_folder();
+				page_folder::save();
 
-				http_put("name",$new_name);
+				http::put("name",$new_name);
 
 				$type_name = $new_name;
-				$q_type_name = html_quote($type_name);
+				$q_type_name = html::quote($type_name);
 
 				$rename_complete = 1;
 				}
@@ -747,12 +746,12 @@ EOM
 		{
 		my $link_cancel;
 		{
-		my $url = top_url(http_slice("function","name","session"));
+		my $url = html::top_url(http::slice("function","name","session"));
 		$link_cancel = qq{<a class=large style='padding-left:20px' href="$url">Cancel</a>};
 		}
 
 		page_zoom_asset_heading();
-		emit(<<EOM
+		page::emit(<<EOM
 <p>
 Enter the new name you would like to use for this asset:
 <form method=post action="" autocomplete=off>
@@ -775,7 +774,7 @@ EOM
 	if ($action eq "delete")
 	{
 
-	if (http_get("confirm_delete") ne "" && http_get("delete_now") ne "")
+	if (http::get("confirm_delete") ne "" && http::get("delete_now") ne "")
 		{
 		# Confirmed delete
 
@@ -785,19 +784,19 @@ EOM
 		# asset ID.
 
 		{
-		my $list_H = folder_get("list_H");
+		my $list_H = page_folder::get("list_H");
 		my @list_H = split(" ",$list_H);
 
 		for my $h_id (@list_H)
 			{
-			my $this_type = folder_get("H_type.$h_id");
+			my $this_type = page_folder::get("H_type.$h_id");
 			next if $this_type ne $type;
 			$found = 1;
 			last;
 			}
 		}
 
-		my $old_list_type = folder_get("list_type");
+		my $old_list_type = page_folder::get("list_type");
 		my @old_list_type = split(" ",$old_list_type);
 
 		my @new_list_type = ();
@@ -810,7 +809,7 @@ EOM
 
 		my $new_list_type = join(" ",@new_list_type);
 
-		folder_put("list_type",$new_list_type);
+		page_folder::put("list_type",$new_list_type);
 
 		if ($found)
 			{
@@ -818,37 +817,37 @@ EOM
 			# let's just mark the asset as deleted instead of clearing all
 			# the details.  That way we can still render history properly.
 
-			folder_put("type_del.$type",1);
+			page_folder::put("type_del.$type",1);
 			}
 		else
 			{
-			folder_put("type_name.$type","");
-			folder_put("type_scale.$type","");
-			folder_put("type_min_precision.$type","");
+			page_folder::put("type_name.$type","");
+			page_folder::put("type_scale.$type","");
+			page_folder::put("type_min_precision.$type","");
 			}
 
-		save_folder();
+		page_folder::save();
 
 		# Attempt to sell the underlying locations for this type.
-		my $loc_folder = folder_location();
+		my $loc_folder = page_folder::current_location();
 
-		my @list_loc = split(" ",folder_get("list_loc"));
+		my @list_loc = split(" ",page_folder::get("list_loc"));
 		for my $loc (@list_loc)
 			{
-			grid_sell($type,$loc,$loc_folder);
+			grid::sell($type,$loc,$loc_folder);
 			}
 
-		my $val = grid_touch($type,$loc_folder);
+		my $val = grid::touch($type,$loc_folder);
 		if ($val eq "-1")
 			{
 			# This is a brand new type with no outstanding liability, so let's
 			# go ahead and move the issuer location back to zero.
 
 			my $loc_zero = "0" x 32;
-			grid_buy($type, $loc_zero, $loc_folder);
-			grid_issuer($type,$loc_folder,$loc_zero);
-			grid_sell($type,$loc_folder,$loc_folder);
-			grid_sell($type,$loc_zero,$loc_folder);
+			grid::buy($type, $loc_zero, $loc_folder);
+			grid::issuer($type,$loc_folder,$loc_zero);
+			grid::sell($type,$loc_folder,$loc_folder);
+			grid::sell($type,$loc_zero,$loc_folder);
 			}
 
 		page_asset_list();
@@ -863,8 +862,8 @@ EOM
 	if ($updated)
 		{
 		# Read the name again in case it was changed.
-		$type_name = http_get("name");
-		$q_type_name = html_quote($type_name);
+		$type_name = http::get("name");
+		$q_type_name = html::quote($type_name);
 
 		$edit_form .= <<EOM;
 <p>
@@ -879,28 +878,28 @@ EOM
 
 	if ($action ne "delete" && $action ne "edit")
 	{
-	my $link_refresh = highlight_link(
-		top_url(http_slice("function","name","session")),
+	my $link_refresh = page::highlight_link(
+		html::top_url(http::slice("function","name","session")),
 		"Refresh");
 
-	my $link_pay = highlight_link(
-		top_url("function","folder", "type",http_get("name"),
-			http_slice("session")),
+	my $link_pay = page::highlight_link(
+		html::top_url("function","folder", "type",http::get("name"),
+			http::slice("session")),
 		"Pay");
 
-	my $link_rename = highlight_link(
-		top_url(http_slice("function","name","session"), "action","rename"),
+	my $link_rename = page::highlight_link(
+		html::top_url(http::slice("function","name","session"), "action","rename"),
 		"Rename");
 
-	my $link_edit = highlight_link(
-		top_url(http_slice("function","name","session"), "action","edit"),
+	my $link_edit = page::highlight_link(
+		html::top_url(http::slice("function","name","session"), "action","edit"),
 		"Edit details");
 
-	my $link_delete = highlight_link(
-		top_url(http_slice("function","name","session"), "action","delete"),
+	my $link_delete = page::highlight_link(
+		html::top_url(http::slice("function","name","session"), "action","delete"),
 		"Delete");
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <b>Options:</b>
 <span style='padding-left:15px'> $link_refresh </span>
@@ -917,28 +916,28 @@ EOM
 	$display->{flavor} = "zoom_asset";
 	$display->{type_name} = $type_name;
 
-	my $table = page_folder_value_table($display);
+	my $table = page_folder::value_table($display);
 	my $has_assets = $display->{involved_type}->{$type};
 
 	if ($action eq "delete")
 	{
-	my $hidden = html_hidden_fields(
-		http_slice(qw(function name action session)));
+	my $hidden = html::hidden_fields(
+		http::slice(qw(function name action session)));
 
-	emit(<<EOM
+	page::emit(<<EOM
 <form method=post action="" autocomplete=off>
 $hidden
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h2 class=alarm>Confirm deletion</h2>
 EOM
 );
 
 	if ($has_assets)
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 If you insist on deleting this asset, you risk <span class=alarm>losing</span>
 all of the assets below.
 EOM
@@ -947,11 +946,11 @@ EOM
 
 	my $link_cancel;
 	{
-	my $url = top_url(http_slice("function","name","session"));
+	my $url = html::top_url(http::slice("function","name","session"));
 	$link_cancel = qq{<a class=large style='padding-left:20px' href="$url">Cancel</a>};
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <input type=checkbox name=confirm_delete>
 Check the box to confirm, then press
@@ -960,7 +959,7 @@ $link_cancel
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 </form>
 EOM
 );
@@ -968,7 +967,7 @@ EOM
 	}
 	elsif ($action eq "edit")
 	{
-	emit($edit_form);
+	page::emit($edit_form);
 	}
 
 	# LATER maybe single out the issuer case specially.
@@ -977,7 +976,7 @@ EOM
 	{
 	if ($has_assets)
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 You have this asset at these contact points:
 EOM
@@ -985,7 +984,7 @@ EOM
 	}
 	else
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 You do not have this asset at any contact points.
 EOM
@@ -993,7 +992,7 @@ EOM
 	}
 	}
 
-	emit($table);
+	page::emit($table);
 
 	return;
 	}
@@ -1012,7 +1011,7 @@ sub page_add_asset
 
 	my $entry_form = "";
 
-	my $description = http_get("description");
+	my $description = http::get("description");
 
 	# Translate all runs of non-printable characters to a single space.
 	# This makes the code more forgiving, for example if someone copies
@@ -1020,20 +1019,20 @@ sub page_add_asset
 	# lines in an email.  Those can have embedded sequences such as \015\n.
 
 	$description =~ s/[^ -~]+/ /g;
-	$description = trimblanks($description);
+	$description = html::trimblanks($description);
 
-	http_put("description",$description);
+	http::put("description",$description);
 
-	my $q_description = html_quote($description);
+	my $q_description = html::quote($description);
 
-	set_focus("description");
+	page::set_focus("description");
 
-	my $hidden = html_hidden_fields(
-		http_slice(qw(function action session)));
+	my $hidden = html::hidden_fields(
+		http::slice(qw(function action session)));
 
 	my $link_cancel;
 	{
-	my $url = top_url(http_slice("function","session"));
+	my $url = html::top_url(http::slice("function","session"));
 	$link_cancel = qq{<a class=large style='padding-left:20px' href="$url">Cancel</a>};
 	}
 
@@ -1051,7 +1050,7 @@ $link_cancel
 </form>
 EOM
 
-	if ($description ne "" || http_get("save") ne "")
+	if ($description ne "" || http::get("save") ne "")
 	{
 	# User submitted the form.
 
@@ -1083,7 +1082,7 @@ EOM
 
 	# Remove any weird binary chars from name.
 	$name = pack("H*",$4);
-	$name = remove_nonprintable($name);
+	$name = html::remove_nonprintable($name);
 
 	# Verify the checksum.
 
@@ -1091,7 +1090,7 @@ EOM
 	my $inner_description = substr($description,0,-9);
 
 	my $expect_checksum = substr(unpack("H*",
-		sha256($inner_description)),0,8);
+		sha256::bin($inner_description)),0,8);
 
 	if ($expect_checksum eq $checksum)
 		{
@@ -1146,7 +1145,7 @@ EOM
 The asset ID is missing.
 EOM
 		}
-	elsif (!valid_id($type))
+	elsif (!id::valid_id($type))
 		{
 		$q_error_stanza .= <<EOM;
 <p>
@@ -1155,20 +1154,20 @@ EOM
 		}
 	else
 		{
-		my $old_name = map_id_to_nickname("type",$type);
+		my $old_name = page_folder::map_id_to_nickname("type",$type);
 
 		# If the asset is marked as deleted, pretend like you didn't see it
 		# so it can be added again.
 
-		if (folder_get("type_del.$type"))
+		if (page_folder::get("type_del.$type"))
 			{
 			$old_name = "";
 			}
 
 		if ($old_name ne "")
 			{
-			my $q_old_name = html_quote($old_name);
-			my $q_name = html_quote($name);
+			my $q_old_name = html::quote($old_name);
+			my $q_name = html::quote($name);
 
 			$duplicate_id = 1;
 
@@ -1203,14 +1202,14 @@ EOM
 		}
 	else
 		{
-		my $other_type = map_nickname_to_id("type",$name);
+		my $other_type = page_folder::map_nickname_to_id("type",$name);
 		if ($other_type ne "" && $other_type ne $type)
 			{
 			$duplicate_name = 1;
 
 			if (!$duplicate_id)
 			{
-			my $q_name = html_quote($name);
+			my $q_name = html::quote($name);
 			$q_error_stanza .= <<EOM;
 <p>
 This new asset is named <b>$q_name</b>, but you already have an asset with
@@ -1236,9 +1235,9 @@ EOM
 		}
 
 	{
-	$scale = trimblanks($scale);
+	$scale = html::trimblanks($scale);
 
-	if (!valid_scale($scale))
+	if (!loom_qty::valid_scale($scale))
 		{
 		$q_error_stanza .= <<EOM;
 <p>
@@ -1248,9 +1247,9 @@ EOM
 	}
 
 	{
-	$min_precision = trimblanks($min_precision);
+	$min_precision = html::trimblanks($min_precision);
 
-	if (!valid_scale($min_precision))
+	if (!loom_qty::valid_scale($min_precision))
 		{
 		$q_error_stanza .= <<EOM;
 <p>
@@ -1280,7 +1279,7 @@ EOM
 		{
 		# Zoom in on the asset page after adding.
 
-		http_put("name",$name);
+		http::put("name",$name);
 		page_zoom_asset();
 
 		return;
@@ -1289,8 +1288,8 @@ EOM
 
 	}
 
-	emit($entry_form);
-	emit($q_error_stanza) if $q_error_stanza ne "";
+	page::emit($entry_form);
+	page::emit($q_error_stanza) if $q_error_stanza ne "";
 
 	return;
 	}
@@ -1305,18 +1304,18 @@ sub page_create_asset
 		return;
 		}
 
-	emit($edit_form);
+	page::emit($edit_form);
 
 	return;
 	}
 
-sub page_asset_respond
+sub respond
 	{
-	set_title("Assets");
+	page::set_title("Assets");
 
-	my $action = http_get("action");
+	my $action = http::get("action");
 
-	if (http_get("help"))
+	if (http::get("help"))
 		{
 		help_asset();
 		}
@@ -1331,7 +1330,7 @@ sub page_asset_respond
 	elsif ($action eq "" || $action eq "rename" || $action eq "edit"
 		|| $action eq "delete")
 		{
-		if (http_get("name") ne "")
+		if (http::get("name") ne "")
 			{
 			page_zoom_asset();
 			}

@@ -1,13 +1,12 @@
 package help_grid;
 use strict;
-use export "help_grid";
 use loom_config;
 use page;
 use page_help;
 
-sub help_grid_buy
+sub buy
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Buy</h1>
 </div>
@@ -17,7 +16,7 @@ Buy a location in the grid.  This costs one usage token.
 The input is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","grid",""],
 	["action","buy","Name of operation"],
 	["type","<b>id</b>","Asset type"],
@@ -25,14 +24,14 @@ EOM
 	["usage","<b>id</b>","Location of usage tokens (where 1 is charged)"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Buy operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["value","<b>qty</b>",
 		"The value at the new location.  This will typically be 0,"
@@ -42,7 +41,7 @@ EOM
 	["usage_balance","<b>qty</b>", "New usage balance"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -50,7 +49,7 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_type","not_valid_id", "type is not a valid id"],
 	["error_loc","not_valid_id", "loc is not a valid id"],
@@ -61,9 +60,9 @@ EOM
 	);
 	}
 
-sub help_grid_sell
+sub sell
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Sell</h1>
 </div>
@@ -73,7 +72,7 @@ Sell a location in the grid.  This refunds one usage token.
 The input is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","grid",""],
 	["action","sell","Name of operation"],
 	["type","<b>id</b>","Asset type"],
@@ -81,14 +80,14 @@ EOM
 	["usage","<b>id</b>","Location of usage tokens (where 1 is refunded)"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Sell operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["value","<b>qty</b>",
 		"The value at the location.  You can only sell a location that"
@@ -100,7 +99,7 @@ EOM
 	["usage_balance","<b>qty</b>", "New usage balance"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -108,7 +107,7 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_type","not_valid_id", "type is not a valid id"],
 	["error_loc","not_valid_id", "loc is not a valid id"],
@@ -120,9 +119,9 @@ EOM
 	);
 	}
 
-sub help_grid_issuer
+sub issuer
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Issuer</h1>
 </div>
@@ -132,7 +131,7 @@ Change the issuer location for an asset type.
 The input is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","grid",""],
 	["action","issuer","Name of operation"],
 	["type","<b>id</b>","Asset type"],
@@ -140,20 +139,20 @@ EOM
 	["dest","<b>id</b>","New issuer location"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Issuer operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["value_orig","<b>qty</b>","Value of original location (after the change)"],
 	["value_dest","<b>qty</b>","Value of destination location"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -161,7 +160,7 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_type","not_valid_id", "type is not a valid id"],
 	["error_orig","not_valid_id", "orig is not a valid id"],
@@ -170,7 +169,7 @@ EOM
 		."(or other error listed below)"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 The operation must obey the following rules (otherwise you'll see
 error_qty = insufficient):
@@ -184,9 +183,9 @@ EOM
 );
 	}
 
-sub help_grid_touch
+sub touch
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Touch</h1>
 </div>
@@ -202,26 +201,26 @@ Examine a location directly, seeing the value stored there.
 The input for the Touch operation is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","grid",""],
 	["action","touch","Name of operation"],
 	["type","<b>id</b>","Asset type"],
 	["loc","<b>id</b>","Location"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Touch operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["value","<b>qty</b>","Value at location"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -229,7 +228,7 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_type","not_valid_id", "type is not a valid id"],
 	["error_loc","not_valid_id", "loc is not a valid id"],
@@ -237,9 +236,9 @@ EOM
 	);
 	}
 
-sub help_grid_look
+sub look
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Look</h1>
 </div>
@@ -262,26 +261,26 @@ hash of a location, then you can Look but you can't Touch.
 The input for the Look operation is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","grid",""],
 	["action","look","Name of operation"],
 	["type","<b>id</b>","Asset type"],
 	["hash","<b>hash</b>","Hash of location to examine"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Look operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["value","<b>qty</b>","Value at location"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -289,7 +288,7 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_type","not_valid_id", "type is not a valid id"],
 	["error_hash","not_valid_hash", "hash is not a valid hash"],
@@ -297,9 +296,9 @@ EOM
 	);
 	}
 
-sub help_grid_move
+sub move
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Move</h1>
 </div>
@@ -311,7 +310,7 @@ Move units of a given type from one location to another.
 The input for the Move operation is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","grid",""],
 	["action","move","Name of operation"],
 	["type","<b>id</b>","Asset type"],
@@ -320,7 +319,7 @@ EOM
 	["dest","<b>id</b>","Destination location (add qty to here)"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 The quantity is normally positive, but a negative or zero value is also
 allowed.
@@ -353,20 +352,20 @@ must use the Issuer operation (see above).
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Move operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["value_orig","<b>qty</b>","New value at origin"],
 	["value_dest","<b>qty</b>","New value at destination"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -374,7 +373,7 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_type","not_valid_id", "type is not a valid id"],
 	["error_orig","not_valid_id", "orig is not a valid id"],
@@ -384,7 +383,7 @@ EOM
 		."(or other error listed below)"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 
 <p>
 Note that if the orig or destination is vacant (not bought), then the
@@ -403,9 +402,9 @@ EOM
 );
 	}
 
-sub help_grid_scan
+sub scan
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Scan</h1>
 </div>
@@ -418,7 +417,7 @@ The input for the Scan operation is:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["function","grid",""],
 	["action","scan","Name of operation"],
 	["locs","list of <b>id</b> or <b>hash</b>",
@@ -427,7 +426,7 @@ EOM
 	["zeroes","<b>flag</b>", "Option to force the scan to return 0-values"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 The Scan operation combines all the specified locs and types together, forming
 all possible pairs, and returns the value associated with each pair.  It uses
@@ -439,19 +438,19 @@ flag altogether.
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 For each location <b>L</b> in the locs list, the output will contain this
 entry:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["loc/<b>L</b>","list of <b>qty:id</b>",
 		"Space-separated list of value:type pairs"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 
 <p>
 Note that if a location <b>L</b> is <em>completely empty</em> for all specified
@@ -500,7 +499,7 @@ From this result we can determine that:
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <h2>NOTE:</h2>
 The Scan operation will scan at most 2048 pairs.  This is a <b>hard limit</b>
@@ -511,7 +510,7 @@ for the first 2048 pairs, and set error flags in the output as follows:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error","excessive", "tried to scan too many pairs"],
 	["error_max","2048", "maximum allowed scan size"],
@@ -522,9 +521,9 @@ EOM
 # and that a "cell" is a specific intersection of type and location.
 # So you're buying and selling cells really.
 
-sub help_grid
+sub respond
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <h1>Grid</h1>
 <p>
 The Grid function is the core operation in the entire Loom system.  The
@@ -691,9 +690,9 @@ EOM
 	my $orig = "c80481226973dfec6dc06c8dfe8a5b1c";
 	my $dest = "29013fc66a653f6765151dd352675d0f";
 
-	my $this_url = loom_config("this_url");
+	my $this_url = loom_config::get("this_url");
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1>Example API Call</h1>
 <p>
 Here is a url which executes a "Move" operation, moving 42500 units
@@ -749,7 +748,7 @@ EOM
 );
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1>Grid Operations</h1>
 <p>
 Here we describe the API (application programming interface) for the Grid.
@@ -758,13 +757,13 @@ The operations are Buy, Sell, Issuer, Touch, Look, and Move.
 EOM
 );
 
-	help_grid_buy();
-	help_grid_sell();
-	help_grid_issuer();
-	help_grid_touch();
-	help_grid_look();
-	help_grid_move();
-	help_grid_scan();
+	buy();
+	sell();
+	issuer();
+	touch();
+	look();
+	move();
+	scan();
 	return;
 	}
 

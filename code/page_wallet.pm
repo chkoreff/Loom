@@ -1,6 +1,5 @@
 package page_wallet;
 use strict;
-use export "page_wallet_respond";
 use context;
 use dttm;
 use grid;
@@ -13,43 +12,43 @@ use page_folder; # TODO
 
 sub handle_history
 	{
-	if (http_get("set_recording") ne "")
+	if (http::get("set_recording") ne "")
 		{
-		my $set_recording = http_get("set_recording") ? 1 : "";
+		my $set_recording = http::get("set_recording") ? 1 : "";
 
-		folder_put("recording",$set_recording);
-		save_folder();
+		page_folder::put("recording",$set_recording);
+		page_folder::save();
 
 		return;
 		}
 
-	if (http_get("delete_history_items") ne "")
+	if (http::get("delete_history_items") ne "")
 		{
-		for my $name (http_names())
+		for my $name (http::names())
 			{
 			next unless $name =~ /^choose_(.+)$/;
 			my $h_id = $1;
-			delete_history_item($h_id);
+			history::delete_item($h_id);
 			}
 
-		save_folder();
+		page_folder::save();
 		return;
 		}
 
-	if (http_get("save_history_items") ne "")
+	if (http::get("save_history_items") ne "")
 		{
-		for my $name (http_names())
+		for my $name (http::names())
 			{
 			next unless $name =~ /^choose_(.+)$/;
 			my $h_id = $1;
-			save_history_item($h_id,http_get("memo_$h_id"));
+			history::save_item($h_id,http::get("memo_$h_id"));
 			}
 
-		save_folder();
+		page_folder::save();
 		return;
 		}
 
-	if (http_get("cancel_history_items") ne "")
+	if (http::get("cancel_history_items") ne "")
 		{
 		# Do nothing.
 		return;
@@ -63,20 +62,20 @@ sub page_folder_main
 	my $display = {};
 	$display->{flavor} = "move_dialog";
 
-	my $hidden = html_hidden_fields(
-		http_slice(qw(function h_pi h_pn h_only session)));
+	my $hidden = html::hidden_fields(
+		http::slice(qw(function h_pi h_pn h_only session)));
 
-	emit(<<EOM
+	page::emit(<<EOM
 <form method=post action="" autocomplete=off>
 $hidden
 EOM
 );
 
-	emit(page_folder_value_table($display)) if !http_get("h_only");
+	page::emit(page_folder::value_table($display)) if !http::get("h_only");
 
-	show_history();
+	history::show();
 
-	emit(<<EOM
+	page::emit(<<EOM
 </form>
 EOM
 );
@@ -86,12 +85,12 @@ EOM
 
 sub handle_move_assets
 	{
-	my $out = folder_result();
+	my $out = page_folder::current_result();
 
-	op_put($out,"status","");
-	op_put($out,"error_move","");
+	context::put($out,"status","");
+	context::put($out,"error_move","");
 
-	return if http_get("give") eq "" && http_get("take") eq "";
+	return if http::get("give") eq "" && http::get("take") eq "";
 
 	# Give wins over take.  This can happen if the user just took some assets
 	# and then immediately pays something out.  The "take" flag is still set
@@ -99,20 +98,20 @@ sub handle_move_assets
 	# new HTTP parser pays attention to both query parameters *and* body
 	# parameters, even in the case of POST.
 
-	http_put("take","") if http_get("give") ne "";
+	http::put("take","") if http::get("give") ne "";
 
 	# Clear the history scroll/edit status.
-	http_put("h_pi","");
-	http_put("h_pn","");
+	http::put("h_pi","");
+	http::put("h_pn","");
 
-	my $qty = http_get("qty");
-	$qty = trimblanks($qty);
-	http_put("qty",$qty);
+	my $qty = http::get("qty");
+	$qty = html::trimblanks($qty);
+	http::put("qty",$qty);
 
 	if ($qty eq "")
 		{
-		op_put($out,"status","fail");
-		op_put($out,"error_move","missing_qty");
+		context::put($out,"status","fail");
+		context::put($out,"error_move","missing_qty");
 		return;
 		}
 
@@ -122,44 +121,44 @@ sub handle_move_assets
 
 	my $is_negative_qty = ($qty =~ /^-/);
 
-	my $type_name = http_get("type");
-	my $loc_name = http_get("loc");
+	my $type_name = http::get("type");
+	my $loc_name = http::get("loc");
 
-	my $type = map_nickname_to_id("type",$type_name);
-	my $loc = map_nickname_to_id("loc",$loc_name);
+	my $type = page_folder::map_nickname_to_id("type",$type_name);
+	my $loc = page_folder::map_nickname_to_id("loc",$loc_name);
 
-	my $scale = folder_get("type_scale.$type");
+	my $scale = page_folder::get("type_scale.$type");
 
-	$qty = float_to_int($qty,$scale);
+	$qty = loom_qty::float_to_int($qty,$scale);
 
 	if ($type eq "")
 		{
 		# This catches when you enter a valid quantity but don't choose an
 		# asset type.  Maybe later we can clean this up a bit.
 
-		op_put($out,"status","fail");
-		op_put($out,"error_move","Please choose an asset.");
+		context::put($out,"status","fail");
+		context::put($out,"error_move","Please choose an asset.");
 		return;
 		}
 
 	if ($qty eq "")
 		{
-		op_put($out,"status","fail");
-		op_put($out,"error_move","invalid_qty");
+		context::put($out,"status","fail");
+		context::put($out,"error_move","invalid_qty");
 		return;
 		}
 
-	if (http_get("take") ne "")
+	if (http::get("take") ne "")
 		{
 		$qty = "-$qty";
 		$qty = "0" if $qty eq "-0";
 		}
 
-	my $loc_folder = folder_location();
+	my $loc_folder = page_folder::current_location();
 
-	my $move = grid_move($type,$qty,$loc_folder,$loc);
+	my $move = grid::move($type,$qty,$loc_folder,$loc);
 
-	if (op_get($move,"status") eq "fail")
+	if (context::get($move,"status") eq "fail")
 		{
 		# Move might have failed because one of the locations was vacant
 		# (not bought).  Buy the offending location(s) automatically and
@@ -168,31 +167,31 @@ sub handle_move_assets
 		my $try_again = 0;
 
 		# LATER could make a little routine out of this
-		if (op_get($move,"value_orig") eq "")
+		if (context::get($move,"value_orig") eq "")
 			{
-			my $buy = grid_buy($type,$loc_folder,$loc_folder);
+			my $buy = grid::buy($type,$loc_folder,$loc_folder);
 
-			if (op_get($buy,"status") eq "fail")
+			if (context::get($buy,"status") eq "fail")
 				{
 				# Not enough usage tokens in main stash, so try to buy it
 				# with usage tokens at the destination.
 
-				grid_buy($type,$loc_folder,$loc);
+				grid::buy($type,$loc_folder,$loc);
 				}
 
 			$try_again = 1;
 			}
 
-		if (op_get($move,"value_dest") eq "")
+		if (context::get($move,"value_dest") eq "")
 			{
-			my $buy = grid_buy($type,$loc,$loc_folder);
+			my $buy = grid::buy($type,$loc,$loc_folder);
 
-			if (op_get($buy,"status") eq "fail")
+			if (context::get($buy,"status") eq "fail")
 				{
 				# Not enough usage tokens in main stash, so try to buy it
 				# with usage tokens at the destination.
 
-				grid_buy($type,$loc,$loc);
+				grid::buy($type,$loc,$loc);
 				}
 
 			$try_again = 1;
@@ -200,30 +199,30 @@ sub handle_move_assets
 
 		if ($try_again)
 			{
-			$move = grid_move($type,$qty,$loc_folder,$loc);
+			$move = grid::move($type,$qty,$loc_folder,$loc);
 			}
 		}
 
-	my $status = op_get($move,"status");
-	op_put($out,"status",$status);
+	my $status = context::get($move,"status");
+	context::put($out,"status",$status);
 
 	if ($status eq "fail")
 		{
-		if (op_get($out,"error_move") eq "")
+		if (context::get($out,"error_move") eq "")
 			{
-			my $error_type = op_get($move,"error_type");
+			my $error_type = context::get($move,"error_type");
 			if ($error_type eq "")
 				{
 				}
 			elsif ($error_type eq "not_valid_id")
 				{
-				op_put($out,"error_move","Please choose an asset.");
+				context::put($out,"error_move","Please choose an asset.");
 				}
 			}
 
-		if (op_get($out,"error_move") eq "")
+		if (context::get($out,"error_move") eq "")
 			{
-			my $error_qty = op_get($move,"error_qty");
+			my $error_qty = context::get($move,"error_qty");
 			if ($error_qty eq "")
 				{
 				}
@@ -231,49 +230,49 @@ sub handle_move_assets
 				{
 				if ($qty eq "")
 					{
-					op_put($out,"error_move","Please enter a quantity.");
+					context::put($out,"error_move","Please enter a quantity.");
 					}
 				else
 					{
-					op_put($out,"error_move","Not a valid quantity");
+					context::put($out,"error_move","Not a valid quantity");
 					}
 				}
 			elsif ($error_qty eq "insufficient")
 				{
-				if (http_get("give") ne "")
+				if (http::get("give") ne "")
 					{
 					if ($is_negative_qty)
 						{
-						op_put($out,"error_move",
+						context::put($out,"error_move",
 						"You cannot take more assets from the contact point "
 						."than are actually there.");
 						}
 					else
 						{
-						op_put($out,"error_move",
+						context::put($out,"error_move",
 						"You cannot pay more assets to the contact point "
 						."than you actually have.");
 						}
 					}
 				else
 					{
-					http_put("qty","");
-					op_put($out,"error_move",
+					http::put("qty","");
+					context::put($out,"error_move",
 					"Some assets have been taken from the contact point "
 					."since you last refreshed your Wallet display.");
 					}
 				}
 			}
 
-		if (op_get($out,"error_move") eq "")
+		if (context::get($out,"error_move") eq "")
 			{
-			my $error_dest = op_get($move,"error_dest");
+			my $error_dest = context::get($move,"error_dest");
 			if ($error_dest eq "")
 				{
 				}
 			elsif ($error_dest eq "not_valid_id")
 				{
-				op_put($out,"error_move","Please choose a contact.");
+				context::put($out,"error_move","Please choose a contact.");
 				}
 			}
 		}
@@ -284,34 +283,34 @@ sub handle_move_assets
 		my $orig_color = "green";  # green-ish
 		my $dest_color = "red";  # red-ish
 
-		if (http_get("give") ne "")
+		if (http::get("give") ne "")
 			{
 			# swap colors
 			($orig_color,$dest_color) = ($dest_color,$orig_color);
 			}
 
-		op_put($out,"color.$type.$loc_folder",$orig_color);
-		op_put($out,"color.$type.$loc",$dest_color);
+		context::put($out,"color.$type.$loc_folder",$orig_color);
+		context::put($out,"color.$type.$loc",$dest_color);
 
-		if (folder_get("recording"))
+		if (page_folder::get("recording"))
 			{
-			add_history_entry($qty,$type,$loc);
-			save_folder();
+			history::add_item($qty,$type,$loc);
+			page_folder::save();
 			}
 
-		if (http_get("give") ne "")
+		if (http::get("give") ne "")
 			{
 			if (!$is_negative_qty)
 				{
 				# Clear the qty field to avoid paying again if user presses
 				# Enter.
-				http_put("qty","");
+				http::put("qty","");
 				}
 			else
 				{
 				# On a negative Pay, flip the quantity to positive so it's
 				# easy to pay it right back out.
-				http_put("qty",substr(http_get("qty"),1));
+				http::put("qty",substr(http::get("qty"),1));
 				}
 			}
 		}
@@ -319,9 +318,9 @@ sub handle_move_assets
 
 sub help_wallet
 	{
-	printer_friendly() if http_get("print");
+	page::printer_friendly() if http::get("print");
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1> How the wallet display is organized </h1>
 Your wallet display consists of four sections:
 
@@ -412,9 +411,9 @@ EOM
 	return;
 	}
 
-sub page_wallet_respond
+sub respond
 	{
-	if (http_get("help"))
+	if (http::get("help"))
 		{
 		help_wallet();
 		return;

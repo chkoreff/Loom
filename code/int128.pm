@@ -1,14 +1,5 @@
 package int128;
 use strict;
-use export
-	"int128_from_dec",
-	"int128_to_dec",
-	"int128_is_zero",
-	"int128_sign",
-	"int128_add",
-	"int128_sub",
-	"int128_inc",
-	;
 use Bit::Vector;
 
 =pod
@@ -32,7 +23,7 @@ my $g_num_bits = 128;
 # Therefore I have an additional check to ensure that the sign of the result
 # is the expected sign.
 
-sub int128_from_dec
+sub from_dec
 	{
 	my $str = shift;
 
@@ -56,7 +47,7 @@ sub int128_from_dec
 
 # Convert 128-bit integer to decimal.
 
-sub int128_to_dec
+sub to_dec
 	{
 	my $num = shift;
 
@@ -65,7 +56,7 @@ sub int128_to_dec
 
 # Determine if the number is zero.
 
-sub int128_is_zero
+sub is_zero
 	{
 	my $num = shift;
 
@@ -74,7 +65,7 @@ sub int128_is_zero
 
 # Return the sign of the number:  1 for negative, 0 for non-negative.
 
-sub int128_sign
+sub sign
 	{
 	my $num = shift;
 
@@ -83,7 +74,7 @@ sub int128_sign
 
 # Add amount to the number destructively.
 
-sub int128_add
+sub add
 	{
 	my $num = shift;
 	my $amount = shift;
@@ -93,7 +84,7 @@ sub int128_add
 
 # Subtract amount from the number destructively.
 
-sub int128_sub
+sub subtract
 	{
 	my $num = shift;
 	my $amount = shift;
@@ -103,7 +94,7 @@ sub int128_sub
 
 # Increment the number destructively.
 
-sub int128_inc
+sub inc
 	{
 	my $num = shift;
 

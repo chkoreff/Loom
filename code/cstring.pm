@@ -1,14 +1,7 @@
-package c_quote;
+package cstring;
 use strict;
-use export "c_quote","c_unquote";
 
-=pod
-
-=head1 NAME
-
-C quoting and unquoting
-
-=cut
+# C quoting and unquoting
 
 sub char_to_code
 	{
@@ -33,7 +26,7 @@ sub code_to_char
 	return chr(oct($code));
 	}
 
-sub c_quote
+sub quote
 	{
 	my $str = shift;
 
@@ -41,7 +34,7 @@ sub c_quote
 	return $str;
 	}
 
-sub c_unquote
+sub unquote
 	{
 	my $str = shift;
 

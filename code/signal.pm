@@ -1,22 +1,7 @@
 package signal;
 use strict;
-use export
-	"signal_init",
-	"signal_get_alarm",
-	"signal_get_child",
-	"signal_get_interrupt",
-	"signal_put_alarm",
-	"signal_put_child",
-	"signal_put_interrupt",
-	;
 
-=pod
-
-=head1 NAME
-
-Catch operating system signals reliably.
-
-=cut
+# Catch operating system signals reliably.
 
 my $g_alarm = 0;
 my $g_child = 0;
@@ -44,7 +29,7 @@ sub signal_catch
 		}
 	}
 
-sub signal_init
+sub init
 	{
 	$g_alarm = 0;
 	$g_child = 0;
@@ -59,13 +44,13 @@ sub signal_init
 	}
 
 # Get the status of some important signals.
-sub signal_get_alarm { return $g_alarm }
-sub signal_get_child { return $g_child }
-sub signal_get_interrupt { return $g_interrupt }
+sub get_alarm { return $g_alarm }
+sub get_child { return $g_child }
+sub get_interrupt { return $g_interrupt }
 
 # Put the status of some important signals.  Use 0 to clear a signal.
-sub signal_put_alarm { $g_alarm = shift; }
-sub signal_put_child { $g_child = shift; }
-sub signal_put_interrupt { $g_interrupt = shift; }
+sub put_alarm { $g_alarm = shift; }
+sub put_child { $g_child = shift; }
+sub put_interrupt { $g_interrupt = shift; }
 
 return 1;

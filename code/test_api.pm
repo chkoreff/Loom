@@ -1,25 +1,24 @@
 package test_api;
 use strict;
-use export "test_api_config";
 use context;
 use file;
 use sloop_top;
 
-my $g_test_api_config;
+my $g_config;
 
-sub test_api_config
+sub config
 	{
 	my $key = shift;
 
-	if (!defined $g_test_api_config)
+	if (!defined $g_config)
 		{
-		my $top = sloop_top();
-		my $text = file_get_content(file_child($top,"data/conf/test_api"));
+		my $top = sloop_top::dir();
+		my $text = file::get_content(file::child($top,"data/conf/test_api"));
 		die if !defined $text;
-		$g_test_api_config = op_read_kv(op_new(),$text);
+		$g_config = context::read_kv(context::new(),$text);
 		}
 
-	my $val = op_get($g_test_api_config,$key);
+	my $val = context::get($g_config,$key);
 	return $val if $val ne "";
 
 	die qq{missing config param "$key"\n};

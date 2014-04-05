@@ -1,7 +1,6 @@
 package loom_db;
 use strict;
-use export "loom_db_get","loom_db_put";
-use c_quote;
+use cstring;
 use trans;
 
 # This module maps keys used in the old GNU database into corresponding path
@@ -14,7 +13,7 @@ use trans;
 # decided to store it in readable hexadecimal instead of binary.  So for those
 # keys we map the value in and out.
 
-sub loom_db_hex_path
+sub hex_path
 	{
 	my $hex_loc = shift;
 
@@ -27,7 +26,7 @@ sub loom_db_hex_path
 	return $path;
 	}
 
-sub loom_db_map_key
+sub map_key
 	{
 	my $key = shift;
 
@@ -42,8 +41,8 @@ sub loom_db_map_key
 		my $hash = unpack("H*",substr($key,22,32));
 		die if length($hash) != 64;
 
-		my $path_type = loom_db_hex_path($type);
-		my $path_hash = loom_db_hex_path($hash);
+		my $path_type = hex_path($type);
+		my $path_hash = hex_path($hash);
 
 		return "grid/$path_type/V/$path_hash";
 		}
@@ -55,7 +54,7 @@ sub loom_db_map_key
 		my $type = unpack("H*",substr($key,6,16));
 		die if length($type) != 32;
 
-		my $path_type = loom_db_hex_path($type);
+		my $path_type = hex_path($type);
 		return "grid/$path_type/I";
 		}
 	elsif ($key =~ /^ar_C/)
@@ -66,23 +65,23 @@ sub loom_db_map_key
 		my $hash2 = unpack("H*",substr($key,4,32));
 		die if length($hash2) != 64;
 
-		my $path_hash2 = loom_db_hex_path($hash2);
+		my $path_hash2 = hex_path($hash2);
 		return "archive/$path_hash2";
 		}
 	else
 		{
 		# Unrecognized key.
-		my $q_key = c_quote($key);
+		my $q_key = cstring::quote($key);
 		print STDERR "ERROR: $q_key\n";
 		die;
 		}
 	}
 
-sub loom_db_get
+sub get
 	{
 	my $key = shift;
 
-	my $val = trans_get(loom_db_map_key($key));
+	my $val = trans::get(map_key($key));
 
 	if ($key =~ /^grid_I/)
 		{
@@ -92,7 +91,7 @@ sub loom_db_get
 	return $val;
 	}
 
-sub loom_db_put
+sub put
 	{
 	my $key = shift;
 	my $val = shift;
@@ -102,7 +101,7 @@ sub loom_db_put
 		$val = unpack("H*",$val) if length($val) == 32;
 		}
 
-	trans_put(loom_db_map_key($key),$val);
+	trans::put(map_key($key),$val);
 	return;
 	}
 

@@ -1,23 +1,21 @@
 package page_view;
 use strict;
-use export "page_view_respond";
 use archive;
 use http;
 use page;
 
-sub page_view_respond
+sub respond
 	{
-	my $loc = http_get("hash");
-	my $text = archive_get($loc);
+	my $loc = http::get("hash");
+	my $text = archive::get($loc);
 
 	if ($text eq "")
 		{
-		page_not_found();
+		page::not_found();
 		return;
 		}
 
-	page_ok($text);
-
+	page::ok($text);
 	return;
 	}
 

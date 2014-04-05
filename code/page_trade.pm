@@ -1,6 +1,5 @@
 package page_trade;
 use strict;
-use export "page_trade_respond";
 use array;
 use context;
 use html;
@@ -62,7 +61,7 @@ sub vendors_who_offer
 	my $product = shift;
 
 	return
-	[sort_names(keys %{$g_set_product_offer_by_vendor->{$product}})];
+	[array::sort_names(keys %{$g_set_product_offer_by_vendor->{$product}})];
 	}
 
 sub vendors_who_accept
@@ -70,10 +69,10 @@ sub vendors_who_accept
 	my $product = shift;
 
 	return
-	[sort_names(keys %{$g_set_product_accept_by_vendor->{$product}})];
+	[array::sort_names(keys %{$g_set_product_accept_by_vendor->{$product}})];
 	}
 
-sub page_trade_read_data
+sub read_data
 	{
 	my $text = shift;
 
@@ -95,36 +94,36 @@ sub page_trade_read_data
 	my $pos = 0;
 	while (1)
 		{
-		my $token = token_get($text,$pos);
+		my $token = token::get($text,$pos);
 		last if !defined $token;
 
 		if ($token eq "vendor_url")
 			{
-			my $vendor = token_get($text,$pos);
-			my $url = token_get($text,$pos);
+			my $vendor = token::get($text,$pos);
+			my $url = token::get($text,$pos);
 			last if !defined $url;
 			vendor_url($vendor,$url);
 			}
 		elsif ($token eq "vendor_offer")
 			{
-			my $vendor = token_get($text,$pos);
-			my $product = token_get($text,$pos);
+			my $vendor = token::get($text,$pos);
+			my $product = token::get($text,$pos);
 			last if !defined $product;
 			vendor_offer($vendor,$product);
 			}
 		elsif ($token eq "vendor_accept")
 			{
-			my $vendor = token_get($text,$pos);
-			my $product = token_get($text,$pos);
+			my $vendor = token::get($text,$pos);
+			my $product = token::get($text,$pos);
 			last if !defined $product;
 			vendor_accept($vendor,$product);
 			}
 		elsif ($token eq "vendor_trade_url")
 			{
-			my $vendor = token_get($text,$pos);
-			my $offer = token_get($text,$pos);
-			my $accept = token_get($text,$pos);
-			my $url = token_get($text,$pos);
+			my $vendor = token::get($text,$pos);
+			my $offer = token::get($text,$pos);
+			my $accept = token::get($text,$pos);
+			my $url = token::get($text,$pos);
 			last if !defined $url;
 			vendor_trade_url($vendor,$offer,$accept,$url);
 			}
@@ -136,7 +135,7 @@ sub page_trade_read_data
 
 	if ($g_error)
 		{
-		emit(<<EOM
+		page::emit(<<EOM
 <div class=alarm> Internal page error </div>
 EOM
 );
@@ -145,15 +144,15 @@ EOM
 	return;
 	}
 
-sub page_trade_search
+sub search
 	{
 	my $payload = shift;
-	page_trade_read_data($payload);
+	read_data($payload);
 
-	my $offer_product = http_get("offer");
-	my $accept_product = http_get("accept");
+	my $offer_product = http::get("offer");
+	my $accept_product = http::get("accept");
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 Click an item in each column.  As you click, entries will highlight in gold to
 reflect new possibilities.
@@ -193,7 +192,7 @@ EOM
 			@products = keys %{$g_set_accept_product};
 			}
 
-		@products = sort_names(@products);
+		@products = array::sort_names(@products);
 
 		for my $product (@products)
 			{
@@ -209,30 +208,30 @@ EOM
 
 			my $style = $highlight ? " class=highlight_link" : "";
 
-			my $context = op_new
+			my $context = context::new
 				(
 				"offer",$offer_product,
 				"accept",$accept_product,
 				);
 
-			op_put($context,$type,$product);
+			context::put($context,$type,$product);
 
-			my $url = make_url("/trade",op_pairs($context));
+			my $url = html::make_url("/trade",context::pairs($context));
 
-			my $q_product = html_semiquote($product);
+			my $q_product = html::semiquote($product);
 			$q_product = qq{<a$style href="$url">$q_product</a>};
 
 			my $possible = 0;
 			if ($type eq "offer" && $accept_product ne "")
 				{
-				my $vendors = intersect(
+				my $vendors = array::intersect(
 					vendors_who_offer($product),
 					vendors_who_accept($accept_product));
 				$possible = (@$vendors > 0);
 				}
 			elsif ($type eq "accept" && $offer_product ne "")
 				{
-				my $vendors = intersect(
+				my $vendors = array::intersect(
 					vendors_who_offer($offer_product),
 					vendors_who_accept($product));
 				$possible = (@$vendors > 0);
@@ -250,7 +249,7 @@ EOM
 		$table .= <<EOM;
 </table>
 EOM
-		emit(<<EOM
+		page::emit(<<EOM
 <td valign=top>
 $table
 </td>
@@ -258,7 +257,7 @@ EOM
 );
 		}
 
-	my $vendors = intersect(
+	my $vendors = array::intersect(
 		vendors_who_offer($offer_product),
 		vendors_who_accept($accept_product));
 
@@ -267,7 +266,7 @@ EOM
 EOM
 	for my $vendor (@$vendors)
 		{
-		my $q_vendor = html_semiquote($vendor);
+		my $q_vendor = html::semiquote($vendor);
 
 		my $url;
 		if ($offer_product ne "" && $accept_product ne "")
@@ -290,7 +289,7 @@ EOM
 </table>
 EOM
 
-	emit(<<EOM
+	page::emit(<<EOM
 <td valign=top>
 <h2> Possible vendors: </h2>
 $table
@@ -298,7 +297,7 @@ $table
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 </tr>
 </table>
 EOM
@@ -307,9 +306,9 @@ EOM
 	return;
 	}
 
-sub page_trade_get_listed
+sub get_listed
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 To obtain a listing on the Find Trades page, we ask that you
 <a href="http://rayservers.com/gold">get verified by the GSF System</a>.
@@ -321,33 +320,33 @@ EOM
 	return;
 	}
 
-sub page_trade_respond
+sub respond
 	{
 	my $id = shift;
 	my $header_op = shift;
 	my $payload = shift;
 
-	top_link(highlight_link("/","Home",0));
+	page::top_link(page::highlight_link("/","Home",0));
 
-	my $query = http_get("q");
+	my $query = http::get("q");
 
-	top_link(highlight_link("/trade","Find Trades",($query eq "")));
-	top_link(highlight_link("/trade?q=get-listed",
+	page::top_link(page::highlight_link("/trade","Find Trades",($query eq "")));
+	page::top_link(page::highlight_link("/trade?q=get-listed",
 		"Get Listed Here",($query eq "get-listed")));
 
 	if ($query eq "")
 		{
-		set_title("Find Trades");
-		page_trade_search($payload);
+		page::set_title("Find Trades");
+		search($payload);
 		}
 	elsif ($query eq "get-listed")
 		{
-		set_title("Get Listed");
-		page_trade_get_listed();
+		page::set_title("Get Listed");
+		get_listed();
 		}
 	else
 		{
-		page_not_found();
+		page::not_found();
 		}
 
 	return;

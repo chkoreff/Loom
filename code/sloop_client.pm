@@ -1,7 +1,5 @@
 package sloop_client;
 use strict;
-use export "sloop_client_respond";
-
 use archive;
 use context;
 use dttm;
@@ -55,7 +53,7 @@ my $g_transaction_in_progress;
 
 sub page_trans_respond
 	{
-	my @path = http_split_path(http_path());
+	my @path = http::split_path(http::path());
 	my $format = shift @path;
 
 	die if $format ne "trans" && $format ne "trans_web";
@@ -63,30 +61,30 @@ sub page_trans_respond
 	my $action = shift @path;
 	$action = "" if !defined $action;
 
-	my $api = op_new();
-	op_put($api,"action",$action);
+	my $api = context::new();
+	context::put($api,"action",$action);
 
 	if ($action eq "begin")
 		{
-		op_put($api,"status",$g_transaction_in_progress ? "fail" : "success");
+		context::put($api,"status",$g_transaction_in_progress ? "fail" : "success");
 		$g_transaction_in_progress = 1;
 		}
 	elsif ($action eq "commit")
 		{
-		my $ok = trans_commit();
-		op_put($api,"status", $ok ? "success" : "fail");
+		my $ok = trans::commit();
+		context::put($api,"status", $ok ? "success" : "fail");
 		$g_transaction_in_progress = 0;
 		}
 	elsif ($action eq "cancel")
 		{
-		op_put($api,"status","success");
-		trans_cancel();
+		context::put($api,"status","success");
+		trans::cancel();
 		$g_transaction_in_progress = 0;
 		}
 	else
 		{
-		op_put($api,"status","fail");
-		op_put($api,"error_action","unknown");
+		context::put($api,"status","fail");
+		context::put($api,"error_action","unknown");
 		}
 
 	if ($format eq "trans")
@@ -94,35 +92,35 @@ sub page_trans_respond
 		# Return result in KV format.
 		my $response_code = "200 OK";
 		my $headers = "Content-Type: text/plain\n";
-		my $text = op_write_kv($api);
-		format_HTTP_response($response_code,$headers,$text);
+		my $text = context::write_kv($api);
+		page::format_HTTP_response($response_code,$headers,$text);
 		}
 	elsif ($format eq "trans_web")
 		{
 		# Return result in HTML format.
 
-		my $action = op_get($api,"action");
-		my $status = op_get($api,"status");
+		my $action = context::get($api,"action");
+		my $status = context::get($api,"status");
 
 		if ($action eq "begin")
 			{
-			set_title("Transaction");
+			page::set_title("Transaction");
 
-			emit(<<EOM
+			page::emit(<<EOM
 <h1> Transaction in Progress </h1>
 EOM
 );
-			emit(<<EOM
+			page::emit(<<EOM
 <p>
 You have started a new transaction.
 EOM
 ) if $status eq "success";
-			emit(<<EOM
+			page::emit(<<EOM
 <p>
 You already have a transaction in progress.
 EOM
 ) if $status eq "fail";
-			emit(<<EOM
+			page::emit(<<EOM
 <p>
 Now you can now go off and do any series of operations you like.  Use the link
 below if you'd like to start fresh.  Or, if you already have a window or tab
@@ -144,7 +142,7 @@ EOM
 			{
 			if ($status eq "success")
 			{
-			emit(<<EOM
+			page::emit(<<EOM
 <h1> Transaction Committed </h1>
 <p>
 The transaction was committed successfully.
@@ -153,7 +151,7 @@ EOM
 			}
 			else
 			{
-			emit(<<EOM
+			page::emit(<<EOM
 <h1> Transaction Failed </h1>
 <p>
 It was not possible to commit the transaction because some other process made
@@ -166,7 +164,7 @@ EOM
 			}
 		elsif ($action eq "cancel")
 			{
-			emit(<<EOM
+			page::emit(<<EOM
 <h1> Transaction Canceled </h1>
 <p>
 The transaction has been canceled.
@@ -176,7 +174,7 @@ EOM
 
 		if ($action eq "commit" || $action eq "cancel")
 			{
-			emit(<<EOM
+			page::emit(<<EOM
 <p style='margin-left:20px'>
 <a href="/trans_web/begin"> Start a new transaction. </a>
 <p style='margin-left:20px'>
@@ -191,11 +189,11 @@ EOM
 
 sub showing_maintenance_page
 	{
-	return 0 if !in_maintenance_mode();
+	return 0 if !notify::in_maintenance_mode();
 
-	http_put("error_system","maintenance");
+	http::put("error_system","maintenance");
 
-	my $system_name = loom_config("system_name");
+	my $system_name = loom_config::get("system_name");
 
 	my $page = <<EOM;
 Content-Type: text/html
@@ -209,8 +207,7 @@ $system_name is currently down for maintenance.
 </BODY></HTML>
 EOM
 
-	page_ok($page);
-
+	page::ok($page);
 	return 1;
 	}
 
@@ -218,32 +215,32 @@ sub interpret_archive_slot
 	{
 	my $id = shift;
 
-	my $content = archive_get($id);
-	my ($header_op,$header_text,$payload) = split_content($content);
+	my $content = archive::get($id);
+	my ($header_op,$header_text,$payload) = page::split_content($content);
 
-	my $content_type = op_get($header_op,"Content-Type");
-	$content_type = op_get($header_op,"Content-type")
+	my $content_type = context::get($header_op,"Content-Type");
+	$content_type = context::get($header_op,"Content-type")
 		if $content_type eq "";
 
 	if ($content_type eq "standard-page")
 		{
-		my $title = op_get($header_op,"Title");
-		set_title($title);
-		emit($payload);
+		my $title = context::get($header_op,"Title");
+		page::set_title($title);
+		page::emit($payload);
 
-		top_link(highlight_link(top_url(), "Home"));
+		page::top_link(page::highlight_link(html::top_url(), "Home"));
 
-		top_link(highlight_link(
-			http_path(),
-			get_title(),1));
+		page::top_link(page::highlight_link(
+			http::path(),
+			page::get_title(),1));
 		}
 	elsif ($content_type eq "loom-trade-page")
 		{
-		page_trade_respond($id,$header_op,$payload);
+		page_trade::respond($id,$header_op,$payload);
 		}
 	else
 		{
-		page_not_found();
+		page::not_found();
 		}
 	}
 
@@ -252,7 +249,7 @@ sub interpret_archive_slot
 
 sub loom_dispatch
 	{
-	page_clear();
+	page::clear();
 
 	return if showing_maintenance_page();
 
@@ -270,7 +267,7 @@ sub loom_dispatch
 	#   Ubuntu/10.04 (lucid)
 	#   Firefox/3.6.12
 	#{
-	#my $user_agent = http_header("User-Agent");
+	#my $user_agent = http::header("User-Agent");
 	#print STDERR "user_agent=$user_agent\n";
 	#}
 
@@ -279,7 +276,7 @@ sub loom_dispatch
 	my $resolved = 0;
 	my $counter = 0;
 
-	my $path = http_path();
+	my $path = http::path();
 
 	while (!$resolved)
 	{
@@ -288,7 +285,7 @@ sub loom_dispatch
 
 	last if $counter > 16;  # impose max 16 redirects
 
-	my @path = http_split_path($path);
+	my @path = http::split_path($path);
 	my $function = shift @path;
 
 	if (!defined $function)
@@ -309,7 +306,7 @@ sub loom_dispatch
 
 		if (!defined $hash)
 			{
-			page_not_found();
+			page::not_found();
 			return;
 			}
 
@@ -321,8 +318,8 @@ sub loom_dispatch
 			$hash = $prefix;
 			}
 
-		http_put("function",$function);
-		http_put("hash",$hash);
+		http::put("function",$function);
+		http::put("hash",$hash);
 		}
 	elsif ($function eq "cache")
 		{
@@ -334,11 +331,11 @@ sub loom_dispatch
 		my $time = shift @path;
 		if (!defined $time || $time !~ /^\d{1,8}$/)
 			{
-			page_not_found();
+			page::not_found();
 			return;
 			}
 
-		set_cache_time($time);
+		page::set_cache_time($time);
 
 		$path = join("/",@path);
 		$resolved = 0;
@@ -349,12 +346,12 @@ sub loom_dispatch
 
 		if (!defined $name)
 			{
-			page_not_found();
+			page::not_found();
 			return;
 			}
 
-		http_put("function",$function);
-		http_put("name",$name);
+		http::put("function",$function);
+		http::put("name",$name);
 		}
 	else
 		{
@@ -365,7 +362,7 @@ sub loom_dispatch
 		#
 		# We currently use this for favicon.ico and nav_logo.
 
-		my $alias = loom_config("alias/$function");
+		my $alias = loom_config::get("alias/$function");
 
 		if ($alias ne "")
 			{
@@ -380,25 +377,25 @@ sub loom_dispatch
 			# LATER: we could implement full positional notation for all
 			# functions, besides just the few we've done.
 
-			http_put("function",$function);
+			http::put("function",$function);
 			}
 		}
 	}
 
-	my $name = http_get("function");
+	my $name = http::get("function");
 
 	if ($name eq "folder" || $name eq "contact" || $name eq "asset"
 		|| $name eq "")
 		{
-		page_folder_respond();
+		page_folder::respond();
 		}
 	elsif ($name eq "grid")
 		{
-		page_grid_api_respond();
+		page_grid_api::respond();
 		}
 	elsif ($name eq "archive")
 		{
-		page_archive_api_respond();
+		page_archive_api::respond();
 		}
 	elsif ($name eq "trans" || $name eq "trans_web")
 		{
@@ -406,80 +403,80 @@ sub loom_dispatch
 		}
 	elsif ($name eq "view")
 		{
-		page_view_respond();
+		page_view::respond();
 		}
 	elsif ($name eq "edit" || $name eq "upload")
 		{
-		page_edit_respond();
+		page_edit::respond();
 		}
 	elsif ($name eq "data")
 		{
-		page_data_respond();
+		page_data::respond();
 		}
 	elsif ($name eq "folder_tools")
 		{
-		page_tool_respond();
+		page_tool::respond();
 		}
 	elsif ($name eq "archive_tutorial")
 		{
-		page_archive_tutorial_respond();
+		page_archive_tutorial::respond();
 		}
 	elsif ($name eq "grid_tutorial")
 		{
-		page_grid_tutorial_respond();
+		page_grid_tutorial::respond();
 		}
 	elsif ($name eq "test")
 		{
-		page_test_respond();
+		page_test::respond();
 		}
 	elsif ($name eq "random")
 		{
-		my $id = unpack("H*",random_id());
+		my $id = random::hex();
 
-		my $api = op_new();
-		op_put($api,"function",$name);
-		op_put($api,"value",$id);
+		my $api = context::new();
+		context::put($api,"function",$name);
+		context::put($api,"value",$id);
 
 		my $response_code = "200 OK";
 		my $headers = "Content-Type: text/plain\n";
-		my $result = op_write_kv($api);
+		my $result = context::write_kv($api);
 
-		format_HTTP_response($response_code,$headers,$result);
+		page::format_HTTP_response($response_code,$headers,$result);
 		}
 	elsif ($name eq "hash")
 		{
-		my $api = op_new();
-		op_put($api,"function",$name);
+		my $api = context::new();
+		context::put($api,"function",$name);
 
-		my $input = http_get("input");
+		my $input = http::get("input");
 
-		my $hash = sha256($input);
+		my $hash = sha256::bin($input);
 		my $id = substr($hash,0,16) ^ substr($hash,16,16);
 		$id = unpack("H*",$id);
 
-		op_put($api,"input",$input);
-		op_put($api,"sha256_hash",unpack("H*",$hash));
-		op_put($api,"folded_hash",$id);
+		context::put($api,"input",$input);
+		context::put($api,"sha256_hash",unpack("H*",$hash));
+		context::put($api,"folded_hash",$id);
 
 		my $response_code = "200 OK";
 		my $headers = "Content-Type: text/plain\n";
-		my $result = op_write_kv($api);
+		my $result = context::write_kv($api);
 
-		format_HTTP_response($response_code,$headers,$result);
+		page::format_HTTP_response($response_code,$headers,$result);
 		}
 	elsif ($name eq "object")
 		{
-		my @path = http_split_path($path);
+		my @path = http::split_path($path);
 		shift @path;
 		my $id = shift @path;
 		interpret_archive_slot($id);
 		}
 	else
 		{
-		my $id = loom_config("link/$name");
+		my $id = loom_config::get("link/$name");
 		if ($id eq "")
 			{
-			page_not_found();
+			page::not_found();
 			}
 		else
 			{
@@ -505,10 +502,10 @@ Your request was too large for the server to store in memory safely.
 </html>
 EOM
 
-	page_HTTP("413 Request Entity Too Large", $page);
-	trans_cancel();
+	page::HTTP("413 Request Entity Too Large", $page);
+	trans::cancel();
 	$g_transaction_in_progress = 0;
-	sloop_disconnect();
+	sloop_io::disconnect();
 	return;
 	}
 
@@ -528,10 +525,10 @@ modifying that same data.  We had to give up, but you can try again later.
 </html>
 EOM
 
-	page_HTTP("409 Conflict", $page);
-	trans_cancel();
+	page::HTTP("409 Conflict", $page);
+	trans::cancel();
 	$g_transaction_in_progress = 0;
-	sloop_disconnect();
+	sloop_io::disconnect();
 	return;
 	}
 
@@ -545,7 +542,7 @@ EOM
 #
 # We can maintain that illusion because, after the core logic is complete, we
 # commit the database changes with the robust "parallel update" routine
-# (file_update).  If the commit succeeds, it means that all the values we
+# (file::update).  If the commit succeeds, it means that all the values we
 # originally read from the file system remained untouched by other processes
 # while we were deciding what changes to make, and all of our changes were
 # successfully written with proper locking to ensure data integrity and avoid
@@ -559,14 +556,14 @@ EOM
 # processes trying to update the same things.  See the "test_file" program
 # for a very thorough stress test of this principle.
 
-sub sloop_client_respond
+sub respond
 	{
 	# Initialize the transaction.
 
-	my $dir = file_child(sloop_top(),"data/app");
-	file_restrict($dir);
+	my $dir = file::child(sloop_top::dir(),"data/app");
+	file::restrict($dir);
 
-	trans_init($dir);
+	trans::start($dir);
 
 	# Flag which tracks if this client process is doing an ACID transaction.
 	# (Atomicity, Consistency, Isolation, Durability)
@@ -581,7 +578,7 @@ sub sloop_client_respond
 		# First clear the HTTP input buffer so it will read more bytes from
 		# the client.
 
-		http_clear();
+		http::clear();
 
 		# This next inner loop reads the HTTP message, dispatches, and tries to
 		# commit any DB changes.  If the commit succeeds it exits the loop.
@@ -593,7 +590,7 @@ sub sloop_client_respond
 
 		while (1)
 			{
-			return if !http_read_message();
+			return if !http::read_message();
 
 			loom_dispatch();  # This handles the message.
 
@@ -602,7 +599,7 @@ sub sloop_client_respond
 				# See if current transaction size exceeds maximum.
 				my $max_size = 2097152; # 2^21 bytes (2 MiB)
 
-				my $cur_size = trans_size();
+				my $cur_size = trans::size();
 				if ($cur_size > $max_size)
 					{
 					transaction_too_large();
@@ -610,7 +607,7 @@ sub sloop_client_respond
 
 				last;
 				}
-			elsif (trans_commit())
+			elsif (trans::commit())
 				{
 				last;
 				}
@@ -639,11 +636,11 @@ sub sloop_client_respond
 		# the message, and committed any database changes, let's send our
 		# response to the client.
 
-		send_response();
+		page::send_response();
 
-		#sloop_disconnect(); # for testing
+		#sloop_io::disconnect(); # for testing
 
-		return if sloop_exiting();
+		return if sloop_io::exiting();
 		}
 
 	return;

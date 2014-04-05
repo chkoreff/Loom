@@ -1,59 +1,58 @@
 package page_archive_api;
 use strict;
-use export "page_archive_api_respond";
 use api;
 use context;
 use http;
 use page;
 
-sub page_archive_api_respond
+sub respond
 	{
-	my $api = op_new();
+	my $api = context::new();
 
-	my $action = http_get("action");
+	my $action = http::get("action");
 
-	op_put($api,"function","archive");
-	op_put($api,"action",$action);
+	context::put($api,"function","archive");
+	context::put($api,"action",$action);
 
 	if ($action eq "look")
 		{
-		op_put($api,"hash",http_get("hash"));
+		context::put($api,"hash",http::get("hash"));
 		}
 	elsif ($action eq "touch")
 		{
-		op_put($api,"loc",http_get("loc"));
+		context::put($api,"loc",http::get("loc"));
 		}
 	elsif ($action eq "write")
 		{
-		op_put($api,
-			"usage",http_get("usage"),
-			"loc",http_get("loc"),
-			"content",http_get("content"),
-			"guard",http_get("guard"),
+		context::put($api,
+			"usage",http::get("usage"),
+			"loc",http::get("loc"),
+			"content",http::get("content"),
+			"guard",http::get("guard"),
 			);
 		}
 	elsif ($action eq "buy")
 		{
-		op_put($api,
-			"usage",http_get("usage"),
-			"loc",http_get("loc"),
+		context::put($api,
+			"usage",http::get("usage"),
+			"loc",http::get("loc"),
 			);
 		}
 	elsif ($action eq "sell")
 		{
-		op_put($api,
-			"usage",http_get("usage"),
-			"loc",http_get("loc"),
+		context::put($api,
+			"usage",http::get("usage"),
+			"loc",http::get("loc"),
 			);
 		}
 
-	api_respond($api);
+	api::respond($api);
 
 	my $response_code = "200 OK";
 	my $headers = "Content-Type: text/plain\n";
-	my $result = op_write_kv($api);
+	my $result = context::write_kv($api);
 
-	format_HTTP_response($response_code,$headers,$result);
+	page::format_HTTP_response($response_code,$headers,$result);
 	return;
 	}
 

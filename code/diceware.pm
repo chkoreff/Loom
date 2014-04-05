@@ -1,26 +1,19 @@
 package diceware;
 use strict;
-use export "diceware_passphrase";
 use random;
 
-=pod
-
-=head1 NAME
-
-Implements the "diceware" algorithm for generating memorable but strong
-passphrases consisting of randomly chosen words.  (See diceware.com.)
-
-=cut
+# Implements the "diceware" algorithm for generating memorable but strong
+# passphrases consisting of randomly chosen words.  (See diceware.com.)
 
 my $g_word_entries;
 
-sub diceware_passphrase
+sub passphrase
 	{
 	my $count = shift;
 
 	die if !defined $count;
 
-	diceware_init() if !defined $g_word_entries;
+	init() if !defined $g_word_entries;
 
 	my $passphrase = "";
 
@@ -31,7 +24,7 @@ sub diceware_passphrase
 
 		for (1 .. 5)
 			{
-			my $roll = random_dice_roll();
+			my $roll = random::dice_roll();
 			$word_rolls .= $roll;
 			$word_index = 6 * $word_index + ($roll - 1);
 			}
@@ -50,9 +43,9 @@ sub diceware_passphrase
 
 my $g_word_list_text;
 
-sub diceware_init
+sub init
 	{
-	diceware_init_text();
+	init_text();
 
 	my @lines = split("\n",$g_word_list_text);
 	my $num_lines = scalar(@lines);
@@ -84,7 +77,7 @@ sub diceware_init
 	}
 
 # Diceware word list as text.
-sub diceware_init_text
+sub init_text
 	{
 	$g_word_list_text = <<'EOM';
 11111	a

@@ -1,12 +1,5 @@
 package loom_qty;
 use strict;
-use export
-	"valid_scale",
-	"float_to_int",
-	"twos_complement_float",
-	"ones_complement_float",
-	"multiply_float",
-	;
 use Bit::Vector;
 use int128;
 
@@ -153,9 +146,9 @@ sub ones_complement_float
 
 	if ($value =~ /^-/)
 		{
-		my $bv = int128_from_dec($value);
-		int128_inc($bv);
-		$value = int128_to_dec($bv);
+		my $bv = int128::from_dec($value);
+		int128::inc($bv);
+		$value = int128::to_dec($bv);
 		$value = "-".$value if $value eq "0";
 		}
 

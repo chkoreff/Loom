@@ -1,6 +1,5 @@
 package sloop_main;
 use strict;
-use export "sloop_main";
 use Getopt::Long;
 use sloop_server;
 
@@ -27,7 +26,7 @@ EOM
 	exit(2);
 	}
 
-sub sloop_main
+sub respond
 	{
 	# We call umask here so that when the server creates a new file the
 	# permissions are restricted to read and write by the owner only.
@@ -59,7 +58,7 @@ sub sloop_main
 	$ok = 0 if $opt->{h} || $opt->{help};
 
 	sloop_usage() if !$ok;
-	sloop_respond($do_start);
+	sloop_server::respond($do_start);
 
 	return;
 	}

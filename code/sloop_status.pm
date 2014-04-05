@@ -1,15 +1,5 @@
 package sloop_status;
 use strict;
-use export
-	"sloop_status_init",
-	"sloop_status_start",
-	"sloop_status_stop",
-	"sloop_info",
-	"sloop_children",
-	"sloop_num_children",
-	"sloop_child_enters",
-	"sloop_child_exits",
-	;
 use file;
 use sloop_config;
 use sloop_top;
@@ -17,26 +7,26 @@ use sloop_top;
 my $g_children;  # hash of all child process ids
 my $g_rundir;
 
-sub sloop_status_init
+sub init
 	{
 	die if defined $g_children;
 
-	my $top = sloop_top();
-	$g_rundir = file_child($top,"data/run");
-	file_restrict($g_rundir);
+	my $top = sloop_top::dir();
+	$g_rundir = file::child($top,"data/run");
+	file::restrict($g_rundir);
 
 	$g_children = {};
 
 	return;
 	}
 
-sub sloop_status_start
+sub start
 	{
-	sloop_update_num_children();
+	update_num_children();
 
-	if (sloop_config("use_error_log"))
+	if (sloop_config::get("use_error_log"))
 		{
-		my $error_log = file_full_path(file_child($g_rundir,"error_log"));
+		my $error_log = file::full_path(file::child($g_rundir,"error_log"));
 		open(STDERR, ">>$error_log") or die $!;
 		chmod(0600,$error_log);
 		}
@@ -44,18 +34,18 @@ sub sloop_status_start
 	return;
 	}
 
-sub sloop_status_stop
+sub stop
 	{
-	file_put_by_name($g_rundir,"pid","");
+	file::put_by_name($g_rundir,"pid","");
 	return;
 	}
 
 # Return information about the running sloop server:
 #   ($pid,$num_children,$max_children)
 
-sub sloop_info
+sub info
 	{
-	my $text = file_get_by_name($g_rundir,"pid");
+	my $text = file::get_by_name($g_rundir,"pid");
 	chomp $text;
 
 	my ($pid,$num_children,$max_children) = split(" ",$text);
@@ -67,41 +57,41 @@ sub sloop_info
 	}
 
 # Return the list of child process ids.
-sub sloop_children
+sub children
 	{
 	return keys %$g_children;
 	}
 
 # Return the number of child client processes.
-sub sloop_num_children
+sub num_children
 	{
-	return scalar sloop_children();
+	return scalar children();
 	}
 
-sub sloop_update_num_children
+sub update_num_children
 	{
-	my $num_children = sloop_num_children();
-	my $max_children = sloop_config("max_children");
+	my $num_children = num_children();
+	my $max_children = sloop_config::get("max_children");
 
-	file_put_by_name($g_rundir,"pid","$$ $num_children $max_children\n");
+	file::put_by_name($g_rundir,"pid","$$ $num_children $max_children\n");
 	return;
 	}
 
-sub sloop_child_enters
+sub child_enters
 	{
 	my $child = shift;  # process id
 
 	$g_children->{$child} = 1;
-	sloop_update_num_children();
+	update_num_children();
 	return;
 	}
 
-sub sloop_child_exits
+sub child_exits
 	{
 	my $child = shift;  # process id
 
 	delete $g_children->{$child};
-	sloop_update_num_children();
+	update_num_children();
 	return;
 	}
 

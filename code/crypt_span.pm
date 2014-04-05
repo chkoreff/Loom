@@ -1,6 +1,5 @@
 package crypt_span;
 use strict;
-use export "span_encrypt","span_decrypt";
 use aes;
 use span;
 
@@ -19,8 +18,8 @@ SYNOPSIS:
 
   my $key = [packed binary key:  16, 24, or 32 bytes]
   my $plain = [arbitrary text];
-  my $crypt = span_encrypt($plain);
-  my $test = span_decrypt($crypt);
+  my $crypt = crypt_span::encrypt($plain);
+  my $test = crypt_span::decrypt($crypt);
   die if $test ne $plain;
 
 With this module you can encrypt and decrypt arbitrary strings without
@@ -56,10 +55,10 @@ sub crypt_blocks
 	my $in = shift;
 
 	my $len = length($in);
-	my $blocksize = aes_blocksize($cipher);
+	my $blocksize = aes::blocksize($cipher);
 	die if $len % $blocksize != 0;
 
-	aes_reset($cipher);
+	aes::clear($cipher);
 
 	my $out = "";
 	my $pos = 0;
@@ -69,8 +68,8 @@ sub crypt_blocks
 		my $block = substr($in,$pos,$blocksize);
 
 		$out .= $encrypt
-			? aes_encrypt($cipher,$block)
-			: aes_decrypt($cipher,$block);
+			? aes::encrypt($cipher,$block)
+			: aes::decrypt($cipher,$block);
 
 		$pos += $blocksize;
 		}
@@ -78,22 +77,22 @@ sub crypt_blocks
 	return $out;
 	}
 
-sub span_encrypt
+sub encrypt
 	{
 	my $key = shift;
 	my $text = shift;
 
 	die if !defined $text;
 
-	my $cipher = aes_new($key);  # single-block cipher
+	my $cipher = aes::new($key);  # single-block cipher
 
 	# Quote the text into the span format.
 
-	my $quoted = span_quote($text,0);
+	my $quoted = span::quote($text,0);
 
 	# Pad the quoted text with NULs to an even multiple of blocksize.
 
-	my $blocksize = aes_blocksize($cipher);
+	my $blocksize = aes::blocksize($cipher);
 	my $len = length($quoted);
 
 	my $num_whole_blocks = int($len / $blocksize);
@@ -110,18 +109,18 @@ sub span_encrypt
 	return crypt_blocks($cipher,1,$quoted);
 	}
 
-sub span_decrypt
+sub decrypt
 	{
 	my $key = shift;
 	my $text = shift;
 
 	die if !defined $text;
 
-	my $cipher = aes_new($key);  # single-block cipher
+	my $cipher = aes::new($key);  # single-block cipher
 
 	$text = crypt_blocks($cipher,0,$text);
 
-	return span_unquote($text,0);
+	return span::unquote($text,0);
 	}
 
 return 1;

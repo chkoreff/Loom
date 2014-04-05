@@ -1,29 +1,5 @@
 package page;
 use strict;
-use export
-	"split_content",
-	"page_clear",
-	"loom_get_cookie",
-	"loom_put_cookie",
-	"loom_check_session",
-	"format_HTTP_response",
-	"set_cache_time",
-	"page_HTTP",
-	"page_ok",
-	"page_not_found",
-	"set_title",
-	"get_title",
-	"set_focus",
-	"need_keyboard",
-	"printer_friendly",
-	"top_link",
-	"highlight_link",
-	"top_message",
-	"simple_value_selector",
-	"emit",
-	"send_response",
-	;
-
 use context;
 use dttm;
 use html;
@@ -39,7 +15,7 @@ sub split_content
 	{
 	my $text = shift;
 
-	my $header_op = op_new();
+	my $header_op = context::new();
 	my $header_end_pos = 0;
 	my $headers = "";
 
@@ -67,7 +43,7 @@ sub split_content
 			my $key = $1;
 			my $val = $2;
 
-			op_put($header_op,$key,$val);
+			context::put($header_op,$key,$val);
 
 			$headers .= "$line\n";
 			$header_end_pos = $pos;
@@ -104,7 +80,7 @@ my $g_cache_time;
 my $g_top_links;
 my $g_top_message;
 
-sub page_clear
+sub clear
 	{
 	set_title("");
 
@@ -123,32 +99,32 @@ sub page_clear
 	$g_top_message = "";
 	}
 
-sub loom_get_cookie
+sub get_cookie
 	{
 	my $key = shift;
 
 	if (!defined $g_cookie_cache)
 		{
-		my $cookie_line = http_header("Cookie");
+		my $cookie_line = http::header("Cookie");
 
 		my @pairs =
 			map { split(/=/,$_) }
-			split(/\s*;\s*/,trimblanks($cookie_line));
+			split(/\s*;\s*/,html::trimblanks($cookie_line));
 
-		$g_cookie_cache = op_new(@pairs);
+		$g_cookie_cache = context::new(@pairs);
 		}
 
-	return op_get($g_cookie_cache,$key);
+	return context::get($g_cookie_cache,$key);
 	}
 
-sub loom_put_cookie
+sub put_cookie
 	{
 	my $key = shift;
 	my $val = shift;
 	my $timeout = shift;  # in seconds (optional)
 
-	my $this_url = loom_config("this_url");
-	my $host = http_header("Host");
+	my $this_url = loom_config::get("this_url");
+	my $host = http::header("Host");
 
 	my $server_name = $host;
 	$server_name =~ s/:\d+$//; # strip off port number if present
@@ -161,7 +137,7 @@ sub loom_put_cookie
 	if (defined $timeout)
 		{
 		my $time = time + $timeout;
-		my $dttm = dttm_as_cookie($time);
+		my $dttm = dttm::as_cookie($time);
 		$expires = " expires=$dttm";
 		}
 
@@ -207,7 +183,7 @@ sub format_HTTP_response
 # See if the page has any content headers.  If so, don't change anything.  If
 # not, put Content-Type: text/plain on the front so it renders properly.
 
-sub page_HTTP
+sub HTTP
 	{
 	my $response_code = shift;
 	my $page = shift;
@@ -224,14 +200,14 @@ sub page_HTTP
 	return;
 	}
 
-sub page_ok
+sub ok
 	{
 	my $page = shift;
 
-	page_HTTP("200 OK", $page);
+	HTTP("200 OK", $page);
 	}
 
-sub page_not_found
+sub not_found
 	{
 	my $page = <<EOM;
 Content-Type: text/html
@@ -246,9 +222,9 @@ The requested URL was not found on this server.
 </html>
 EOM
 
-	page_HTTP("404 Not Found",$page);
+	HTTP("404 Not Found",$page);
 
-	sloop_disconnect();
+	sloop_io::disconnect();
 
 	return;
 	}
@@ -257,7 +233,7 @@ sub set_title
 	{
 	my $title = shift;
 
-	$g_title_text = html_quote($title);
+	$g_title_text = html::quote($title);
 	return;
 	}
 
@@ -295,6 +271,7 @@ sub top_link
 
 # Conditionally highlighted link.
 
+# TODO 20140405 simplify page::top_link(page::highlight_link(...))
 sub highlight_link
 	{
 	my $url = shift;
@@ -339,10 +316,10 @@ EOM
 
 	for my $value (@$values)
 		{
-		my $q_value = html_quote($value);
+		my $q_value = html::quote($value);
 
 		my $selected = "";
-		$selected = " selected" if http_get($field) eq $value;
+		$selected = " selected" if http::get($field) eq $value;
 
 		$selector .= <<EOM;
 <option$selected value="$q_value">$q_value</option>
@@ -365,7 +342,7 @@ sub loom_top_navigation_bar
 		$dsp_links .= qq{<span style='padding-right:15px'>$link</span>\n};
 		}
 
-	my $nav_logo_stanza = loom_config("nav_logo_stanza");
+	my $nav_logo_stanza = loom_config::get("nav_logo_stanza");
 
 	if ($nav_logo_stanza eq "")
 		{
@@ -414,7 +391,7 @@ sub loom_render_page
 	$onload_clause = qq{ onload="document.forms[0].$g_focus_field.focus()"}
 		if $g_focus_field ne "";
 
-	my $system_name = loom_config("system_name");
+	my $system_name = loom_config::get("system_name");
 	my $title = get_title();
 
 	# Conditional javascript keyboard.
@@ -436,9 +413,9 @@ EOM
 	# Allow optional "base ref" clause in case someone is running the Loom
 	# server behind a front-end that uses some other root path.
 	my $base_clause = "";
-	if (loom_config("use_base"))
+	if (loom_config::get("use_base"))
 		{
-		my $this_url = loom_config("this_url");
+		my $this_url = loom_config::get("this_url");
 		$base_clause = qq{<base href="$this_url">\n};
 		}
 
@@ -477,16 +454,16 @@ EOM
 # reveal the real session id.  Validate the real session id.  If it's good,
 # return it.  If not, clear the session parameter and return null.
 
-sub loom_check_session
+sub check_session
 	{
-	my $masked_session = http_get("session");
-	my $mask = loom_get_cookie("mask");
+	my $masked_session = http::get("session");
+	my $mask = get_cookie("mask");
 
-	if (valid_id($masked_session) && valid_id($mask))
+	if (id::valid_id($masked_session) && id::valid_id($mask))
 		{
-		my $real_session = xor_hex($masked_session,$mask);
+			my $real_session = id::xor_hex($masked_session,$mask);
 
-		if (valid_session($real_session))
+		if (loom_login::valid_session($real_session))
 			{
 			# Session is valid.  Return it.
 			return $real_session;
@@ -494,14 +471,14 @@ sub loom_check_session
 		}
 
 	# Session is not valid.  Clear the parameter and return null.
-	http_put("session","");
+	http::put("session","");
 	return "";
 	}
 
 sub send_response
 	{
 	loom_render_page();
-	sloop_send($g_response_text);
+	sloop_io::send($g_response_text);
 	}
 
 return 1;

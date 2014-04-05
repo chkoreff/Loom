@@ -1,12 +1,11 @@
 package token;
 use strict;
-use export "token_get_nl","token_get";
 
 # LATER define in terms of $source
 # LATER include the extra functions from fexl
 
 # Get the next token with newlines significant.
-sub token_get_nl
+sub get_nl
 	{
 	my $in = \shift;
 	my $pos = \shift;
@@ -94,14 +93,14 @@ sub token_get_nl
 	}
 
 # Get the next token but skip newlines.
-sub token_get
+sub get
 	{
 	my $in = \shift;
 	my $pos = \shift;
 
 	while (1)
 		{
-		my $token = token_get_nl($$in,$$pos);
+		my $token = get_nl($$in,$$pos);
 		return if !defined $token;
 		return $token if $token ne "\n";
 		}

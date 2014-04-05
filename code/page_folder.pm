@@ -1,22 +1,5 @@
 package page_folder;
 use strict;
-use export
-	"folder_location",
-	"folder_result",
-	"save_folder",
-	"folder_get",
-	"folder_put",
-	"display_value",
-	"map_id_to_nickname",
-	"map_nickname_to_id",
-	"get_sorted_list_loc",
-	"get_sorted_list_loc_enabled",
-	"get_sorted_list_type",
-	"get_sorted_list_type_enabled",
-	"page_folder_value_table",
-	"build_folder_template",
-	"page_folder_respond",
-	;
 use archive;
 use context;
 use crypt_span;
@@ -38,12 +21,12 @@ use random;
 
 sub put_mask_if_absent
 	{
-	my $mask = loom_get_cookie("mask");
-	if (!valid_id($mask))
+	my $mask = page::get_cookie("mask");
+	if (!id::valid_id($mask))
 		{
 		# Set the mask cookie to a new random value.
-		$mask = unpack("H*",random_id());
-		loom_put_cookie("mask",$mask);
+		$mask = random::hex();
+		page::put_cookie("mask",$mask);
 		}
 
 	return;
@@ -53,9 +36,9 @@ sub page_cookie_problem
 	{
 	put_mask_if_absent();
 
-	top_link(highlight_link(top_url(),"Home"));
+	page::top_link(page::highlight_link(html::top_url(),"Home"));
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h2> This site requires cookies! </h2>
 This site requires cookies in order to function properly, but it appears that
 you have disabled them in your browser.  Please change your browser preferences
@@ -90,12 +73,12 @@ my $g_folder_location;
 my $g_folder_reclaim;
 my $g_folder_result;
 
-sub folder_location
+sub current_location
 	{
 	return $g_folder_location;
 	}
 
-sub folder_result
+sub current_result
 	{
 	return $g_folder_result;
 	}
@@ -104,36 +87,36 @@ sub read_folder
 	{
 	my $session = shift;
 
-	$g_folder_location = archive_touch($session);
-	$g_folder_object = archive_touch_object($g_folder_location);
+	$g_folder_location = archive::touch($session);
+	$g_folder_object = archive::touch_object($g_folder_location);
 	return;
 	}
 
-sub save_folder
+sub save
 	{
 	# Write the modified folder object into the archive.
-	my $write = archive_write_object($g_folder_location,$g_folder_object,
+	my $write = archive::write_object($g_folder_location,$g_folder_object,
 		$g_folder_location);
 
 	# Refresh the folder object in memory.
-	$g_folder_object = archive_touch_object($g_folder_location);
+	$g_folder_object = archive::touch_object($g_folder_location);
 
 	# Return the result of the write operation.
 	return $write;
 	}
 
-sub folder_get
+sub get
 	{
 	my $key = shift;
-	return op_get($g_folder_object,$key);
+	return context::get($g_folder_object,$key);
 	}
 
-sub folder_put
+sub put
 	{
 	my $key = shift;
 	my $val = shift;
 
-	op_put($g_folder_object,$key,$val);
+	context::put($g_folder_object,$key,$val);
 	}
 
 # Format a grid value for display according to the conventions of the current
@@ -150,10 +133,10 @@ sub display_value
 
 	die if !defined $type;
 
-	my $scale = folder_get("type_scale.$type");
-	my $min_precision = folder_get("type_min_precision.$type");
+	my $scale = get("type_scale.$type");
+	my $min_precision = get("type_min_precision.$type");
 
-	return ones_complement_float($value,$scale,$min_precision);
+	return loom_qty::ones_complement_float($value,$scale,$min_precision);
 	}
 
 sub map_id_to_nickname
@@ -161,7 +144,7 @@ sub map_id_to_nickname
 	my $kind = shift;
 	my $id = shift;
 
-	my $name = folder_get($kind."_name.$id");
+	my $name = get($kind."_name.$id");
 	return $name;
 	}
 
@@ -170,12 +153,12 @@ sub map_nickname_to_id
 	my $kind = shift;
 	my $name = shift;
 
-	my $list = folder_get("list_".$kind);
+	my $list = get("list_".$kind);
 	my @list = split(" ",$list);
 
 	for my $id (@list)
 		{
-		my $id_name = folder_get($kind."_name.$id");
+		my $id_name = get($kind."_name.$id");
 		return $id if $id_name eq $name;
 		}
 
@@ -198,7 +181,7 @@ sub map_ids_to_nicknames
 
 sub get_sorted_list_loc
 	{
-	my $list_loc = folder_get("list_loc");
+	my $list_loc = get("list_loc");
 	my @list_loc = split(" ",$list_loc);
 
 	return @list_loc if @list_loc == 0;
@@ -222,7 +205,7 @@ sub get_sorted_list_loc_enabled
 	my @result;
 	for my $loc (@list)
 		{
-		push @result, $loc if !folder_get("loc_disable.$loc");
+		push @result, $loc if !get("loc_disable.$loc");
 		}
 
 	return @result;
@@ -230,7 +213,7 @@ sub get_sorted_list_loc_enabled
 
 sub get_sorted_list_type
 	{
-	my $list_type = folder_get("list_type");
+	my $list_type = get("list_type");
 	my @list_type = split(" ",$list_type);
 
 	my @result =
@@ -249,7 +232,7 @@ sub get_sorted_list_type_enabled
 	my @result;
 	for my $loc (@list)
 		{
-		push @result, $loc if !folder_get("type_disable.$loc");
+		push @result, $loc if !get("type_disable.$loc");
 		}
 
 	return @result;
@@ -257,10 +240,10 @@ sub get_sorted_list_type_enabled
 
 sub handle_login
 	{
-	my $out = folder_result();
+	my $out = current_result();
 
-	http_put("session","");
-	my $passphrase = http_get("passphrase");
+	http::put("session","");
+	my $passphrase = http::get("passphrase");
 
 	my $min_length = 8;
 	my $max_length = 255;
@@ -269,27 +252,27 @@ sub handle_login
 
 	if ($passphrase eq "")
 		{
-		op_put($out,"error_passphrase","missing");
+		context::put($out,"error_passphrase","missing");
 		}
 	elsif (length($passphrase) < $min_length)
 		{
-		op_put($out,"error_passphrase","too_small");
-		op_put($out,"error_passphrase_min_length", $min_length);
+		context::put($out,"error_passphrase","too_small");
+		context::put($out,"error_passphrase_min_length", $min_length);
 		}
 	elsif (length($passphrase) > $max_length)
 		{
-		op_put($out,"error_passphrase","too_large");
-		op_put($out,"error_passphrase_max_length", $max_length);
+		context::put($out,"error_passphrase","too_large");
+		context::put($out,"error_passphrase_max_length", $max_length);
 		}
 	else
 		{
-		my $session = passphrase_session($passphrase);
+		my $session = loom_login::passphrase_session($passphrase);
 		if ($session eq "")
 			{
-			op_put($out,"error_passphrase","invalid");
+			context::put($out,"error_passphrase","invalid");
 			}
 
-		http_put("session",$session);
+		http::put("session",$session);
 		}
 	}
 
@@ -299,7 +282,7 @@ sub configure_scan_display
 	my $list_loc = shift;
 	my $list_type = shift;
 
-	my $out = folder_result();
+	my $out = current_result();
 
 	# When we render the main wallet display, we compute the list of all zero-
 	# value locations we find so we can reclaim (sell) them automatically.
@@ -309,19 +292,19 @@ sub configure_scan_display
 	# We pass in the "1" flag to force the scan to show us 0-value locations
 	# as well.
 
-	my $rsp = grid_scan($list_loc,$list_type,1);
+	my $rsp = grid::scan($list_loc,$list_type,1);
 
-	op_put($out,"scan_status",op_get($rsp,"status"));
-	op_put($out,"scan_error",op_get($rsp,"error"));
-	op_put($out,"scan_error_max",op_get($rsp,"error_max"));
+	context::put($out,"scan_status",context::get($rsp,"status"));
+	context::put($out,"scan_error",context::get($rsp,"error"));
+	context::put($out,"scan_error_max",context::get($rsp,"error_max"));
 
 	my $usage_type = "0" x 32;
 
-	for my $loc (split(" ",op_get($rsp,"locs")))
+	for my $loc (split(" ",context::get($rsp,"locs")))
 		{
 		my @items;
 
-		for my $pair (split(" ",op_get($rsp,"loc/$loc")))
+		for my $pair (split(" ",context::get($rsp,"loc/$loc")))
 			{
 			my ($value,$type) = split(":",$pair);
 
@@ -337,6 +320,12 @@ sub configure_scan_display
 
 				# However, do not include 0-value locations in the wallet
 				# display.
+
+				# TODO 20140404 actually I'd kind of like 0-value locations to
+				# show up under your personal location, but of course not under
+				# the "on the table" locations.  Unfortunately this can't be
+				# done easily because I'm using api_grid::scan which makes no
+				# distinction per-location.
 
 				next;
 				}
@@ -367,9 +356,9 @@ sub page_move_dialog
 	my $list_select_type = shift;
 	my $list_select_loc = shift;
 
-	my $out = folder_result();
+	my $out = current_result();
 
-	my $type_selector = simple_value_selector("type",
+	my $type_selector = page::simple_value_selector("type",
 		"-- choose asset --",
 		map_ids_to_nicknames("type",$list_select_type));
 
@@ -386,11 +375,11 @@ EOM
 		{
 		my $name = map_id_to_nickname("loc",$loc);
 
-		my $q_value = html_quote($name);
+		my $q_value = html::quote($name);
 		my $q_display = $q_value;
 
 		my $selected = "";
-		$selected = " selected" if http_get("loc") eq $name;
+		$selected = " selected" if http::get("loc") eq $name;
 
 		$selector .= <<EOM;
 <option$selected value="$q_value">$q_display</option>
@@ -403,18 +392,18 @@ EOM
 	$loc_selector = $selector;
 	}
 
-	set_focus("qty");
+	page::set_focus("qty");
 
-	my $qty = http_get("qty");
-	my $q_qty = html_quote($qty);
+	my $qty = http::get("qty");
+	my $q_qty = html::quote($qty);
 
-	my $size = html_display_length($q_qty) + 3;
+	my $size = html::display_length($q_qty) + 3;
 	$size = 10 if $size < 10;
 
 	my $message = "";
 
 	{
-	my $status = op_get($out,"status");
+	my $status = context::get($out,"status");
 	my $color = "";
 
 	if ($status eq "")
@@ -428,7 +417,7 @@ EOM
 	else
 		{
 		$color = "red";
-		$message = op_get($out,"error_move");
+		$message = context::get($out,"error_move");
 
 		if ($message eq "")
 			{
@@ -437,12 +426,12 @@ EOM
 		elsif ($message eq "missing_qty")
 			{
 			$message = "Please enter a quantity.";
-			set_focus("qty");
+			page::set_focus("qty");
 			}
 		elsif ($message eq "invalid_qty")
 			{
 			$message = "Not a valid quantity";
-			set_focus("qty");
+			page::set_focus("qty");
 			}
 		elsif ($message eq "insufficent_usage")
 			{
@@ -524,7 +513,7 @@ sub configure_value_display
 	{
 	my $display = shift;
 
-	my $loc_folder = folder_location();
+	my $loc_folder = current_location();
 
 	$display->{locations} = [];
 	$display->{contact_title} = "";
@@ -608,11 +597,11 @@ sub configure_value_display
 # receive usage token refunds.  We only do this when we're on the main wallet
 # display.
 
-sub page_folder_value_table
+sub value_table
 	{
 	my $display = shift;
 
-	my $out = folder_result();
+	my $out = current_result();
 
 	configure_value_display($display);
 
@@ -620,7 +609,7 @@ sub page_folder_value_table
 	{
 	if (@$g_folder_reclaim)
 		{
-		my $loc_folder = folder_location();
+		my $loc_folder = current_location();
 
 		my $usage_type = "0" x 32;
 
@@ -638,7 +627,7 @@ sub page_folder_value_table
 				}
 			else
 				{
-				grid_sell($type,$loc,$loc_folder);
+				grid::sell($type,$loc,$loc_folder);
 				}
 			}
 
@@ -649,7 +638,7 @@ sub page_folder_value_table
 		}
 	}
 
-	my $loc_folder = folder_location();
+	my $loc_folder = current_location();
 
 	# Now build up the HTML display of all the specified locations.
 
@@ -663,9 +652,9 @@ sub page_folder_value_table
 </colgroup>
 EOM
 
-	if (op_get($out,"scan_status") eq "fail")
+	if (context::get($out,"scan_status") eq "fail")
 		{
-		my $scan_error_max = op_get($out,"scan_error_max");
+		my $scan_error_max = context::get($out,"scan_error_max");
 
 		$table .= <<EOM;
 <tr>
@@ -698,15 +687,16 @@ EOM
 	{
 	my $loc_name = map_id_to_nickname("loc",$loc);
 
-	my $url = top_url(
+	my $url = html::top_url(
 		"function","contact",
 		"name",$loc_name,
-		http_slice(qw(session)),
+		http::slice(qw(session)),
 		);
 
+	# TODO 20140404 Perhaps separate assets and liabilities
 	my $label = $loc eq $loc_folder ? "In my wallet" : "On the table";
 
-	my $q_loc_name = html_quote($loc_name);
+	my $q_loc_name = html::quote($loc_name);
 
 	my $link_view_contact = "";
 
@@ -738,8 +728,8 @@ EOM
 
 	# LATER use CSS style sheet
 
-	my $odd_color = loom_config("odd_row_color");
-	my $even_color = loom_config("even_row_color");
+	my $odd_color = loom_config::get("odd_row_color");
+	my $even_color = loom_config::get("even_row_color");
 
 	my $odd_row = 1;  # for odd-even coloring
 
@@ -749,7 +739,7 @@ EOM
 	my $q_value = display_value($value,$type);
 
 	my $style = "";
-	my $color = op_get($out,"color.$type.$loc");
+	my $color = context::get($out,"color.$type.$loc");
 	if ($color ne "")
 		{
 		# NOTE: Getting rid of the red and green display for now because
@@ -764,21 +754,21 @@ EOM
 	$loc_name = "" if $loc eq $loc_folder;
 
 	my $type_name = map_id_to_nickname("type",$type);
-	my $q_type_name = html_quote($type_name);
+	my $q_type_name = html::quote($type_name);
 
 	my $link_asset = "";
 
-	# LATER use highlight_link here
+	# LATER use page::highlight_link here
 
 	if ($display->{flavor} eq "move_dialog" && $loc ne $loc_folder)
 		{
-		my $url = top_url(
+		my $url = html::top_url(
 			"function","folder",
 			"qty",$q_value,
 			"loc",$loc_name,
 			"type",$type_name,
 			"take",1,
-			http_slice(qw(session)),
+			http::slice(qw(session)),
 			);
 
 		$link_asset =
@@ -790,8 +780,8 @@ EOM
 		&& $display->{flavor} ne "zoom_asset"
 		)
 		{
-		my $url = top_url("function","asset",
-			"name",$type_name, "session",http_get("session"));
+		my $url = html::top_url("function","asset",
+			"name",$type_name, "session",http::get("session"));
 
 		$link_asset =
 		qq{<a href="$url" title="View or edit this asset.">}
@@ -832,10 +822,10 @@ EOM
 	return $table;
 	}
 
-# LATER maybe get rid of complex build_folder_template for the purpose of
+# LATER maybe get rid of complex build_template for the purpose of
 # estimating usage token cost.  Still need to support GNB links though.
 
-sub build_folder_template
+sub build_template
 	{
 	my $template = shift;
 
@@ -857,16 +847,16 @@ sub build_folder_template
 	# needed to create the folder.
 
 	{
-	my $passphrase = op_get($template,"passphrase");
-	$build->{location} = passphrase_location($passphrase);
+	my $passphrase = context::get($template,"passphrase");
+	$build->{location} = loom_login::passphrase_location($passphrase);
 
-	$build->{object} = op_new();
+	$build->{object} = context::new();
 
 	# Build up the folder object in memory based on the invitation
 	# parameters.
 
 	{
-	op_put($build->{object},"Content-Type", "loom/folder");
+	context::put($build->{object},"Content-Type", "loom/folder");
 
 	# Build the list of asset types from the invitation url.
 
@@ -876,17 +866,17 @@ sub build_folder_template
 	my $usage_type = "0" x 32;
 	my $found_usage_type = 0;
 
-	my $nT = op_get($template,"nT");
+	my $nT = context::get($template,"nT");
 	$nT = 0 if $nT eq "";
 
 	for my $type_no (1 .. $nT)
 		{
-		my $id = op_get($template,"T$type_no.id");
-		my $name = op_get($template,"T$type_no.name");
-		my $display = op_get($template,"T$type_no.display");
+		my $id = context::get($template,"T$type_no.id");
+		my $name = context::get($template,"T$type_no.name");
+		my $display = context::get($template,"T$type_no.display");
 
 		next if $id eq "" || $name eq "";
-		next if !valid_id($id);
+		next if !id::valid_id($id);
 
 		my $scale = "";
 		my $min_precision = "";
@@ -917,28 +907,28 @@ sub build_folder_template
 		}
 
 	my $list_type = join(" ",@{$build->{list_type}});
-	op_put($build->{object},"list_type", $list_type);
+	context::put($build->{object},"list_type", $list_type);
 
 	for my $entry (@$install_types)
 		{
 		my ($type,$nickname,$scale,$min_precision) = @$entry;
-		op_put($build->{object},"type_name.$type",$nickname);
-		op_put($build->{object},"type_scale.$type", $scale);
-		op_put($build->{object},"type_min_precision.$type", $min_precision);
+		context::put($build->{object},"type_name.$type",$nickname);
+		context::put($build->{object},"type_scale.$type", $scale);
+		context::put($build->{object},"type_min_precision.$type", $min_precision);
 		}
 
-	my $sponsor = op_get($template,"usage");
+	my $sponsor = context::get($template,"usage");
 
 	my $install_locs = [];
 
-	my $owner_name = op_get($template,"owner.name");
+	my $owner_name = context::get($template,"owner.name");
 	$owner_name = "My New Wallet" if $owner_name eq "";
 
 	# Note that if you ever change the default sponsor name here you need
 	# to change it above in handle_new_folder above as well.  That ain't
 	# pretty but that's the way it is right now.
 
-	my $sponsor_name = op_get($template,"sponsor.name");
+	my $sponsor_name = context::get($template,"sponsor.name");
 	$sponsor_name = "My Sponsor" if $sponsor_name eq "";
 
 	push @$install_locs, [$build->{location},$owner_name];
@@ -951,27 +941,27 @@ sub build_folder_template
 		}
 
 	my $list_loc = join(" ",@{$build->{list_loc}});
-	op_put($build->{object},"list_loc", $list_loc);
+	context::put($build->{object},"list_loc", $list_loc);
 
 	for my $entry (@$install_locs)
 		{
 		my ($loc,$nickname) = @$entry;
-		op_put($build->{object},"loc_name.$loc", $nickname);
+		context::put($build->{object},"loc_name.$loc", $nickname);
 		}
 
 	# Enable transaction history by default.
-	op_put($build->{object},"recording",1);
+	context::put($build->{object},"recording",1);
 	}
 
 	# Now estimate cost of creation.
 
-	$build->{folder_text} = archive_object_text($build->{object});
+	$build->{folder_text} = archive::object_text($build->{object});
 
 	$build->{cost}++;  # will buy folder location in archive
 
 	# Compute cost of folder object in archive.
 	{
-	my $blocks = span_encrypt("\000"x16,$build->{folder_text});
+	my $blocks = crypt_span::encrypt("\000"x16,$build->{folder_text});
 
 	my $len_old = 16;  # because the new loc has an encrypted null
 	my $len_new = length($blocks);
@@ -1003,96 +993,96 @@ sub build_folder_template
 
 sub handle_new_folder
 	{
-	http_put("session","");
+	http::put("session","");
 
-	set_title("Create Wallet");
-	set_focus("passphrase");
+	page::set_title("Create Wallet");
+	page::set_focus("passphrase");
 
-	my $out = folder_result();
+	my $out = current_result();
 
-	op_put($out,"status","");
+	context::put($out,"status","");
 
 	# Normalize the usage parameter
 	{
-	my $usage = http_get("usage");
-	$usage = trimblanks($usage);
-	http_put("usage",$usage);
+	my $usage = http::get("usage");
+	$usage = html::trimblanks($usage);
+	http::put("usage",$usage);
 	}
 
-	my $build = build_folder_template(http_op());
+	my $build = build_template(http::op());
 
-	if (http_get("create_folder") ne "")
+	if (http::get("create_folder") ne "")
 		{
-		if (op_get($out,"status") eq "")
+		if (context::get($out,"status") eq "")
 			{
-			set_focus("passphrase");
+			page::set_focus("passphrase");
 
-			my $passphrase = http_get("passphrase");
+			my $passphrase = http::get("passphrase");
 			if (length($passphrase) < 8)
 				{
-				op_put($out,"status","fail");
-				op_put($out,"error_passphrase","too_short");
+				context::put($out,"status","fail");
+				context::put($out,"error_passphrase","too_short");
 				}
 			elsif (length($passphrase) > 255)
 				{
-				op_put($out,"status","fail");
-				op_put($out,"error_passphrase","too_long");
+				context::put($out,"status","fail");
+				context::put($out,"error_passphrase","too_long");
 				}
 			}
 
-		if (op_get($out,"status") eq "")
+		if (context::get($out,"status") eq "")
 			{
-			my $passphrase = http_get("passphrase");
-			my $passphrase2 = http_get("passphrase2");
+			my $passphrase = http::get("passphrase");
+			my $passphrase2 = http::get("passphrase2");
 
 			if ($passphrase2 ne $passphrase)
 				{
-				op_put($out,"status","fail");
-				op_put($out,"error_passphrase2","no_match");
+				context::put($out,"status","fail");
+				context::put($out,"error_passphrase2","no_match");
 				}
 			}
 
-		if (op_get($out,"status") eq "")
+		if (context::get($out,"status") eq "")
 			{
-			set_focus("usage");
+			page::set_focus("usage");
 
-			my $usage = http_get("usage");
-			$usage = trimblanks($usage);
-			http_put("usage",$usage);
+			my $usage = http::get("usage");
+			$usage = html::trimblanks($usage);
+			http::put("usage",$usage);
 
-			if (!valid_id($usage))
+			if (!id::valid_id($usage))
 				{
-				op_put($out,"status","fail");
-				op_put($out,"error_usage","not_valid_id");
+				context::put($out,"status","fail");
+				context::put($out,"error_usage","not_valid_id");
 				}
 			}
 
-		if (op_get($out,"status") eq "")
+		if (context::get($out,"status") eq "")
 			{
 			# Everything looks good so far, let's see if the passphrase is
 			# already taken.
 
-			my $passphrase = http_get("passphrase");
+			my $passphrase = http::get("passphrase");
 
-			my $loc_folder = passphrase_location($passphrase);
+			my $loc_folder = loom_login::passphrase_location($passphrase);
 
-			if (!archive_is_vacant($loc_folder))
+			if (!archive::is_vacant($loc_folder))
 				{
 				# Something is already at this folder location, so ask
 				# user to choose a different passphrase.
 
-				set_focus("passphrase");
+				page::set_focus("passphrase");
 
-				op_put($out,"status","fail");
-				op_put($out,"error_passphrase","taken");
+				context::put($out,"status","fail");
+				context::put($out,"error_passphrase","taken");
 				}
 			}
 
-		if (op_get($out,"status") eq "")
+		if (context::get($out,"status") eq "")
 			{
 			# Double-checking
-			my $passphrase = http_get("passphrase");
-			my $passphrase2 = http_get("passphrase2");
+			my $passphrase = http::get("passphrase");
+			my $passphrase2 = http::get("passphrase2");
 			die if $passphrase ne $passphrase2;
 			die if length($passphrase) < 8 || length($passphrase) > 255;
 			}
@@ -1100,12 +1090,12 @@ sub handle_new_folder
 		# See if there are enough usage tokens in this invitation to fund
 		# the creation.
 
-		if (op_get($out,"status") eq "")
+		if (context::get($out,"status") eq "")
 			{
-			my $sponsor = http_get("usage");
+			my $sponsor = http::get("usage");
 			my $usage_type = "0" x 32;
 
-			my $value = grid_touch($usage_type,$sponsor);
+			my $value = grid::touch($usage_type,$sponsor);
 
 			if ($value eq "" && $sponsor eq $usage_type)
 				{
@@ -1120,71 +1110,71 @@ sub handle_new_folder
 				# cause the system to make your folder location the issuing
 				# location for usage tokens.
 
-				grid_buy($usage_type,$sponsor,$sponsor);
-				$value = grid_touch($usage_type,$sponsor);
+				grid::buy($usage_type,$sponsor,$sponsor);
+				$value = grid::touch($usage_type,$sponsor);
 				}
 
 			$value = "0" if $value eq "";
 
 			if ($value !~ /^-/ && $value < $build->{min_usage})
 				{
-				op_put($out,"status","fail");
-				op_put($out,"error_usage","insufficient");
-				op_put($out,"error_usage_here",$value);
-				op_put($out,"error_usage_min",$build->{min_usage});
+				context::put($out,"status","fail");
+				context::put($out,"error_usage","insufficient");
+				context::put($out,"error_usage_here",$value);
+				context::put($out,"error_usage_min",$build->{min_usage});
 				}
 			}
 
 		# If everything went well, go ahead and create the folder.
 
-		if (op_get($out,"status") eq "")
+		if (context::get($out,"status") eq "")
 			{
-			my $sponsor = http_get("usage");
+			my $sponsor = http::get("usage");
 
 			my $type_usage = "0" x 32;
-			archive_buy($build->{location},$sponsor);
+			archive::buy($build->{location},$sponsor);
 
 			# Get the location "adjacent" to the folder itself and we'll
 			# store the session id there.
 
-			my $session_ptr = xor_hex($build->{location}, "0" x 31 . "1");
+			my $session_ptr = id::xor_hex($build->{location}, "0" x 31 . "1");
 
 			# Create an initial session.
 
 			# LATER unify with loom_login code
 
-			my $session = archive_random_vacant_location();
+			my $session = archive::random_vacant_location();
 
 			# Store the session id adjacent to the folder.
 
-			archive_buy($session_ptr,$sponsor);
-			archive_write($session_ptr,$session,$sponsor);
+			archive::buy($session_ptr,$sponsor);
+			archive::do_write($session_ptr,$session,$sponsor);
 
 			# Store the folder location at the session id.
 
-			archive_buy($session,$sponsor);
-			archive_write($session,$build->{location},$sponsor);
+			archive::buy($session,$sponsor);
+			archive::do_write($session,$build->{location},$sponsor);
 
 			# Write the folder text.
 
-			archive_write($build->{location},$build->{folder_text},$sponsor);
+			archive::do_write($build->{location},$build->{folder_text},$sponsor);
 
 			# Buy the folder location for each asset type.
 
 			for my $type (@{$build->{list_type}})
 				{
-				grid_buy($type,$build->{location},$sponsor);
+				grid::buy($type,$build->{location},$sponsor);
 				}
 
 			# Take all assets away from the sponsor drop point.
 
 			for my $type (@{$build->{list_type}})
 				{
-				my $remain = grid_touch($type,$sponsor);
-				grid_move($type,$remain,$sponsor,$build->{location});
+				my $remain = grid::touch($type,$sponsor);
+				grid::move($type,$remain,$sponsor,$build->{location});
 				}
 
-			http_put("session",$session);
+			http::put("session",$session);
 
 			return;
 			}
@@ -1194,9 +1184,9 @@ sub handle_new_folder
 	my $q_error_passphrase = "";
 	my $q_error_passphrase2 = "";
 
-	if (op_get($out,"status") eq "fail")
+	if (context::get($out,"status") eq "fail")
 		{
-		my $error_usage = op_get($out,"error_usage");
+		my $error_usage = context::get($out,"error_usage");
 
 		if ($error_usage eq "not_valid_id")
 			{
@@ -1204,8 +1194,8 @@ sub handle_new_folder
 			}
 		elsif ($error_usage eq "insufficient")
 			{
-			my $min = op_get($out,"error_usage_min");
-			my $here = op_get($out,"error_usage_here");
+			my $min = context::get($out,"error_usage_min");
+			my $here = context::get($out,"error_usage_here");
 
 			$error_usage = "This invitation has $here usage tokens, but you ";
 			$error_usage .= "need at least $min to create a wallet.  ";
@@ -1227,7 +1217,7 @@ sub handle_new_folder
 			$q_error_usage = qq{<br><span class=alarm>$error_usage</span>};
 			}
 
-		my $error_passphrase = op_get($out,"error_passphrase");
+		my $error_passphrase = context::get($out,"error_passphrase");
 
 		if ($error_passphrase eq "too_short")
 			{
@@ -1248,7 +1238,7 @@ sub handle_new_folder
 			$q_error_passphrase = qq{<br><span class=alarm>$error_passphrase</span>};
 			}
 
-		my $error_passphrase2 = op_get($out,"error_passphrase2");
+		my $error_passphrase2 = context::get($out,"error_passphrase2");
 
 		if ($error_passphrase2 eq "no_match")
 			{
@@ -1261,14 +1251,14 @@ sub handle_new_folder
 			}
 		}
 
-	my $context = op_new(http_slice(qw(function new_folder invite)));
+	my $context = context::new(http::slice(qw(function new_folder invite)));
 
 	# Include extra type and location information supplied in the invitation.
 	{
-	op_put($context,http_slice(qw(owner.name sponsor.name)));
+	context::put($context,http::slice(qw(owner.name sponsor.name)));
 
-	my $nT = http_get("nT");
-	op_put($context,"nT",$nT);
+	my $nT = http::get("nT");
+	context::put($context,"nT",$nT);
 
 	$nT = 0 if $nT eq "";
 	for my $type_no (1 .. $nT)
@@ -1276,25 +1266,25 @@ sub handle_new_folder
 		for my $field (qw(id name display))
 			{
 			my $key = "T$type_no.$field";
-			op_put($context,$key, http_get($key));
+			context::put($context,$key, http::get($key));
 			}
 		}
 	}
 
-	my $hidden = html_hidden_fields(op_pairs($context));
+	my $hidden = html::hidden_fields(context::pairs($context));
 
 	my $input_size_id = 32 + 4;
 
-	my $usage = http_get("usage");
-	my $q_usage = html_quote($usage);
+	my $usage = http::get("usage");
+	my $q_usage = html::quote($usage);
 
-	top_link(highlight_link(top_url(),"Home"));
+	page::top_link(page::highlight_link(html::top_url(),"Home"));
 
-	top_link(highlight_link(
-		top_url(op_pairs($context), "usage",$usage),
+	page::top_link(page::highlight_link(
+		html::top_url(context::pairs($context), "usage",$usage),
 		"Sign Up", 1));
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1> Create a New Wallet </h1>
 
 <hr>
@@ -1313,22 +1303,22 @@ press the button again to gather more words.
 
 EOM
 );
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <form method=post action="" autocomplete=off>
 $hidden
 EOM
 );
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <input type=submit name=random_passphrase value="Random Passphrase">
 EOM
 );
-	if (http_get("random_passphrase") ne "")
+	if (http::get("random_passphrase") ne "")
 	{
-	my $passphrase = diceware_passphrase(5);
+	my $passphrase = diceware::passphrase(5);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <span class=large_mono>$passphrase</span>
 
@@ -1349,7 +1339,7 @@ EOM
 );
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 <hr>
 <h2> Step 2: Enter the passphrase </h2>
 
@@ -1358,18 +1348,18 @@ Now type your chosen passphrase into the field below, and type it again
 to make sure you entered it correctly.
 EOM
 );
-	if (http_get("random_passphrase") ne "")
+	if (http::get("random_passphrase") ne "")
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 Make sure you <em><b>type</b></em> the passphrase using your keyboard &mdash;
 <span class=alarm>do not</span> copy and paste it.
 EOM
 );
 	}
 
-	need_keyboard();
+	page::need_keyboard();
 
-	emit(<<EOM
+	page::emit(<<EOM
 
 <table border=0 cellpadding=5 style='border-collapse:collapse'>
 
@@ -1403,12 +1393,12 @@ $q_error_passphrase2
 EOM
 );
 
-	if (http_get("invite"))
+	if (http::get("invite"))
 	{
 	}
 	else
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <hr>
 <h2> Step 3: Paste your invitation into the box and press Create Wallet. </h2>
 
@@ -1416,7 +1406,7 @@ EOM
 );
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 <table border=0 cellpadding=5 style='border-collapse:collapse'>
 
 <colgroup>
@@ -1426,9 +1416,9 @@ EOM
 EOM
 );
 
-	if (http_get("invite"))
+	if (http::get("invite"))
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <tr>
 <td></td>
 <td>
@@ -1441,7 +1431,7 @@ EOM
 	}
 	else
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <tr>
 <td>
 Paste your invitation here:
@@ -1455,7 +1445,7 @@ EOM
 );
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 
 <tr>
 <td>
@@ -1479,7 +1469,7 @@ EOM
 	my $display = {};
 	$display->{flavor} = "invite_location";
 
-	my $loc_name = http_get("sponsor.name");
+	my $loc_name = http::get("sponsor.name");
 	$loc_name = "My Sponsor" if $loc_name eq "";
 	$display->{location_name} = $loc_name;
 
@@ -1491,14 +1481,14 @@ EOM
 	configure_value_display($display);
 
 	{
-	my $sponsor = http_get("usage");
+	my $sponsor = http::get("usage");
 
 	if ($sponsor eq "")
 		{
 		}
-	elsif (!valid_id($sponsor))
+	elsif (!id::valid_id($sponsor))
 		{
-		emit(<<EOM
+		page::emit(<<EOM
 <hr>
 <h1 class=alarm> Warning </h1>
 <p>
@@ -1515,7 +1505,7 @@ EOM
 
 		if ($actual_usage >= $build->{min_usage})
 		{
-		emit(<<EOM
+		page::emit(<<EOM
 <hr>
 <h1>Assets you will receive</h1>
 <p>
@@ -1527,7 +1517,7 @@ EOM
 		}
 		else
 		{
-		emit(<<EOM
+		page::emit(<<EOM
 <hr>
 <h1>Not enough usage tokens here!</h1>
 <p>
@@ -1541,7 +1531,7 @@ EOM
 		}
 	else
 		{
-		emit(<<EOM
+		page::emit(<<EOM
 <hr>
 <h1 class=alarm> Warning </h1>
 <p>
@@ -1553,25 +1543,25 @@ EOM
 		}
 	}
 
-	emit(page_folder_value_table($display));
+	page::emit(value_table($display));
 
 	$g_folder_object = undef;
 	$g_folder_location = undef;
 	}
 
-	if (http_get("invite"))
+	if (http::get("invite"))
 	{
 	}
-	elsif (http_get("usage") eq "")
+	elsif (http::get("usage") eq "")
 	{
 
 	#  NOTE: disabled 11/19/11
 	if (0)
 	{
-	my $url = top_url("help",1, "topic","get_usage_tokens");
+	my $url = html::top_url("help",1, "topic","get_usage_tokens");
 	my $link = qq{<a class=large href="$url">How do I get an invitation?</a>};
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 $link
 EOM
@@ -1580,7 +1570,7 @@ EOM
 
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 </form>
 EOM
 );
@@ -1590,30 +1580,30 @@ EOM
 
 sub page_login
 	{
-	set_title("Login");
+	page::set_title("Login");
 	put_mask_if_absent();
 
-	if (http_get("help"))
+	if (http::get("help"))
 		{
 		# LATER This is our entry point into the "Advanced" screen.
 		# Strange but oh well.
-		help_topic("index");
+		page_help::topic("index");
 		return;
 		}
 
-	my $out = folder_result();
+	my $out = current_result();
 
-	top_link(highlight_link(top_url(),"Home", 1));
+	page::top_link(page::highlight_link(html::top_url(),"Home", 1));
 
-	if (http_get("logout") ne "")
+	if (http::get("logout") ne "")
 		{
-		top_message(
+		page::top_message(
 		"<div class=alarm><b>Please close your browser window now.</b></div>");
 		}
 
-	set_focus("passphrase");
+	page::set_focus("passphrase");
 
-	my $error = op_get($out,"error_passphrase");
+	my $error = context::get($out,"error_passphrase");
 
 	if ($error eq "missing")
 		{
@@ -1621,12 +1611,12 @@ sub page_login
 		}
 	elsif ($error eq "too_small")
 		{
-		my $min_length = op_get($out,"error_passphrase_min_length");
+		my $min_length = context::get($out,"error_passphrase_min_length");
 		$error = "Please enter at least $min_length characters.";
 		}
 	elsif ($error eq "too_large")
 		{
-		my $max_length = op_get($out,"error_passphrase_max_length");
+		my $max_length = context::get($out,"error_passphrase_max_length");
 		$error = "Please enter at most $max_length characters.";
 		}
 	elsif ($error eq "invalid")
@@ -1639,26 +1629,26 @@ sub page_login
 		$error = "<br><span class=alarm>$error</span>";
 		}
 
-	my $hidden = html_hidden_fields(http_slice(qw(function)));
+	my $hidden = html::hidden_fields(http::slice(qw(function)));
 
 	# Allow specifying partial or complete passphrase in URL.  That way you
 	# could bookmark the first part of a passphrase, and type in the rest.
 
 	my $q_passphrase = "";
-	if (http_get("login") eq "")
+	if (http::get("login") eq "")
 		{
-		my $passphrase = http_get("passphrase");
-		$q_passphrase = html_quote($passphrase);
+		my $passphrase = http::get("passphrase");
+		$q_passphrase = html::quote($passphrase);
 		}
 
-	need_keyboard();
+	page::need_keyboard();
 
 	if (0)
 	{
-	my $name = loom_config("system_name");
+	my $name = loom_config::get("system_name");
 	my $login_greeting = "<h1>\nWelcome to $name.</h1>";
 
-	emit(<<EOM
+	page::emit(<<EOM
 $login_greeting
 EOM
 );
@@ -1666,7 +1656,7 @@ EOM
 
 #Please enter your passphrase here.  For your security, we highly recommend that
 #you <em>bookmark</em> this site and only come here by clicking that bookmark.
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 Please enter passphrase:
 <p>
@@ -1682,21 +1672,21 @@ EOM
 
 	# LATER: we'll spruce up sign-up process.
 	{
-	my $link_folder_new = highlight_link(
-		top_url("function","folder", "new_folder",1),
+	my $link_folder_new = page::highlight_link(
+		html::top_url("function","folder", "new_folder",1),
 		#"you may sign up here",
 		"Join today!",
 		0,
 		"Become a brand new user",
 		);
 
-#	my $name = loom_config("system_name");
-#	emit(<<EOM
+#	my $name = loom_config::get("system_name");
+#	page::emit(<<EOM
 #<p>
 #New to $name?  $link_folder_new
 #EOM
 #);
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 $link_folder_new
 EOM
@@ -1706,7 +1696,7 @@ EOM
 
 	if (0)
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <h1>Q. What is Loom ...</h1>
 <ul>
@@ -1730,7 +1720,7 @@ EOM
 );
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <a href="/help">Learn more &hellip;</a>
 EOM
@@ -1740,7 +1730,7 @@ EOM
 	# LATER:  figure out a non-threatening way to bring some of it back.
 	if (0)
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <table border=1 cellpadding=0 style='border-collapse:collapse'>
 <tr>
@@ -1786,7 +1776,7 @@ EOM
 	# Disable for now.  This is all on the Help page.
 	if (0)
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <h1> What is Loom? </h1>
 <p>
 Loom is a system which enables people to transfer ownership of any kind of
@@ -1842,7 +1832,7 @@ EOM
 	my $color = "";
 	my $msg = "";
 
-	my $this_url = loom_config("this_url");
+	my $this_url = loom_config::get("this_url");
 
 	if ($this_url =~ /^https:/)
 	{
@@ -1855,7 +1845,7 @@ EOM
 	$msg = "*** WARNING: This is <em>not</em> a secure login form!";
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 <span class=small style='color:$color; font-weight:bold; margin-left:20px;'>
 $msg
 </span>
@@ -1863,21 +1853,21 @@ EOM
 );
 	}
 
-	top_link("");
+	page::top_link("");
 
-	top_link(highlight_link(
-		top_url("function","folder", "new_folder",1),
+	page::top_link(page::highlight_link(
+		html::top_url("function","folder", "new_folder",1),
 		"Sign Up", 0, "Become a brand new user"));
 
-	top_link(highlight_link(
+	page::top_link(page::highlight_link(
 		"/help",
 		"Help", 0, "Frequently Asked Questions"));
 
-	top_link(highlight_link(
-		top_url("help",1, "topic","contact_info"),
+	page::top_link(page::highlight_link(
+		html::top_url("help",1, "topic","contact_info"),
 		"Contact", 0, "Contact someone for help with your questions"));
 
-#	top_link(highlight_link(
+#	page::top_link(page::highlight_link(
 #		"/news",
 #		"News", 0,
 #		"See the latest announcements and other useful information"));
@@ -1885,54 +1875,54 @@ EOM
 	if (0)
 	{
 	# NOTE: disabled 11/19/11
-	top_link(highlight_link(
+	page::top_link(page::highlight_link(
 		"/merchants",
 		"Merchants", 0, "See who uses Loom"));
 
-	top_link(highlight_link(
+	page::top_link(page::highlight_link(
 		"/trade",
 		"Trade", 0, "See the products that vendors buy and sell."));
 	}
 
-	top_link(highlight_link(
-		top_url("help",1),
+	page::top_link(page::highlight_link(
+		html::top_url("help",1),
 		"Advanced", 0,
 		"Advanced functions which may interest experts and developers"));
 
 	return;
 	}
 
-sub page_folder_respond
+sub respond
 	{
-	set_title("Wallet");
+	page::set_title("Wallet");
 
 	$g_folder_object = undef;
 	$g_folder_location = undef;
 	$g_folder_reclaim = undef;
-	$g_folder_result = op_new();
+	$g_folder_result = context::new();
 
 	# If we got here by default then set function to "folder".
-	http_put("function","folder") if http_get("function") eq "";
+	http::put("function","folder") if http::get("function") eq "";
 
 	my $action = "";
 
-	if (http_get("new_folder") ne "" || http_get("invite") ne "")
+	if (http::get("new_folder") ne "" || http::get("invite") ne "")
 		{
 		$action = "new_folder";
 		}
-	elsif (http_get("login") ne "" || http_get("passphrase") ne "")
+	elsif (http::get("login") ne "" || http::get("passphrase") ne "")
 		{
 		# Attempt a login if the user pressed Login or entered a passphrase.
 		$action = "login";
 		}
-	elsif (http_get("logout") ne "")
+	elsif (http::get("logout") ne "")
 		{
 		$action = "logout";
 		}
 
-	my $mask = loom_get_cookie("mask");
+	my $mask = page::get_cookie("mask");
 
-	if ($action ne "" && !valid_id($mask))
+	if ($action ne "" && !id::valid_id($mask))
 		{
 		# Here we take an extra measure to enable "auto-login" links.  If you
 		# click an auto-login link, it brings up a browser and attempts to
@@ -1941,15 +1931,15 @@ sub page_folder_respond
 		# and will display an error message.  So in the case of login, we give
 		# your browser one more chance to set the cookie.
 
-		if ($action eq "login" && http_get("repeat") eq "")
+		if ($action eq "login" && http::get("repeat") eq "")
 			{
 			put_mask_if_absent();
 
-			my $url = top_url(
-				http_slice("function","login","passphrase"),
+			my $url = html::top_url(
+				http::slice("function","login","passphrase"),
 				"repeat","1",
 				);
-			format_HTTP_response
+			page::format_HTTP_response
 				(
 				"303 See Other",
 				"Location: $url\n",
@@ -1973,14 +1963,14 @@ sub page_folder_respond
 			handle_new_folder();
 			}
 
-		my $real_session = http_get("session");
-		if (valid_id($real_session))
+		my $real_session = http::get("session");
+		if (id::valid_id($real_session))
 			{
-			my $masked_session = xor_hex($real_session,$mask);
+			my $masked_session = id::xor_hex($real_session,$mask);
 
 			# http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 
-			format_HTTP_response
+			page::format_HTTP_response
 				(
 				"303 See Other",
 				"Location: /?function=folder&session=$masked_session\n",
@@ -1994,12 +1984,12 @@ sub page_folder_respond
 		}
 	elsif ($action eq "logout")
 		{
-		my $real_session = loom_check_session();
+		my $real_session = page::check_session();
 		if ($real_session ne "")
 			{
-			kill_session($real_session);
+			loom_login::kill_session($real_session);
 
-			format_HTTP_response
+			page::format_HTTP_response
 				(
 				"303 See Other",
 				"Location: /?logout=1\n",
@@ -2010,7 +2000,7 @@ sub page_folder_respond
 			}
 		}
 
-	my $real_session = loom_check_session();
+	my $real_session = page::check_session();
 
 	if ($real_session eq "")
 		{
@@ -2022,14 +2012,14 @@ sub page_folder_respond
 
 	read_folder($real_session);
 
-	my $content_type = folder_get("Content-Type");
-	$content_type = folder_get("Content-type") if $content_type eq "";
+	my $content_type = get("Content-Type");
+	$content_type = get("Content-type") if $content_type eq "";
 
 	if ($content_type ne "loom/folder")
 	{
-	my $q_content_type = html_quote($content_type);
+	my $q_content_type = html::quote($content_type);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1>Unknown Content-Type: $q_content_type</h1>
 EOM
 );
@@ -2038,53 +2028,53 @@ EOM
 
 	{
 	my $on_wallet_page =
-		http_get("function") eq "folder"
-			&& !http_get("h_only")
-			&& !http_get("help");
+		http::get("function") eq "folder"
+			&& !http::get("h_only")
+			&& !http::get("help");
 
-	top_link(highlight_link(
-		top_url("function","folder", http_slice("session")),
+	page::top_link(page::highlight_link(
+		html::top_url("function","folder", http::slice("session")),
 		($on_wallet_page ? "Refresh" : "Wallet"),
 		$on_wallet_page,
 		"Show current wallet status."));
 
-	top_link(highlight_link(
-		top_url("function","contact", http_slice("session")),
+	page::top_link(page::highlight_link(
+		html::top_url("function","contact", http::slice("session")),
 		"Contacts",
-		http_get("function") eq "contact" && http_get("help") eq "",
+		http::get("function") eq "contact" && http::get("help") eq "",
 		"Manage contacts, invite new users"));
 
-	top_link(highlight_link(
-		top_url("function","asset", http_slice("session")),
+	page::top_link(page::highlight_link(
+		html::top_url("function","asset", http::slice("session")),
 		"Assets",
-		http_get("function") eq "asset" && http_get("help") eq "",
+		http::get("function") eq "asset" && http::get("help") eq "",
 		"Manage asset types"));
 
-	top_link(highlight_link(
-		top_url(http_slice("function","session"), "help",1),
+	page::top_link(page::highlight_link(
+		html::top_url(http::slice("function","session"), "help",1),
 		"Help",
-		http_get("help") ne ""));
+		http::get("help") ne ""));
 	}
 
-	# Reset the result context here because page_wallet_respond uses it.
+	# Reset the result context here because page_wallet::respond uses it.
 	# I'm not thrilled with this but oh well for now.
 
-	$g_folder_result = op_new();
+	$g_folder_result = context::new();
 
 	{
-	my $function = http_get("function");
+	my $function = http::get("function");
 
 	if ($function eq "folder")
 		{
-		page_wallet_respond();
+		page_wallet::respond();
 		}
 	elsif ($function eq "contact")
 		{
-		page_contact_respond();
+		page_contact::respond();
 		}
 	elsif ($function eq "asset")
 		{
-		page_asset_respond();
+		page_asset::respond();
 		}
 	else
 		{
@@ -2094,26 +2084,26 @@ EOM
 
 	# Add the Logout link.
 
-	top_link("&nbsp;");
+	page::top_link("&nbsp;");
 
-	top_link(highlight_link(
-		top_url("function","folder", http_slice("session"),
+	page::top_link(page::highlight_link(
+		html::top_url("function","folder", http::slice("session"),
 			"logout",1),
 		"Logout", 0,
 		"Log out of your wallet."));
 
 	# Append the name of this folder to the title.
 	{
-	my $list_loc = folder_get("list_loc");
+	my $list_loc = get("list_loc");
 	my @list_loc = split(" ",$list_loc,2);
 	my $loc = $list_loc[0];
 	if (defined $loc)
 		{
 		my $name = map_id_to_nickname("loc",$loc);
-		my $q_name = html_quote($name);
-		my $title = get_title();
+		my $q_name = html::quote($name);
+		my $title = page::get_title();
 		$title = "$title : $q_name";
-		set_title($title);
+		page::set_title($title);
 		}
 	}
 

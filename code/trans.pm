@@ -1,29 +1,15 @@
 package trans;
 use strict;
-use export
-	"trans_init",
-	"trans_get",
-	"trans_put",
-	"trans_size",
-	"trans_cancel",
-	"trans_commit",
-	;
 use file;
 
-=pod
-
-=head1 NAME
-
-Transaction buffer
-
-=cut
+# Transaction buffer
 
 my $g_dir;
 my $g_new_val;
 my $g_old_val;
 my $g_size;
 
-sub trans_init
+sub start
 	{
 	my $dir = shift;
 
@@ -31,17 +17,17 @@ sub trans_init
 		{
 		print STDERR "ERROR: Tried to change transaction directory while\n";
 		print STDERR "a transaction was in progress.\n";
-		print STDERR "   old dir ".file_full_path($g_dir)."\n";
-		print STDERR "   new dir ".file_full_path($dir)."\n";
+		print STDERR "   old dir ".file::full_path($g_dir)."\n";
+		print STDERR "   new dir ".file::full_path($dir)."\n";
 		die;
 		}
 
 	$g_dir = $dir;
-	trans_cancel();
+	cancel();
 	return;
 	}
 
-sub trans_get
+sub get
 	{
 	my $key = shift;
 
@@ -53,14 +39,14 @@ sub trans_get
 	$val = $g_old_val->{$key};
 	return $val if defined $val;
 
-	$val = file_get_by_name($g_dir,$key);
+	$val = file::get_by_name($g_dir,$key);
 
 	$g_old_val->{$key} = $val;
 	$g_size += length($val) if defined $val;
 	return $val;
 	}
 
-sub trans_put
+sub put
 	{
 	my $key = shift;
 	my $val = shift;
@@ -85,12 +71,12 @@ sub trans_put
 # LATER also restrict the number of updated keys to about 512 to avoid trying
 # to lock too many files
 
-sub trans_size
+sub size
 	{
 	return $g_size;
 	}
 
-sub trans_cancel
+sub cancel
 	{
 	$g_old_val = {};
 	$g_new_val = {};
@@ -98,10 +84,10 @@ sub trans_cancel
 	return;
 	}
 
-sub trans_commit
+sub commit
 	{
-	my $ok = file_update($g_dir,$g_new_val,$g_old_val);
-	trans_cancel();
+	my $ok = file::update($g_dir,$g_new_val,$g_old_val);
+	cancel();
 	return $ok;
 	}
 

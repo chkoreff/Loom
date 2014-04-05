@@ -1,41 +1,24 @@
 package context;
 use strict;
-use export
-	"op_new",
-	"op_get",
-	"op_put",
-	"op_default",
-	"op_names",
-	"op_slice",
-	"op_pairs",
-	"op_read_kv",
-	"op_write_kv",
-	;
-use c_quote;
+use cstring;
 
-=pod
-
-=head1 NAME
-
-A context is an set of key-value pairs in memory which preserves the order in
-which the keys were inserted.  This is handy for building url query strings.
-
-=cut
+# A context is an set of key-value pairs in memory which preserves the order in
+# which the keys were inserted.  This is handy for building url query strings.
 
 # Make a new context.
-sub op_new
+sub new
 	{
 	my $op = {};
 
 	$op->{list} = [];
 	$op->{hash} = {};
 
-	op_put($op,@_);
+	put($op,@_);
 	return $op;
 	}
 
 # Get the named value from the context.
-sub op_get
+sub get
 	{
 	my $op = shift;
 	my $key = shift;
@@ -49,7 +32,7 @@ sub op_get
 	}
 
 # Put one or more key-value pairs into the context.
-sub op_put
+sub put
 	{
 	my $op = shift;
 	die if !defined $op;
@@ -92,17 +75,17 @@ sub op_put
 	}
 
 # Put the key value into the context if it's not already there.
-sub op_default
+sub default
 	{
 	my $op = shift;
 	my $key = shift;
 	my $val = shift;
 
-	return if op_get($op,$key) ne "";
-	op_put($op,$key,$val);
+	return if get($op,$key) ne "";
+	put($op,$key,$val);
 	}
 
-sub op_names
+sub names
 	{
 	my $op = shift;
 	die if !defined $op;
@@ -110,7 +93,7 @@ sub op_names
 	return @{$op->{list}};
 	}
 
-sub op_slice
+sub slice
 	{
 	my $op = shift;
 	die if !defined $op;
@@ -119,17 +102,17 @@ sub op_slice
 
 	for my $key (@_)
 		{
-		push @pairs, $key, op_get($op,$key);
+		push @pairs, $key, get($op,$key);
 		}
 
 	return @pairs;
 	}
 
-sub op_pairs
+sub pairs
 	{
 	my $op = shift;
 
-	return op_slice($op,op_names($op));
+	return slice($op,names($op));
 	}
 
 # KV format, flat on separate lines with C-quoting
@@ -142,7 +125,7 @@ sub op_pairs
 # Any other line is silently ignored.  This allows arbitrary boilerplate to
 # be skipped easily, e.g. if you get KV data back from a web query.
 
-sub op_read_kv
+sub read_kv
 	{
 	my $op = shift;
 	my $text = shift;
@@ -159,7 +142,7 @@ sub op_read_kv
 		my $type = substr($line,0,1);
 		next if $type ne ":" && $type ne "=";
 
-		my $data = c_unquote(substr($line,1));
+		my $data = cstring::unquote(substr($line,1));
 
 		if ($type eq ":")
 			{
@@ -167,7 +150,7 @@ sub op_read_kv
 			}
 		else
 			{
-			op_put($op,$key,$data);
+			put($op,$key,$data);
 			}
 		}
 
@@ -176,17 +159,17 @@ sub op_read_kv
 
 # Write the Context in KV text format.
 
-sub op_write_kv
+sub write_kv
 	{
 	my $op = shift;
 
 	my $text = "(\n";
 
-	for my $key (op_names($op))
+	for my $key (names($op))
 		{
-		my $val = op_get($op,$key);
-		$text .= ":".c_quote($key)."\n";
-		$text .= "=".c_quote($val)."\n";
+		my $val = get($op,$key);
+		$text .= ":".cstring::quote($key)."\n";
+		$text .= "=".cstring::quote($val)."\n";
 		}
 
 	$text .= ")\n";

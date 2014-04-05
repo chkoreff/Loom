@@ -1,6 +1,5 @@
 package test_file;
 use strict;
-use export "test_file_run";
 use array;
 use file;
 use process;
@@ -10,13 +9,13 @@ use trans;
 
 my $g_count;
 my $g_delay;
-my $g_trace_test_file;
+my $g_trace;
 my $g_show_final;
 
 # I find that using 3 locations is pretty good.  Using 2 locations is boring,
 # and using more than 3 locations results in less contention.
 
-sub test_file_locations
+sub locations
 	{
 	return [qw(A B C)];
 
@@ -32,7 +31,7 @@ sub test_file_locations
 		# tmp/B.
 	}
 
-sub test_file_run_child
+sub run_child
 	{
 	my $child_no = shift;
 	my $seed = shift;
@@ -40,14 +39,14 @@ sub test_file_run_child
 	die if !defined $seed;
 	srand($seed);
 
-	my $locs = test_file_locations();
-	shuffle($locs);
+	my $locs = locations();
+	array::shuffle($locs);
 
 	my $key_orig = $locs->[0];
 	my $key_dest = $locs->[1];
 
 	print "$$ child $child_no begin $key_orig $key_dest\n"
-		if $g_trace_test_file;
+		if $g_trace;
 
 	sleep(1);
 		# If you have a lot of processes, the sleep will allow them all to be
@@ -58,10 +57,10 @@ sub test_file_run_child
 
 	while (1)
 		{
-		my $val_orig = trans_get($key_orig);
+		my $val_orig = trans::get($key_orig);
 		$val_orig = 0 if $val_orig eq "";
 
-		my $val_dest = trans_get($key_dest);
+		my $val_dest = trans::get($key_dest);
 		$val_dest = 0 if $val_dest eq "";
 
 		$val_orig -= $amount;
@@ -70,26 +69,26 @@ sub test_file_run_child
 		$val_orig = "" if $val_orig == 0;
 		$val_dest = "" if $val_dest == 0;
 
-		trans_put($key_orig,$val_orig);
-		trans_put($key_dest,$val_dest);
+		trans::put($key_orig,$val_orig);
+		trans::put($key_dest,$val_dest);
 
 		print "$$ child $child_no attempt "
 			."$key_orig:$val_orig "
-			."$key_dest:$val_dest\n" if $g_trace_test_file;
+			."$key_dest:$val_dest\n" if $g_trace;
 
-		my $ok = trans_commit();
+		my $ok = trans::commit();
 
 		last if $ok;
 
-		print "$$ child $child_no try again\n" if $g_trace_test_file;
+		print "$$ child $child_no try again\n" if $g_trace;
 		}
 
-	print "$$ child $child_no done\n" if $g_trace_test_file;
+	print "$$ child $child_no done\n" if $g_trace;
 
 	return;
 	}
 
-sub test_file_spawn_children
+sub spawn_children
 	{
 	for my $child_no (1 .. $g_count)
 		{
@@ -99,7 +98,7 @@ sub test_file_spawn_children
 
 		if (defined $child && $child == 0)
 			{
-			test_file_run_child($child_no,$seed);
+			run_child($child_no,$seed);
 			exit;
 			}
 
@@ -113,11 +112,11 @@ sub test_file_spawn_children
 	return 1;
 	}
 
-sub test_file_run
+sub run
 	{
 	$g_count = shift;
 	$g_delay = shift;  # if negative, use the default delay
-	$g_trace_test_file = shift;
+	$g_trace = shift;
 	$g_show_final = shift;
 
 	$g_delay = 100000 if $g_delay < 0;
@@ -135,21 +134,21 @@ sub test_file_run
 	# on just two specific locations.  Very bizarre and intricate behavior
 	# there, but easily avoided by just calling srand in each child.
 
-	srand( random_ulong() );
+	srand( random::ulong() );
 
-	my $TOP = file_full_path(sloop_top());
+	my $TOP = file::full_path(sloop_top::dir());
 
-	my $dir_test = file_new("$TOP/test");
+	my $dir_test = file::new("$TOP/test");
 
-	my $dir_data = file_child($dir_test,"test_file");
+	my $dir_data = file::child($dir_test,"test_file");
 
-	file_create_path($dir_data);
-	file_remove_tree($dir_data);
+	file::create_path($dir_data);
+	file::remove_tree($dir_data);
 
-	file_create_dir($dir_data);
-	file_restrict($dir_data);
+	file::create_dir($dir_data);
+	file::restrict($dir_data);
 
-	if (file_type($dir_data) ne "d")
+	if (file::type($dir_data) ne "d")
 		{
 		print STDERR <<EOM;
 Could not create the data directory.
@@ -158,31 +157,31 @@ EOM
 		}
 
 	# Start a transaction with the data directory.
-	trans_init($dir_data);
+	trans::start($dir_data);
 
 	# Insert a deliberate delay into the file module if requested.
-	file_update_set_test_delay($g_delay) if $g_delay > 0;
+	file::set_test_delay($g_delay) if $g_delay > 0;
 
 	# Now let's spawn all the children and wait for them to finish.
 
-	test_file_spawn_children();
-	wait_children();
+	spawn_children();
+	process::wait_children();
 
 	# Display the final values, check for integrity, and clean up.
 
 	print "\nFinal values:\n" if $g_show_final;
 	my $sum = 0;
-	my $locs = test_file_locations();
+	my $locs = locations();
 	for my $name (@$locs)
 		{
-		my $file = file_child($dir_data,$name);
+		my $file = file::child($dir_data,$name);
 
-		my $val = file_get_content($file);
+		my $val = file::get_content($file);
 
 		if ($g_show_final)
 			{
 			my $q_val = defined $val ? $val : "undef";
-			my $q_name = file_local_path($file);
+			my $q_name = file::local_path($file);
 			print "$q_name : $q_val\n";
 			}
 
@@ -194,8 +193,8 @@ EOM
 	if ($sum == 0)
 		{
 		# Success!
-		file_remove_tree($dir_data);
-		file_remove_dir($dir_test);  # remove empty test dir if possible
+		file::remove_tree($dir_data);
+		file::remove_dir($dir_test);  # remove empty test dir if possible
 		return 0;
 		}
 	else

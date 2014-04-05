@@ -1,34 +1,27 @@
 package test_random;
 use strict;
-use export "test_random_run";
 use random_stream;
 
-=pod
+# Test the random number generator using all zeroes as an entropy source.
 
-=head1 NAME
+my $g_source;
+my $g_trace = 0;
 
-Test the random number generator using all zeroes as an entropy source.
-
-=cut
-
-my $g_test_random;
-my $g_trace_test_random = 0;
-
-sub test_random_run
+sub run
 	{
-	print "Test_random numbers.\n" if $g_trace_test_random;
+	print "Test_random numbers.\n" if $g_trace;
 
-	$g_test_random = random_new("/dev/zero");
+	$g_source = random_stream::new("/dev/zero");
 
 	my $result = "";
 
 	for (1 .. 64)
 		{
-		my $rand = random_get($g_test_random);
+		my $rand = random_stream::get($g_source);
 
 		die if $rand eq "";
 		$result .= unpack("H*",$rand)."\n";
-		print unpack("H*",$rand)."\n" if $g_trace_test_random;
+		print unpack("H*",$rand)."\n" if $g_trace;
 		}
 
 	my $expected = <<EOM;
@@ -104,10 +97,10 @@ EOM
 		die;
 		}
 
-	print "Random number test succeeded.\n" if $g_trace_test_random;
+	print "Random number test succeeded.\n" if $g_trace;
 
 	# LATER perhaps clean up after some other tests as well.
-	$g_test_random = undef;
+	$g_source = undef;
 
 	return;
 	}

@@ -1,6 +1,5 @@
 package sloop_top;
 use strict;
-use export "sloop_top","sloop_top_path";
 use file;
 use FindBin;
 
@@ -17,23 +16,23 @@ my $g_top;
 #   data/run/pid          # server process information
 #   data/run/error_log    # error log
 
-sub sloop_top
+sub dir
 	{
 	if (!defined $g_top)
 		{
 		# the TOP directory is one level above code.
 		my $TOP = $FindBin::RealBin."/..";
 
-		$g_top = file_new($TOP);
-		file_restrict($g_top);
+		$g_top = file::new($TOP);
+		file::restrict($g_top);
 		}
 
 	return $g_top;
 	}
 
-sub sloop_top_path
+sub path
 	{
-	return file_full_path(sloop_top());
+	return file::full_path(dir());
 	}
 
 return 1;

@@ -1,6 +1,5 @@
 package page_grid_tutorial;
 use strict;
-use export "page_grid_tutorial_respond";
 use api;
 use context;
 use html;
@@ -9,110 +8,108 @@ use loom_config;
 use page;
 use page_help;
 
-sub page_grid_tutorial_links
+sub links
 	{
-	my $function = http_get("function");
+	my $function = http::get("function");
 
-	top_link(highlight_link(top_url(),"Home"));
-	top_link(highlight_link(top_url("help",1),"Advanced"));
+	page::top_link(page::highlight_link(html::top_url(),"Home"));
+	page::top_link(page::highlight_link(html::top_url("help",1),"Advanced"));
 
 	my $link_tutorial =
-		highlight_link
-		(
-		top_url("function","grid_tutorial"),
+		page::highlight_link(
+		html::top_url("function","grid_tutorial"),
 		"Grid Tutorial",
-		($function eq "grid_tutorial" && !http_get("help"))
+		($function eq "grid_tutorial" && !http::get("help"))
 		);
 
 	my $link_api =
-		highlight_link
-		(
-		top_url("function","grid_tutorial", "help",1),
+		page::highlight_link(
+		html::top_url("function","grid_tutorial", "help",1),
 		"Grid API",
-		($function eq "grid_tutorial" && http_get("help"))
+		($function eq "grid_tutorial" && http::get("help"))
 		);
 
-	top_link($link_api);
-	top_link($link_tutorial);
+	page::top_link($link_api);
+	page::top_link($link_tutorial);
 
 	return;
 	}
 
-sub page_grid_tutorial_respond
+sub respond
 	{
-	set_title("Grid Tutorial");
-	page_grid_tutorial_links();
+	page::set_title("Grid Tutorial");
+	links();
 
-	if (http_get("help"))
+	if (http::get("help"))
 		{
 		# LATER get rid of these
-		help_topic("grid");
+		page_help::topic("grid");
 		return;
 		}
 
-	my $api = op_new();
+	my $api = context::new();
 
-	op_put($api,"function","grid");
+	context::put($api,"function","grid");
 
-	if (http_get("buy") ne "")
+	if (http::get("buy") ne "")
 		{
-		op_put($api,
+		context::put($api,
 			"action","buy",
-			"type",http_get("common_type"),
-			"loc",http_get("buy_loc"),
-			"usage",http_get("buy_usage"),
+			"type",http::get("common_type"),
+			"loc",http::get("buy_loc"),
+			"usage",http::get("buy_usage"),
 			);
 		}
-	elsif (http_get("sell") ne "")
+	elsif (http::get("sell") ne "")
 		{
-		op_put($api,
+		context::put($api,
 			"action","sell",
-			"type",http_get("common_type"),
-			"loc",http_get("buy_loc"),
-			"usage",http_get("buy_usage"),
+			"type",http::get("common_type"),
+			"loc",http::get("buy_loc"),
+			"usage",http::get("buy_usage"),
 			);
 		}
-	elsif (http_get("issuer") ne "")
+	elsif (http::get("issuer") ne "")
 		{
-		op_put($api,
+		context::put($api,
 			"action","issuer",
-			"type",http_get("common_type"),
-			"orig",http_get("issuer_orig"),
-			"dest",http_get("issuer_dest"),
+			"type",http::get("common_type"),
+			"orig",http::get("issuer_orig"),
+			"dest",http::get("issuer_dest"),
 			);
 		}
-	elsif (http_get("touch") ne "")
+	elsif (http::get("touch") ne "")
 		{
-		op_put($api,
+		context::put($api,
 			"action","touch",
-			"type",http_get("common_type"),
-			"loc",http_get("touch_loc"),
+			"type",http::get("common_type"),
+			"loc",http::get("touch_loc"),
 			);
 		}
-	elsif (http_get("look") ne "")
+	elsif (http::get("look") ne "")
 		{
-		op_put($api,
+		context::put($api,
 			"action","look",
-			"type",http_get("common_type"),
-			"hash",http_get("look_hash"),
+			"type",http::get("common_type"),
+			"hash",http::get("look_hash"),
 			);
 		}
-	elsif (http_get("move") ne "")
+	elsif (http::get("move") ne "")
 		{
-		op_put($api,
+		context::put($api,
 			"action","move",
-			"type",http_get("common_type"),
-			"qty",http_get("move_qty"),
-			"orig",http_get("move_orig"),
-			"dest",http_get("move_dest"),
+			"type",http::get("common_type"),
+			"qty",http::get("move_qty"),
+			"orig",http::get("move_orig"),
+			"dest",http::get("move_dest"),
 			);
 		}
-	elsif (http_get("move_back") ne "")
+	elsif (http::get("move_back") ne "")
 		{
 		# Just a convenient way to move in the opposite direction, e.g.
 		# to undo the last move.
 
-		my $qty = http_get("move_qty");
+		my $qty = http::get("move_qty");
 		if ($qty =~ /^-/)
 			{
 			$qty = substr($qty,1);
@@ -122,22 +119,22 @@ sub page_grid_tutorial_respond
 			$qty = "-$qty";
 			}
 
-		op_put($api,
+		context::put($api,
 			"action","move",
-			"type",http_get("common_type"),
+			"type",http::get("common_type"),
 			"qty",$qty,
-			"orig",http_get("move_orig"),
-			"dest",http_get("move_dest"),
+			"orig",http::get("move_orig"),
+			"dest",http::get("move_dest"),
 			);
 		}
 
 	my $orig_api;
 
-	if (op_get($api,"action") ne "")
+	if (context::get($api,"action") ne "")
 		{
 		# First make a copy of the $api object so we can show the url below.
-		$orig_api = op_new(op_pairs($api));
-		api_respond($api);
+		$orig_api = context::new(context::pairs($api));
+		api::respond($api);
 		}
 
 	my $q = {};
@@ -152,7 +149,7 @@ sub page_grid_tutorial_respond
 		look_hash
 		))
 		{
-		$q->{$field} = html_quote(http_get($field));
+		$q->{$field} = html::quote(http::get($field));
 		}
 
 	# Allow a little extra room for display.
@@ -352,9 +349,9 @@ Hash:
 </table>
 EOM
 
-	my $hidden = html_hidden_fields(http_slice(qw(function)));
+	my $hidden = html::hidden_fields(http::slice(qw(function)));
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 This is an interactive tutorial to help you set up and test Grid API operations.
 Be careful using sensitive locations in this tutorial, since they do show
@@ -407,14 +404,14 @@ $move_table
 EOM
 );
 
-	if (op_get($api,"action") ne "")
+	if (context::get($api,"action") ne "")
 	{
-	my $q_result = op_write_kv($api);
-	my $url = top_url(op_pairs($orig_api));
+	my $q_result = context::write_kv($api);
+	my $url = html::top_url(context::pairs($orig_api));
 
-	my $this_url = loom_config("this_url");
+	my $this_url = loom_config::get("this_url");
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h2>URL</h2>
 <p>
 <a href="$url">$this_url$url</a>

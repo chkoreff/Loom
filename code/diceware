@@ -42,7 +42,7 @@ sub diceware_main
 	{
 	diceware_check_usage();
 
-	my $passphrase = diceware_passphrase($g_num_words);
+	my $passphrase = diceware::passphrase($g_num_words);
 	print "$passphrase\n";
 	}
 

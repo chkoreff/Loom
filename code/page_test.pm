@@ -1,8 +1,7 @@
 package page_test;
 use strict;
-use export "page_test_respond";
 use context;
-use c_quote;
+use cstring;
 use html;
 use http;
 use loom_config;
@@ -11,19 +10,19 @@ use page;
 sub html_c_quote
 	{
 	my $string = shift;
-	return html_quote(c_quote($string));
+	return html::quote(cstring::quote($string));
 	}
 
-sub page_test_respond
+sub respond
 	{
-	set_title("Test");
+	page::set_title("Test");
 
-	if (http_get("help"))
+	if (http::get("help"))
 		{
 		# LATER there's no link to reach this help
-		top_link(highlight_link(top_url("function","test"), "Test"));
+		page::top_link(page::highlight_link(html::top_url("function","test"), "Test"));
 
-		emit(<<EOM
+		page::emit(<<EOM
 <h1>Test</h1>
 
 <p>
@@ -36,7 +35,7 @@ EOM
 		return;
 		}
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1>Test quoted values in HTML links and forms</h1>
 <p>
 This is a test of HTML quoting rules in urls and hidden form fields.
@@ -47,7 +46,7 @@ it fails with the urlencoded form.
 EOM
 );
 
-	my $context = op_new(http_slice(qw(function)));
+	my $context = context::new(http::slice(qw(function)));
 
 	# LATER can we put \015 in the key?
 
@@ -58,18 +57,18 @@ EOM
 	my $val_expect =
 		qq{hello\nworld/!!!\015 <a> "backslash" \\ & oct8=\010+hello!\n};
 
-	op_put($context,$key_expect,$val_expect);
-	op_put($context,"go",1);
+	context::put($context,$key_expect,$val_expect);
+	context::put($context,"go",1);
 
-	my $url = top_url(op_pairs($context));
+	my $url = html::top_url(context::pairs($context));
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <a href="$url">Test using the link (this succeeds)</a>
 EOM
 );
 
-	my $val_found = http_get($key_expect);
+	my $val_found = http::get($key_expect);
 
 	my $q_key_expect = html_c_quote($key_expect);
 	my $q_val_found = html_c_quote($val_found);
@@ -77,10 +76,10 @@ EOM
 
 	# LATER 20110311 the form tests FAIL now.  There's a problem with "/" in
 	# the name.
-	#if (http_get("go") ne "")
+	#if (http::get("go") ne "")
 	#{
 	## LATER we're seeing the key "color/" -- it's truncated
-	#print "keys are: ".join(" ",http_names())."\n";
+	#print "keys are: ".join(" ",http::names())."\n";
 	#}
 
 	# LATER At one point I noticed this:
@@ -88,9 +87,9 @@ EOM
 	# straight in with /test"
 	# But now it never works.
 
-	my $hidden = html_hidden_fields(op_pairs($context));
+	my $hidden = html::hidden_fields(context::pairs($context));
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <form method=post action="" enctype="multipart/form-data">
 $hidden
@@ -100,7 +99,7 @@ $hidden
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 <form method=post action="">
 $hidden
@@ -110,13 +109,13 @@ $hidden
 EOM
 );
 
-	if (http_get("go") ne "")
+	if (http::get("go") ne "")
 	{
 	my $status = $val_found eq $val_expect
 		? "<span style='color:green'><b>Success</b></span>"
 		: "<span class=alarm><b>ERROR</b></span>";
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h2>Result</h2>
 <table border=1 style='border-collapse:collapse'>
 <colgroup>
@@ -146,7 +145,7 @@ EOM
 
 	if ($val_found ne $val_expect)
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <tr>
 <td align=right>
 <b>Expected:</b>
@@ -161,7 +160,7 @@ EOM
 );
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 
 </table>
 EOM
@@ -169,17 +168,17 @@ EOM
 	}
 
 	{
-	my $this_url = loom_config("this_url");
+	my $this_url = loom_config::get("this_url");
 	my $url = q{/test/path/a///%3Cbr%3E%3F%2F%22hi%22%25%2F..%2Fweird%20/two%0D%0Alines here/c/};
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1>Test path interpretation</h1>
 <a href="$url"> Example of a strange path </a>
 EOM
 );
 
-	my $path = http_path();
-	my @path = http_split_path($path);
+	my $path = http::path();
+	my @path = http::split_path($path);
 
 	shift @path;   # drop "test"
 	my $verb = shift @path;
@@ -197,7 +196,7 @@ EOM
 
 		my $q_path = html_c_quote($path);
 
-		emit(<<EOM
+		page::emit(<<EOM
 <p>
 Path = <span class=mono>"$q_path"</span>
 <p>

@@ -1,11 +1,5 @@
 package history;
 use strict;
-use export
-	"show_history",
-	"add_history_entry",
-	"save_history_item",
-	"delete_history_item",
-	;
 use context;
 use dttm;
 use html;
@@ -23,38 +17,38 @@ sub normalize_scroll_position
 
 	{
 	my $key = "h_pi";
-	my $val = http_get($key);
+	my $val = http::get($key);
 	unless ($val =~ /^([a-f0-9]{8})$/ && length($1) == length($val))
 		{
-		http_put($key,"");
+		http::put($key,"");
 		}
 	}
 
 	{
 	my $key = "h_pn";
-	my $val = http_get($key);
+	my $val = http::get($key);
 	unless ($val =~ /^([0-9]{1,8})$/ && length($1) == length($val))
 		{
-		http_put($key,"");
+		http::put($key,"");
 		}
 	}
 
 	{
 	my $key = "h_pi";
-	my $val = http_get($key);
+	my $val = http::get($key);
 
 	if ($val ne "")
 		{
-		my $time = folder_get("H_time.$val");
+		my $time = page_folder::get("H_time.$val");
 		if ($time eq "")
 			{
-			http_put($key,"");
+			http::put($key,"");
 			}
 		}
 	}
 
 	{
-	my $h_pi = http_get("h_pi");
+	my $h_pi = http::get("h_pi");
 
 	if ($h_pi ne "")
 		{
@@ -69,17 +63,17 @@ sub normalize_scroll_position
 
 		if ($pos < $num_items)
 			{
-			http_put("h_pn",$num_items - $pos);
+			http::put("h_pn",$num_items - $pos);
 			}
 		else
 			{
-			http_put("h_pi","");
+			http::put("h_pi","");
 			}
 		}
 	}
 
 	{
-	my $h_pn = http_get("h_pn");
+	my $h_pn = http::get("h_pn");
 
 	if ($h_pn ne "")
 		{
@@ -87,24 +81,24 @@ sub normalize_scroll_position
 
 		if ($h_pn < 1)
 			{
-			http_put("h_pn","");
+			http::put("h_pn","");
 			}
 		elsif ($h_pn > $num_items)
 			{
-			http_put("h_pn",$num_items);
+			http::put("h_pn",$num_items);
 			}
 		}
 	}
 
 	{
-	my $h_pi = http_get("h_pi");
-	my $h_pn = http_get("h_pn");
+	my $h_pi = http::get("h_pi");
+	my $h_pn = http::get("h_pn");
 
 	if ($h_pi eq "" && $h_pn ne "")
 		{
 		my $num_items = scalar(@$list);
 		$h_pi = $list->[$num_items - $h_pn];
-		http_put("h_pi",$h_pi);
+		http::put("h_pi",$h_pi);
 		}
 	}
 
@@ -113,12 +107,12 @@ sub normalize_scroll_position
 
 # Display history.
 
-sub show_history
+sub show
 	{
-	my $odd_color = loom_config("odd_row_color");
-	my $even_color = loom_config("even_row_color");
+	my $odd_color = loom_config::get("odd_row_color");
+	my $even_color = loom_config::get("even_row_color");
 
-	my $now_recording = folder_get("recording");
+	my $now_recording = page_folder::get("recording");
 	my $table = "";
 
 	$table .= <<EOM;
@@ -139,11 +133,11 @@ EOM
 
 	# Establish history control links.
 	{
-	my @params = http_slice(qw(function h_pi h_pn session));
+	my @params = http::slice(qw(function h_pi h_pn session));
 
-	if (http_get("h_only"))
+	if (http::get("h_only"))
 		{
-		my $url = top_url(@params);
+		my $url = html::top_url(@params);
 
 		$history_control .=
 		qq{<a href="$url" title="Show wallet also.">Zoom out</a>};
@@ -152,18 +146,18 @@ EOM
 		{
 
 		{
-		my $url = top_url(@params, "h_only",1);
+		my $url = html::top_url(@params, "h_only",1);
 
 		$history_control .=
 		qq{<a href="$url" title="Show history only">Zoom in</a>};
 		}
 
 		{
-		my $url = top_url(
-			"function",http_get("function"),
+		my $url = html::top_url(
+			"function",http::get("function"),
 			"set_recording",0,
-			http_slice(qw(qty type loc)),
-			"session",http_get("session"),
+			http::slice(qw(qty type loc)),
+			"session",http::get("session"),
 			);
 
 		$history_control .=
@@ -174,7 +168,7 @@ EOM
 		}
 	}
 
-	my $val_list_H = folder_get("list_H");
+	my $val_list_H = page_folder::get("list_H");
 	my $list_H = [ split(" ",$val_list_H) ];
 
 	normalize_scroll_position($list_H);
@@ -182,7 +176,7 @@ EOM
 	my $num_items = scalar(@$list_H);
 
 	# Establish first absolute row number to display.
-	my $h_pn = http_get("h_pn");
+	my $h_pn = http::get("h_pn");
 	$h_pn = $num_items if $h_pn eq "";
 
 	my $rows_per_page = 20;  # LATER configurable
@@ -196,7 +190,7 @@ EOM
 	my @scroll_links = ();
 
 	{
-	my @params = http_slice(qw(function h_only session));
+	my @params = http::slice(qw(function h_only session));
 
 	# Newest
 	{
@@ -206,9 +200,9 @@ EOM
 	my $attr = "";
 	$attr = " style='color:gray'" if $max_row == $num_items;
 
-	my $context = op_new(@params);
+	my $context = context::new(@params);
 
-	my $url = top_url(op_pairs($context));
+	my $url = html::top_url(context::pairs($context));
 	my $link = qq{<a$attr href="$url" title="$title">$label</a>};
 
 	push @scroll_links, $link;
@@ -226,10 +220,10 @@ EOM
 	$row_no = $num_items if $row_no > $num_items;
 	my $h_id = $list_H->[$num_items-$row_no];
 
-	my $context = op_new(@params,
+	my $context = context::new(@params,
 		"h_pi",$h_id, "h_pn",$row_no);
 
-	my $url = top_url(op_pairs($context));
+	my $url = html::top_url(context::pairs($context));
 	my $link = qq{<a$attr href="$url" title="$title">$label</a>};
 
 	push @scroll_links, $link;
@@ -248,10 +242,10 @@ EOM
 	$row_no = 1 if $row_no < 1;
 	my $h_id = $list_H->[$num_items-$row_no];
 
-	my $context = op_new(@params,
+	my $context = context::new(@params,
 		"h_pi",$h_id, "h_pn",$row_no);
 
-	my $url = top_url(op_pairs($context));
+	my $url = html::top_url(context::pairs($context));
 	my $link = qq{<a$attr href="$url" title="$title">$label</a>};
 
 	push @scroll_links, $link;
@@ -267,9 +261,9 @@ EOM
 
 	my $row_no = $rows_per_page;
 
-	my $context = op_new(@params, "h_pn",$rows_per_page);
+	my $context = context::new(@params, "h_pn",$rows_per_page);
 
-	my $url = top_url(op_pairs($context));
+	my $url = html::top_url(context::pairs($context));
 	my $link = qq{<a$attr href="$url" title="$title">$label</a>};
 
 	push @scroll_links, $link;
@@ -293,7 +287,7 @@ EOM
 </table>
 EOM
 
-	if (http_get("edit_history_items") eq "")
+	if (http::get("edit_history_items") eq "")
 	{
 	$table .= <<EOM;
 <tr>
@@ -365,52 +359,52 @@ EOM
 	my $row_color = $odd_row ? $odd_color : $even_color;
 	$odd_row = 1 - $odd_row;
 
-	my $time = folder_get("H_time.$h_id");
-	my $qty = folder_get("H_qty.$h_id");
-	my $type = folder_get("H_type.$h_id");
-	my $loc = folder_get("H_loc.$h_id");
+	my $time = page_folder::get("H_time.$h_id");
+	my $qty = page_folder::get("H_qty.$h_id");
+	my $type = page_folder::get("H_type.$h_id");
+	my $loc = page_folder::get("H_loc.$h_id");
 
 	my $q_loc_name;
 	my $q_type_name;
 
 	{
-	my $type_name = map_id_to_nickname("type",$type);
+	my $type_name = page_folder::map_id_to_nickname("type",$type);
 
 	if ($type_name eq "")
 		{
-		$q_type_name = html_quote($type);
-		my $scale = folder_get("type_scale.$type");
+		$q_type_name = html::quote($type);
+		my $scale = page_folder::get("type_scale.$type");
 		$q_type_name = qq{<span class=tiny_mono>$q_type_name $scale</span>};
 		}
 	else
 		{
-		$q_type_name = html_quote($type_name);
+		$q_type_name = html::quote($type_name);
 
-		if (folder_get("type_del.$type"))
+		if (page_folder::get("type_del.$type"))
 			{
 			# Deleted asset: show the name in italics with ID and scale.
 			$q_type_name = qq{<i>$q_type_name</i>};
 
-			my $scale = folder_get("type_scale.$type");
+			my $scale = page_folder::get("type_scale.$type");
 			$q_type_name .= qq{<br><span class=tiny_mono>$type $scale</span>};
 			}
 		}
 	}
 
 	{
-	my $loc_name = map_id_to_nickname("loc",$loc);
+	my $loc_name = page_folder::map_id_to_nickname("loc",$loc);
 
 	if ($loc_name eq "")
 		{
 		# Render unnamed contacts as raw hex.
-		$q_loc_name = html_quote($loc);
+		$q_loc_name = html::quote($loc);
 		$q_loc_name = qq{<span class=tiny_mono>$q_loc_name</span>};
 		}
 	else
 		{
-		$q_loc_name = html_quote($loc_name);
+		$q_loc_name = html::quote($loc_name);
 
-		if (folder_get("loc_del.$loc"))
+		if (page_folder::get("loc_del.$loc"))
 			{
 			# Deleted contact: show the name in italics with ID.
 			$q_loc_name = qq{<i>$q_loc_name</i>};
@@ -424,13 +418,13 @@ EOM
 	# Here we build the link that lets you bring a history entry to the top
 	# of the display.
 
-	my $dttm = dttm_as_gmt($time);
+	my $dttm = dttm::as_gmt($time);
 
-	my $row_context = op_new(
-		http_slice(qw(function h_pi h_pn h_only session)));
-	op_put($row_context,"h_pi",$h_id);
+	my $row_context = context::new(
+		http::slice(qw(function h_pi h_pn h_only session)));
+	context::put($row_context,"h_pi",$h_id);
 
-	my $url = top_url(op_pairs($row_context));
+	my $url = html::top_url(context::pairs($row_context));
 	my $q_dttm =
 		qq{<a href="$url" title="Show this entry at the top.">$dttm</a>};
 
@@ -446,14 +440,14 @@ EOM
 		$sign = "+";
 		}
 
-	my $dsp_qty = $sign.display_value($abs_qty,$type);
+	my $dsp_qty = $sign.page_folder::display_value($abs_qty,$type);
 
 	{
 	my $color = $sign eq "+" ? "green" : "red";
 	$dsp_qty = qq{<span style='color:$color'>$dsp_qty</span>};
 	}
 
-	my $is_checked = http_get("choose_$h_id") ne "" ? 1 : 0;
+	my $is_checked = http::get("choose_$h_id") ne "" ? 1 : 0;
 	my $q_checked = $is_checked ? " checked" : "";
 
 	$table .= <<EOM;
@@ -476,13 +470,13 @@ $q_loc_name
 </tr>
 EOM
 
-	if ($is_checked && http_get("edit_history_items") ne "")
+	if ($is_checked && http::get("edit_history_items") ne "")
 	{
 	$first_memo = $h_id if $first_memo eq "";
 		# Set focus to first open memo.
 
-	my $memo = folder_get("H_memo.$h_id");
-	my $q_memo = html_semiquote($memo);
+	my $memo = page_folder::get("H_memo.$h_id");
+	my $q_memo = html::semiquote($memo);
 
 	my @lines = split("\n",$memo);
 	my $num_lines = scalar(@lines);
@@ -504,11 +498,11 @@ EOM
 	else
 	{
 
-	my $memo = folder_get("H_memo.$h_id");
+	my $memo = page_folder::get("H_memo.$h_id");
 
 	if ($memo ne "")
 	{
-	my $q_memo = html_semiquote($memo);
+	my $q_memo = html::semiquote($memo);
 	$q_memo =~ s/\n/<br>/g;
 
 	# We use the "overflow" style attribute on the memo to prevent very wide
@@ -532,17 +526,17 @@ EOM
 
 	if ($first_memo ne "")
 		{
-		set_focus("memo_$first_memo");
+		page::set_focus("memo_$first_memo");
 		}
 
 	}
 	else
 	{
-	my $url = top_url(
-		"function",http_get("function"),
+	my $url = html::top_url(
+		"function",http::get("function"),
 		"set_recording",1,
-		http_slice(qw(qty type loc)),
-		"session",http_get("session"),
+		http::slice(qw(qty type loc)),
+		"session",http::get("session"),
 		);
 
 	my $link_enable =
@@ -570,7 +564,7 @@ EOM
 </table>
 EOM
 
-	emit(<<EOM
+	page::emit(<<EOM
 $table
 EOM
 );
@@ -585,12 +579,12 @@ sub new_history_id
 
 	while (1)
 		{
-		my $h_id = unpack("H*",random_id());
+		my $h_id = random::hex();
 		$h_id = substr($h_id,0,8);
 
 		$num_tries++;
 
-		my $time = folder_get("H_time.$h_id");
+		my $time = page_folder::get("H_time.$h_id");
 		if ($time ne "")
 			{
 			return "" if $num_tries >= $max_tries;
@@ -604,7 +598,7 @@ sub new_history_id
 	return "";
 	}
 
-sub add_history_entry
+sub add_item
 	{
 	my $qty = shift;
 	my $type = shift;
@@ -614,7 +608,7 @@ sub add_history_entry
 
 	return if $h_id eq "";
 
-	my $list_H = folder_get("list_H");
+	my $list_H = page_folder::get("list_H");
 	$list_H = "$h_id $list_H";
 
 	# Negate the quantity because positive values are in folder's favor.
@@ -630,35 +624,35 @@ sub add_history_entry
 
 	my $time = time();
 
-	folder_put("list_H",$list_H);
-	folder_put("H_time.$h_id",$time);
-	folder_put("H_qty.$h_id",$qty);
-	folder_put("H_type.$h_id",$type);
-	folder_put("H_loc.$h_id",$loc);
+	page_folder::put("list_H",$list_H);
+	page_folder::put("H_time.$h_id",$time);
+	page_folder::put("H_qty.$h_id",$qty);
+	page_folder::put("H_type.$h_id",$type);
+	page_folder::put("H_loc.$h_id",$loc);
 
 	return;
 	}
 
-sub save_history_item
+sub save_item
 	{
 	my $h_id = shift;
 	my $memo = shift;
 
-	my $time = folder_get("H_time.$h_id");
+	my $time = page_folder::get("H_time.$h_id");
 	return 0 if $time eq "";
 
 	$memo =~ s/\015//g;
 
-	folder_put("H_memo.$h_id",$memo);
+	page_folder::put("H_memo.$h_id",$memo);
 
 	return 1;
 	}
 
-sub delete_history_item
+sub delete_item
 	{
 	my $h_id = shift;
 
-	my $list_H = folder_get("list_H");
+	my $list_H = page_folder::get("list_H");
 	my @list_H = split(" ",$list_H);
 
 	my $found = 0;
@@ -677,9 +671,9 @@ sub delete_history_item
 	return 0 if !$found;
 
 	{
-	my $loc = folder_get("H_loc.$h_id");
+	my $loc = page_folder::get("H_loc.$h_id");
 
-	if (folder_get("loc_del.$loc"))
+	if (page_folder::get("loc_del.$loc"))
 		{
 		# We're about to delete a history entry which points to a deleted
 		# contact.  Now let's check the history to see if this is the *last*
@@ -689,7 +683,7 @@ sub delete_history_item
 		my $count = 0;
 		for my $this_h_id (@list_H)
 			{
-			my $this_loc = folder_get("H_loc.$this_h_id");
+			my $this_loc = page_folder::get("H_loc.$this_h_id");
 			if ($this_loc eq $loc)
 				{
 				$count++;
@@ -702,16 +696,16 @@ sub delete_history_item
 			# Now we can clear the contact because we're about to delete the
 			# last history entry which points to it.
 
-			folder_put("loc_name.$loc","");
-			folder_put("loc_del.$loc","");
+			page_folder::put("loc_name.$loc","");
+			page_folder::put("loc_del.$loc","");
 			}
 		}
 	}
 
 	{
-	my $type = folder_get("H_type.$h_id");
+	my $type = page_folder::get("H_type.$h_id");
 
-	if (folder_get("type_del.$type"))
+	if (page_folder::get("type_del.$type"))
 		{
 		# We're about to delete a history entry which points to a deleted
 		# asset.  Now let's check the history to see if this is the *last*
@@ -721,7 +715,7 @@ sub delete_history_item
 		my $count = 0;
 		for my $this_h_id (@list_H)
 			{
-			my $this_type = folder_get("H_type.$this_h_id");
+			my $this_type = page_folder::get("H_type.$this_h_id");
 			if ($this_type eq $type)
 				{
 				$count++;
@@ -734,22 +728,22 @@ sub delete_history_item
 			# Now we can clear the asset because we're about to delete the
 			# last history entry which points to it.
 
-			folder_put("type_name.$type","");
-			folder_put("type_scale.$type","");
-			folder_put("type_min_precision.$type","");
-			folder_put("type_del.$type","");
+			page_folder::put("type_name.$type","");
+			page_folder::put("type_scale.$type","");
+			page_folder::put("type_min_precision.$type","");
+			page_folder::put("type_del.$type","");
 			}
 		}
 	}
 
 	my $new_list_H = join(" ",@new_list_H);
 
-	folder_put("list_H",$new_list_H);
-	folder_put("H_time.$h_id","");
-	folder_put("H_qty.$h_id","");
-	folder_put("H_type.$h_id","");
-	folder_put("H_loc.$h_id","");
-	folder_put("H_memo.$h_id","");
+	page_folder::put("list_H",$new_list_H);
+	page_folder::put("H_time.$h_id","");
+	page_folder::put("H_qty.$h_id","");
+	page_folder::put("H_type.$h_id","");
+	page_folder::put("H_loc.$h_id","");
+	page_folder::put("H_memo.$h_id","");
 
 	return 1;
 	}

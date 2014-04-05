@@ -1,6 +1,5 @@
 package notify;
 use strict;
-use export "in_maintenance_mode";
 use file;
 use loom_config;
 use sloop_top;
@@ -11,7 +10,7 @@ sub notify_path
 	{
 	if (!defined $g_notify_path)
 		{
-		$g_notify_path = sloop_top_path()."/data/run";
+		$g_notify_path = sloop_top::path()."/data/run";
 		}
 
 	return $g_notify_path;
@@ -55,8 +54,8 @@ sub email_notify
 	my $subject = shift;
 	my $msg = shift;
 
-	my $from = loom_config("notify_from");
-	my $to = loom_config("notify_to");
+	my $from = loom_config::get("notify_from");
+	my $to = loom_config::get("notify_to");
 
 	send_email($from, $to, $subject, $msg);
 	}
@@ -88,7 +87,7 @@ sub exit_maintenance_mode
 	unlink "$path/maintenance.flag";
 	}
 
-# LATER not yet used, might want to call it from file_update in case of panic
+# LATER not yet used, might want to call it from file::update in case of panic
 
 sub fatal_error
 	{
@@ -101,7 +100,7 @@ sub fatal_error
 	my $filename = $caller[1];
 	my $lineno = $caller[2];
 
-	my $system_name = loom_config("system_name");
+	my $system_name = loom_config::get("system_name");
 	my $subject = "$system_name system error";
 
 	email_notify($subject, $msg);

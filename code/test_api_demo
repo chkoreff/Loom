@@ -19,11 +19,11 @@ sub demo_api_call
 	{
 	my $url = shift;
 
-	my $text = get_url($url);
+	my $text = web::get_url($url);
 	print $text;
 
-	my $op = op_read_kv(op_new(),$text);
-	die if $text ne op_write_kv($op); # Just testing here
+	my $op = context::read_kv(context::new(),$text);
+	die if $text ne context::write_kv($op); # Just testing here
 
 	return $op;
 	}
@@ -33,9 +33,9 @@ sub demo_api_call
 # Here we demonstrate taking a look at the balance in Grid location A.
 sub demo_grid_touch
 	{
-	my $server_name = test_api_config("server");
-	my $type = test_api_config("type");
-	my $loc_A = test_api_config("loc_A");
+	my $server_name = test_api::config("server");
+	my $type = test_api::config("type");
+	my $loc_A = test_api::config("loc_A");
 
 	demo_api_call(
 	"$server_name/?function=grid&action=touch&type=$type&loc=$loc_A");
@@ -54,10 +54,10 @@ sub demo_grid_move
 		# The number of units to move.  If you use a negative number, it simply
 		# moves the units in the opposite direction.
 
-	my $server_name = test_api_config("server");
-	my $type = test_api_config("type");
-	my $loc_A = test_api_config("loc_A");
-	my $loc_B = test_api_config("loc_B");
+	my $server_name = test_api::config("server");
+	my $type = test_api::config("type");
+	my $loc_A = test_api::config("loc_A");
+	my $loc_B = test_api::config("loc_B");
 
 	my $op = demo_api_call(
 	"$server_name/?function=grid&action=move&type=$type"
@@ -66,7 +66,7 @@ sub demo_grid_move
 		."&dest=$loc_B"
 		);
 
-	if (op_get($op,"status") eq "success")
+	if (context::get($op,"status") eq "success")
 		{
 		print "I succeeded in moving $qty units\n";
 		}
@@ -79,8 +79,8 @@ sub demo_grid_move
 # Here we demonstrate looking directly into an Archive location.
 sub demo_archive_touch
 	{
-	my $server_name = test_api_config("server");
-	my $loc_A = test_api_config("loc_A");
+	my $server_name = test_api::config("server");
+	my $loc_A = test_api::config("loc_A");
 
 	demo_api_call(
 	"$server_name/?function=archive&action=touch"

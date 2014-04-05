@@ -1,24 +1,15 @@
 package grid;
 use strict;
-use export
-	"grid_buy",
-	"grid_sell",
-	"grid_issuer",
-	"grid_touch",
-	"grid_look",
-	"grid_move",
-	"grid_scan",
-	;
 use api;
 use context;
 
-sub grid_buy
+sub buy
 	{
 	my $type = shift;
 	my $loc = shift;
 	my $usage = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","grid",
 		"action","buy",
@@ -27,16 +18,16 @@ sub grid_buy
 		"usage",$usage
 		);
 
-	return api_respond($op);
+	return api::respond($op);
 	}
 
-sub grid_sell
+sub sell
 	{
 	my $type = shift;
 	my $loc = shift;
 	my $usage = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","grid",
 		"action","sell",
@@ -45,16 +36,16 @@ sub grid_sell
 		"usage",$usage
 		);
 
-	return api_respond($op);
+	return api::respond($op);
 	}
 
-sub grid_issuer
+sub issuer
 	{
 	my $type = shift;
 	my $orig = shift;
 	my $dest = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","grid",
 		"action","issuer",
@@ -63,17 +54,17 @@ sub grid_issuer
 		"dest",$dest
 		);
 
-	return api_respond($op);
+	return api::respond($op);
 	}
 
-sub grid_touch
+sub touch
 	{
 	my $type = shift;
 	my $loc = shift;
 
 	die if !defined $loc;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","grid",
 		"action","touch",
@@ -81,18 +72,18 @@ sub grid_touch
 		"loc",$loc,
 		);
 
-	api_respond($op);
-	return op_get($op,"value");
+	api::respond($op);
+	return context::get($op,"value");
 	}
 
-sub grid_look
+sub look
 	{
 	my $type = shift;
 	my $hash = shift;
 
 	die if !defined $hash;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","grid",
 		"action","look",
@@ -100,18 +91,18 @@ sub grid_look
 		"hash",$hash,
 		);
 
-	api_respond($op);
-	return op_get($op,"value");
+	api::respond($op);
+	return context::get($op,"value");
 	}
 
-sub grid_move
+sub move
 	{
 	my $type = shift;
 	my $qty = shift;
 	my $orig = shift;
 	my $dest = shift;
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","grid",
 		"action","move",
@@ -121,16 +112,16 @@ sub grid_move
 		"dest",$dest,
 		);
 
-	return api_respond($op);
+	return api::respond($op);
 	}
 
-sub grid_scan
+sub scan
 	{
 	my $locs = shift;
 	my $types = shift;
 	my $zeroes = shift;  # optional flag to include 0 values
 
-	my $op = op_new
+	my $op = context::new
 		(
 		"function","grid",
 		"action","scan",
@@ -139,7 +130,7 @@ sub grid_scan
 		"zeroes",($zeroes ? "1" : ""),
 		);
 
-	return api_respond($op);
+	return api::respond($op);
 	}
 
 return 1;

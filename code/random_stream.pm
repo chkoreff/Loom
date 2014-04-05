@@ -1,10 +1,5 @@
 package random_stream;
 use strict;
-use export
-	"random_new",
-	"random_get",
-	"random_get_ulong",
-	;
 use aes;
 use file;
 
@@ -20,15 +15,15 @@ use file;
 # source file.  The source file defaults to "/dev/urandom".  For repeatable
 # numbers you can pass in "/dev/zero".
 
-sub random_new
+sub new
 	{
 	my $source = shift;
 	$source = "/dev/urandom" if !defined $source;
 
 	my $stream = {};
 
-	$stream->{entropy} = file_new($source);
-	file_open_read($stream->{entropy});
+	$stream->{entropy} = file::new($source);
+	file::open_read($stream->{entropy});
 
 	$stream->{encrypt} = undef;
 	$stream->{count} = 0;  # use new key when count reaches zero
@@ -50,10 +45,10 @@ sub random_refresh
 	# use the result as the IV of the new crypto object.
 
 	my $iv = defined $stream->{encrypt}
-		? aes_encrypt($stream->{encrypt},$seed)
+		? aes::encrypt($stream->{encrypt},$seed)
 		: "\000" x 16;
 
-	$stream->{encrypt} = aes_new($seed,$iv);
+	$stream->{encrypt} = aes::new($seed,$iv);
 	$stream->{count} = 32;  # use new key every 32 rounds
 
 	return;
@@ -62,12 +57,12 @@ sub random_refresh
 # Get the next 128-bit random number from the stream.  This returns 16 bytes of
 # packed binary data.  To display it in hex you can say unpack("H*",$id).
 
-sub random_get
+sub get
 	{
 	my $stream = shift;
 	die if !defined $stream;
 
-	my $seed = file_get_bytes($stream->{entropy},16);
+	my $seed = file::get_bytes($stream->{entropy},16);
 
 	die if !defined $seed;
 	die if length($seed) != 16;
@@ -77,18 +72,18 @@ sub random_get
 
 	die if $stream->{count} < 0;
 
-	return aes_encrypt($stream->{encrypt},$seed);
+	return aes::encrypt($stream->{encrypt},$seed);
 	}
 
 # Get a random unsigned long.  This can be useful as a seed to "srand" when
 # you want to generate lower-strength random numbers with "rand()", e.g.:
-#   srand( random_get_ulong( random_new() ) );
+#   srand( random_stream::get_ulong( random_stream::new() ) );
 
-sub random_get_ulong
+sub get_ulong
 	{
 	my $stream = shift;
 
-	return unpack("L",random_get($stream));
+	return unpack("L",get($stream));
 	}
 
 return 1;

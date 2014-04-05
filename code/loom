@@ -13,4 +13,4 @@ use FindBin;
 use lib $FindBin::RealBin;
 use sloop_main;
 
-sloop_main();
+sloop_main::respond();

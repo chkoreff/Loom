@@ -21,7 +21,7 @@ violates the sanctity of lock semantics when using the "flock" routine.
 
 This exposure of such a subtle flaw in ecryptfs actually bolsters my confidence
 in the thoroughness of the stress test and the strength of the underlying
-file_update routine.
+file::update routine.
 
 =cut
 
@@ -61,7 +61,7 @@ EOM
 		exit(2);
 		}
 
-	test_file_run($count,$delay,$verbose,1);
+	test_file::run($count,$delay,$verbose,1);
 
 	return;
 	}

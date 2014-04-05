@@ -1,6 +1,5 @@
 package page_edit;
 use strict;
-use export "page_edit_respond";
 use api;
 use archive;
 use context;
@@ -34,7 +33,7 @@ sub full_uploaded_content
 
 	# Don't override any existing content headers in the uploaded data.
 
-	my ($header_op,$header_text,$content) = split_content($uploaded_content);
+	my ($header_op,$header_text,$content) = page::split_content($uploaded_content);
 
 	my $inferred_header = "";
 
@@ -74,72 +73,72 @@ sub full_uploaded_content
 	return $full_content;
 	}
 
-sub page_edit_respond
+sub respond
 	{
-	set_title("Edit Content");
+	page::set_title("Edit Content");
 
 	my $q = {};   # for page rendering
 
-	my $api = op_new();
-	op_put($api,"function","archive");
+	my $api = context::new();
+	context::put($api,"function","archive");
 
-	set_focus("content");
+	page::set_focus("content");
 
 	# If usage not specified, use location by default.
 	{
-	my $usage = http_get("usage");
+	my $usage = http::get("usage");
 	if ($usage eq "")
 		{
-		my $loc = http_get("loc");
-		if (valid_id($loc))
+		my $loc = http::get("loc");
+		if (id::valid_id($loc))
 			{
-			http_put("usage",$loc);
+			http::put("usage",$loc);
 			}
 		}
 	}
 
-	my $function = http_get("function");
+	my $function = http::get("function");
 
-	if (http_get("random"))
+	if (http::get("random"))
 		{
-		my $loc = archive_random_vacant_location();
-		http_put("loc",$loc);
+		my $loc = archive::random_vacant_location();
+		http::put("loc",$loc);
 		}
 
-	if (http_get("buy") ne "")
+	if (http::get("buy") ne "")
 		{
-		op_put($api,"action","buy");
-		op_put($api,"usage",http_get("usage"));
-		op_put($api,"loc",http_get("loc"));
+		context::put($api,"action","buy");
+		context::put($api,"usage",http::get("usage"));
+		context::put($api,"loc",http::get("loc"));
 		}
-	elsif (http_get("sell") ne "")
+	elsif (http::get("sell") ne "")
 		{
-		op_put($api,"action","sell");
-		op_put($api,"usage",http_get("usage"));
-		op_put($api,"loc",http_get("loc"));
+		context::put($api,"action","sell");
+		context::put($api,"usage",http::get("usage"));
+		context::put($api,"loc",http::get("loc"));
 		}
-	elsif (http_get("delete") ne "")
+	elsif (http::get("delete") ne "")
 		{
-		if (http_get("confirm_delete") ne "")
+		if (http::get("confirm_delete") ne "")
 			{
-			http_put("content","");
-			op_put($api,"action","write");
+			http::put("content","");
+			context::put($api,"action","write");
 			}
 		}
 	else
 		{
-		if ($function eq "edit" && http_get("write") ne "")
+		if ($function eq "edit" && http::get("write") ne "")
 			{
-			my $content = http_get("content");
+			my $content = http::get("content");
 			$content =~ s/\015//g;
-			http_put("content",$content);
+			http::put("content",$content);
 
-			op_put($api,"action","write");
+			context::put($api,"action","write");
 			}
-		elsif ($function eq "upload" && http_get("upload") ne "")
+		elsif ($function eq "upload" && http::get("upload") ne "")
 			{
-			my $filename = http_get("filename");
-			my $uploaded_content = http_upload("filename");
+			my $filename = http::get("filename");
+			my $uploaded_content = http::upload("filename");
 			my $full_content = full_uploaded_content($filename,
 				$uploaded_content);
 
@@ -155,63 +154,63 @@ sub page_edit_respond
 				}
 			else
 				{
-				http_put("content",$full_content);
-				op_put($api,"action","write");
+				http::put("content",$full_content);
+				context::put($api,"action","write");
 				}
 			}
 		}
 
-	if (op_get($api,"action") eq "write")
+	if (context::get($api,"action") eq "write")
 		{
-		op_put($api,"usage",http_get("usage"));
-		op_put($api,"loc",http_get("loc"));
-		op_put($api,"content",http_get("content"));
-		op_put($api,"guard",http_get("guard"));
+		context::put($api,"usage",http::get("usage"));
+		context::put($api,"loc",http::get("loc"));
+		context::put($api,"content",http::get("content"));
+		context::put($api,"guard",http::get("guard"));
 		}
-	elsif (op_get($api,"action") eq "")
+	elsif (context::get($api,"action") eq "")
 		{
-		op_put($api,"action","touch");
-		op_put($api,"loc",http_get("loc"));
+		context::put($api,"action","touch");
+		context::put($api,"loc",http::get("loc"));
 		}
 
-	api_respond($api);
+	api::respond($api);
 
-	http_put("hash",op_get($api,"hash"));
+	http::put("hash",context::get($api,"hash"));
 
 	my $usage_balance = "";
-	my $operation_cost = op_get($api,"cost");
+	my $operation_cost = context::get($api,"cost");
 
 	my $enable_buy = 0;
 	my $enable_sell = 0;
 
 	{
-	my $status = op_get($api,"status");
+	my $status = context::get($api,"status");
 
 	if ($status eq "fail")
 		{
-		my $error_loc = op_get($api,"error_loc");
+		my $error_loc = context::get($api,"error_loc");
 		if ($error_loc ne "" && $error_loc ne "vacant"
 			&& $error_loc ne "occupied")
 			{
-			http_put("change_loc", 1);
+			http::put("change_loc", 1);
 			}
 
-		my $error_usage = op_get($api,"error_usage");
+		my $error_usage = context::get($api,"error_usage");
 		if ($error_usage ne "")
 			{
-			http_put("change_usage", 1);
+			http::put("change_usage", 1);
 			}
 		}
 
-	my $action = op_get($api,"action");
+	my $action = context::get($api,"action");
 
 	if ($action eq "touch")
 		{
-		my $content = op_get($api,"content");
-		http_put("content",$content);
+		my $content = context::get($api,"content");
+		http::put("content",$content);
 		if ($status eq "fail")
 			{
-			my $error_loc = op_get($api,"error_loc");
+			my $error_loc = context::get($api,"error_loc");
 			$enable_buy = 1 if $error_loc eq "vacant";
 			}
 
@@ -224,8 +223,8 @@ sub page_edit_respond
 		{
 		if ($status eq "fail")
 			{
-			my $error_loc = op_get($api,"error_loc");
-			my $error_usage = op_get($api,"error_usage");
+			my $error_loc = context::get($api,"error_loc");
+			my $error_usage = context::get($api,"error_usage");
 
 			$enable_buy = 1 if $error_loc eq "not_valid_id";
 			$enable_buy = 1 if $error_usage ne "";
@@ -240,7 +239,7 @@ sub page_edit_respond
 		{
 		if ($status eq "fail")
 			{
-			my $error_loc = op_get($api,"error_loc");
+			my $error_loc = context::get($api,"error_loc");
 			$enable_sell = 1 if $error_loc ne "vacant";
 			$enable_buy = 1 if $error_loc eq "vacant";
 			}
@@ -254,13 +253,13 @@ sub page_edit_respond
 		{
 		if ($status eq "fail")
 			{
-			my $error_loc = op_get($api,"error_loc");
+			my $error_loc = context::get($api,"error_loc");
 			$enable_buy = 1 if $error_loc eq "vacant";
 			}
 
 		if ($status eq "success")
 			{
-			my $content = http_get("content");
+			my $content = http::get("content");
 			if ($content eq "")
 				{
 				$enable_sell = 1;
@@ -270,15 +269,15 @@ sub page_edit_respond
 	}
 
 	# LATER make a function to return type_zero
-	$usage_balance = grid_touch("0"x32,http_get("usage"));
+	$usage_balance = grid::touch("0"x32,http::get("usage"));
 
 	for my $field (qw(usage loc))
 		{
-		$q->{$field} = html_quote(http_get($field));
+		$q->{$field} = html::quote(http::get($field));
 		}
 
 	{
-	my $entered_content = http_get("content");
+	my $entered_content = http::get("content");
 
 	my @lines = split("\n",$entered_content);
 
@@ -288,34 +287,34 @@ sub page_edit_respond
 	$num_rows = 20 if $num_rows < 20;
 	$num_rows = 50 if $num_rows > 50;
 
-	$q->{content} = html_quote($entered_content);
+	$q->{content} = html::quote($entered_content);
 	$q->{num_content_rows} = $num_rows;
 	}
 
 	my $input_size_id = 32 + 4;
 
 	{
-	my $context = op_new(http_slice(qw(function)));
-	if (!http_get("change_usage"))
+	my $context = context::new(http::slice(qw(function)));
+	if (!http::get("change_usage"))
 		{
-		op_put($context,"usage",http_get("usage"));
+		context::put($context,"usage",http::get("usage"));
 		}
 
-	if (!http_get("change_loc"))
+	if (!http::get("change_loc"))
 		{
-		op_put($context,"loc",http_get("loc"));
+		context::put($context,"loc",http::get("loc"));
 		}
 
 	# I need this flag to detect if a button was pressed, because query
 	# parameters such as "change_loc" can stay around in the URL.
 
-	op_put($context,"pressed_button",1);
+	context::put($context,"pressed_button",1);
 
 	# LATER I have noticed a diff between upload and edit on certain files.
 
-	my $hidden = html_hidden_fields(op_pairs($context));
+	my $hidden = html::hidden_fields(context::pairs($context));
 
-	emit(<<EOM
+	page::emit(<<EOM
 <form method=post action="" autocomplete=off enctype="multipart/form-data">
 $hidden
 
@@ -326,8 +325,8 @@ EOM
 	my $dsp_status = "";
 
 	{
-	my $action = op_get($api,"action");
-	my $status = op_get($api,"status");
+	my $action = context::get($api,"action");
+	my $status = context::get($api,"status");
 	my $color = $status eq "success" ? "green" : "red";
 
 	my $msg = $status;
@@ -342,13 +341,13 @@ EOM
 
 	if ($status eq "fail")
 		{
-		my $error_loc = op_get($api,"error_loc");
-		my $error_usage = op_get($api,"error_usage");
-		my $error_guard = op_get($api,"error_guard");
+		my $error_loc = context::get($api,"error_loc");
+		my $error_usage = context::get($api,"error_usage");
+		my $error_guard = context::get($api,"error_guard");
 
 		if ($error_loc eq "not_valid_id")
 			{
-			if (op_get($api,"loc") eq "")
+			if (context::get($api,"loc") eq "")
 				{
 				$msg = "Please enter location";
 				}
@@ -419,33 +418,33 @@ EOM
 	# in a text box.
 
 	my ($header_op,$header_text,$payload) =
-		split_content(http_get("content"));
+		page::split_content(http::get("content"));
 
-	my $content_type = op_get($header_op,"Content-Type");
-	$content_type = op_get($header_op,"Content-type")
+	my $content_type = context::get($header_op,"Content-Type");
+	$content_type = context::get($header_op,"Content-type")
 		if $content_type eq "";
 
-	my $len_content = length(http_get("content"));
-	my $guard = unpack("H*",sha256(http_get("content")));
+	my $len_content = length(http::get("content"));
+	my $guard = unpack("H*",sha256::bin(http::get("content")));
 
 	{
-	my $link_edit = highlight_link(
-		top_url("function","edit", http_slice(qw(loc usage))),
+	my $link_edit = page::highlight_link(
+		html::top_url("function","edit", http::slice(qw(loc usage))),
 		"Edit", ($function eq "edit"), "Edit web page",
 		);
 
-	my $link_upload = highlight_link(
-		top_url("function","upload", http_slice(qw(loc usage))),
+	my $link_upload = page::highlight_link(
+		html::top_url("function","upload", http::slice(qw(loc usage))),
 		"Upload", ($function eq "upload"), "Upload document",
 		);
 
 	my $link_view;
 	{
 	# LATER probably need to make a simple ultra-reliable path-quotation thing.
-	my $q_hash = html_quote(http_get("hash"));
+	my $q_hash = html::quote(http::get("hash"));
 	my $url = "/view/$q_hash";
 
-	$link_view = highlight_link(
+	$link_view = page::highlight_link(
 		$url,
 		"View", 0, "View as web page",
 		);
@@ -454,26 +453,26 @@ EOM
 	my $link_object;
 	{
 	# LATER probably need to make a simple ultra-reliable path-quotation thing.
-	my $q_hash = html_quote(http_get("hash"));
+	my $q_hash = html::quote(http::get("hash"));
 	my $url = "/object/$q_hash";
 
-	$link_object = highlight_link(
+	$link_object = page::highlight_link(
 		$url,
 		"Object", 0, "View as a rendered object",
 		);
 	}
 
-	my $link_change_loc = highlight_link(
-		top_url("function",$function,
+	my $link_change_loc = page::highlight_link(
+		html::top_url("function",$function,
 			"change_loc",1,
-			http_slice(qw(loc usage))),
+			http::slice(qw(loc usage))),
 		"Location", 0, "Change editing location",
 		);
 
-	my $link_change_usage = highlight_link(
-		top_url("function",$function,
+	my $link_change_usage = page::highlight_link(
+		html::top_url("function",$function,
 			"change_usage",1,
-			http_slice(qw(loc usage))),
+			http::slice(qw(loc usage))),
 		"Usage", 0, "Change usage location",
 		);
 
@@ -485,9 +484,9 @@ EOM
 	# clause || $function eq "edit" so I can see an edit link on types
 	# like loom/folder etc.
 
-	top_link(highlight_link(top_url(),"Home"));
-	top_link(highlight_link(top_url("help",1),"Advanced"));
-	top_link("");
+	page::top_link(page::highlight_link(html::top_url(),"Home"));
+	page::top_link(page::highlight_link(html::top_url("help",1),"Advanced"));
+	page::top_link("");
 
 	my $enable_edit = 0;
 
@@ -497,12 +496,12 @@ EOM
 		$enable_edit = 1;
 		}
 
-	top_link($link_edit) if $enable_edit;
-	top_link($link_upload);
-	top_link($link_view);
-	top_link($link_object);
-	top_link($link_change_loc);
-	top_link($link_change_usage);
+	page::top_link($link_edit) if $enable_edit;
+	page::top_link($link_upload);
+	page::top_link($link_view);
+	page::top_link($link_object);
+	page::top_link($link_change_loc);
+	page::top_link($link_change_usage);
 	}
 
 	my $archive_table = "";
@@ -518,9 +517,9 @@ EOM
 
 EOM
 
-	if (http_get("change_loc") && !http_get("pressed_button"))
+	if (http::get("change_loc") && !http::get("pressed_button"))
 	{
-	set_focus("loc");
+	page::set_focus("loc");
 
 	$archive_table .= <<EOM;
 <tr>
@@ -537,9 +536,9 @@ Change Location:
 EOM
 	}
 
-	if (http_get("change_usage") && !http_get("pressed_button"))
+	if (http::get("change_usage") && !http::get("pressed_button"))
 	{
-	set_focus("usage");
+	page::set_focus("usage");
 
 	$archive_table .= <<EOM;
 <tr>
@@ -648,7 +647,7 @@ EOM
 </table>
 EOM
 
-	emit(<<EOM
+	page::emit(<<EOM
 $archive_table
 
 </form>

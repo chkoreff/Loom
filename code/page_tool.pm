@@ -1,6 +1,5 @@
 package page_tool;
 use strict;
-use export "page_tool_respond";
 use diceware;
 use html;
 use http;
@@ -8,39 +7,39 @@ use loom_login;
 use random;
 use page;
 
-sub page_tool_respond
+sub respond
 	{
-	top_link(highlight_link(top_url(),"Home"));
-	top_link(highlight_link(top_url("help",1),"Advanced"));
-	top_link(highlight_link(top_url("function","folder_tools"),"Tools",1));
+	page::top_link(page::highlight_link(html::top_url(),"Home"));
+	page::top_link(page::highlight_link(html::top_url("help",1),"Advanced"));
+	page::top_link(page::highlight_link(html::top_url("function","folder_tools"),"Tools",1));
 
-	if (http_get("random_id") ne "")
+	if (http::get("random_id") ne "")
 		{
-		my $id = unpack("H*",random_id());
-		http_put("id",$id);
-		http_put("passphrase","");
+		my $id = random::hex();
+		http::put("id",$id);
+		http::put("passphrase","");
 		}
-	elsif (http_get("random_passphrase") ne "")
+	elsif (http::get("random_passphrase") ne "")
 		{
-		http_put("passphrase",diceware_passphrase(5));
-		http_put("id","");
+		http::put("passphrase",diceware::passphrase(5));
+		http::put("id","");
 		}
-	elsif (http_get("hash_passphrase") ne "")
+	elsif (http::get("hash_passphrase") ne "")
 		{
-		my $passphrase = http_get("passphrase");
-		my $id = passphrase_location($passphrase);
-		http_put("id",$id);
+		my $passphrase = http::get("passphrase");
+		my $id = loom_login::passphrase_location($passphrase);
+		http::put("id",$id);
 		}
 
-	set_title("Tools");
+	page::set_title("Tools");
 
-	my $hidden = html_hidden_fields(http_slice(qw(function session)));
+	my $hidden = html::hidden_fields(http::slice(qw(function session)));
 
-	my $passphrase = http_get("passphrase");
-	my $q_passphrase = html_quote($passphrase);
+	my $passphrase = http::get("passphrase");
+	my $q_passphrase = html::quote($passphrase);
 
-	my $id = http_get("id");
-	my $q_id = html_quote($id);
+	my $id = http::get("id");
+	my $q_id = html::quote($id);
 
 	my $input_size_id = 32 + 4;
 
@@ -74,13 +73,13 @@ EOM
 </table>
 EOM
 
-	emit(<<EOM
+	page::emit(<<EOM
 <form method=post action="" autocomplete=off>
 $hidden
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1> Tools </h1>
 On this panel, you may generate a new random identifier or random passphrase.
 You may also compute the "hash" of a passphrase, which converts a passphrase
@@ -91,7 +90,7 @@ $table
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 </form>
 EOM
 );

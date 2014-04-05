@@ -1,12 +1,5 @@
 package aes;
 use strict;
-use export
-	"aes_new",
-	"aes_blocksize",
-	"aes_reset",
-	"aes_decrypt",
-	"aes_encrypt",
-	;
 use Crypt::Rijndael;
 
 =pod
@@ -30,39 +23,39 @@ same length as the cipher blocksize.
 
 =cut
 
-sub aes_new
+sub new
 	{
 	my $key = shift;
 	my $iv = shift;  # optional
 
 	my $cipher = {};
 	$cipher->{ecb} = new Crypt::Rijndael $key, Crypt::Rijndael::MODE_ECB;
-	aes_reset($cipher,$iv);
+	clear($cipher,$iv);
 	return $cipher;
 	}
 
-sub aes_blocksize
+sub blocksize
 	{
 	my $cipher = shift;
 	return $cipher->{ecb}->blocksize;
 	}
 
 # Reset the initial value (iv) used in chaining.
-sub aes_reset
+sub clear
 	{
 	my $cipher = shift;
 	my $iv = shift;  # optional
 
-	$iv = "\000" x aes_blocksize($cipher) if !defined $iv;
+	$iv = "\000" x blocksize($cipher) if !defined $iv;
 	$cipher->{iv} = $iv;
 
-	die if length($iv) != aes_blocksize($cipher);
+	die if length($iv) != blocksize($cipher);
 
 	return;
 	}
 
 # Decrypt a single block.
-sub aes_decrypt
+sub decrypt
 	{
 	my $cipher = shift;
 	my $crypt = shift;
@@ -78,7 +71,7 @@ sub aes_decrypt
 	}
 
 # Encrypt a single block.
-sub aes_encrypt
+sub encrypt
 	{
 	my $cipher = shift;
 	my $plain = shift;

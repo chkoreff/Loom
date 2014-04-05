@@ -1,14 +1,13 @@
 package help_archive;
 use strict;
-use export "help_archive";
 use loom_config;
 use page_help;
 use page;
 use URI::Escape;
 
-sub help_archive_buy
+sub buy
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Buy</h1>
 </div>
@@ -18,28 +17,28 @@ Buy a location in the archive.  This costs 1 usage token.  The location must
 currently be vacant (not bought) in order to buy it.  The input is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","archive",""],
 	["action","buy","Name of operation"],
 	["loc","<b>id</b>","Location to buy"],
 	["usage","<b>id</b>","Location of usage tokens"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Buy operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["cost","<b>qty</b>","Cost of operation"],
 	["usage_balance","<b>qty</b>","New usage balance"],
 	["hash","<b>hash</b>","Hash of location"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -47,7 +46,7 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_loc","not_valid_id", "loc is not a valid id"],
 	["error_loc","occupied", "loc is already occupied (bought)"],
@@ -58,9 +57,9 @@ EOM
 	);
 	}
 
-sub help_archive_sell
+sub sell
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Sell</h1>
 </div>
@@ -71,28 +70,28 @@ at the location must currently be empty (null) in order to sell the location.
 The input is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","archive",""],
 	["action","sell","Name of operation"],
 	["loc","<b>id</b>","Location to sell"],
 	["usage","<b>id</b>","Location of usage tokens"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Sell operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["cost","<b>qty</b>","Cost of operation (-1 meaning refund)"],
 	["usage_balance","<b>qty</b>","New usage balance"],
 	["hash","<b>hash</b>","Hash of location"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -100,7 +99,7 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_loc","not_valid_id", "loc is not a valid id"],
 	["error_loc","vacant", "loc is already vacant (sold)"],
@@ -110,9 +109,9 @@ EOM
 	);
 	}
 
-sub help_archive_touch
+sub touch
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Touch</h1>
 </div>
@@ -121,27 +120,27 @@ sub help_archive_touch
 Touch a location in the archive.  The input is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","archive",""],
 	["action","touch","Name of operation"],
 	["loc","<b>id</b>","Location to touch"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Touch operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["content","<b>string</b>","Content at archive location"],
 	["hash","<b>hash</b>","Hash of location"],
 	["content_hash","<b>hash</b>","Hash of content"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -149,16 +148,16 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_loc","not_valid_id", "loc is not a valid id"],
 	["error_loc","vacant", "loc is vacant (sold)"],
 	);
 	}
 
-sub help_archive_look
+sub look
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Look</h1>
 </div>
@@ -167,26 +166,26 @@ sub help_archive_look
 Look at a location in the archive by its hash.  The input is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","archive",""],
 	["action","look","Name of operation"],
 	["hash","<b>hash</b>","Hash of location to examine"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Look operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["content","<b>string</b>","Content at hash of location"],
 	["content_hash","<b>hash</b>","Hash of content"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -194,16 +193,16 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_hash","not_valid_id", "hash is not a valid hash"],
 	["error_loc","vacant", "loc is vacant (sold)"],
 	);
 	}
 
-sub help_archive_write
+sub do_write
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <div class=color_heading>
 <h1>Write</h1>
 </div>
@@ -220,7 +219,7 @@ subtracted.
 The input is:
 EOM
 );
-	help_context_table(
+	page_help::context_table(
 	["function","archive",""],
 	["action","write","Name of operation"],
 	["loc","<b>id</b>","Location to write"],
@@ -232,14 +231,14 @@ EOM
 		],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the Write operation succeeds, you will see the following keys in the
 result:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","success","Everything went well."],
 	["cost","<b>qty</b>","Cost of operation"],
 	["usage_balance","<b>qty</b>","New usage balance"],
@@ -247,7 +246,7 @@ EOM
 	["content_hash","<b>hash</b>","Hash of content"],
 	);
 
-	emit(<<EOM
+	page::emit(<<EOM
 
 <p>
 <b>NOTE:</b> the "content" key supplied in the input is <em>not</em> echoed
@@ -255,7 +254,7 @@ back in the result, because that would just be a waste of time and bandwidth.
 EOM
 );
 
-	emit(<<EOM
+	page::emit(<<EOM
 <p>
 If the operation fails, the status will be <em>fail</em>, and the
 reason for the failure will be indicated with any keys below which
@@ -263,7 +262,7 @@ apply:
 EOM
 );
 
-	help_context_table(
+	page_help::context_table(
 	["status","fail","Something went wrong."],
 	["error_loc","not_valid_id", "loc is not a valid id"],
 	["error_loc","vacant", "loc is vacant (sold)"],
@@ -283,9 +282,9 @@ EOM
 	);
 	}
 
-sub help_archive
+sub respond
 	{
-	emit(<<EOM
+	page::emit(<<EOM
 <h1>Archive</h1>
 
 <p>
@@ -318,9 +317,9 @@ EOM
 	my $test_str = "first/line\nsecond/line\n";
 	my $q_test_str = uri_escape($test_str);
 
-	my $this_url = loom_config("this_url");
+	my $this_url = loom_config::get("this_url");
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1>Example API Call</h1>
 <p>
 Here is a url which writes the string "abc" into archive location $loc,
@@ -364,7 +363,7 @@ EOM
 );
 	}
 
-	emit(<<EOM
+	page::emit(<<EOM
 <h1>Archive Operations</h1>
 <p>
 Here we describe the API (application programming interface) for the Archive.
@@ -373,11 +372,11 @@ The operations are Buy, Sell, Touch, Look, and Write.
 EOM
 );
 
-	help_archive_buy();
-	help_archive_sell();
-	help_archive_touch();
-	help_archive_look();
-	help_archive_write();
+	buy();
+	sell();
+	touch();
+	look();
+	do_write();
 	}
 
 return 1;

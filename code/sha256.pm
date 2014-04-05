@@ -1,6 +1,5 @@
 package sha256;
 use strict;
-use export "sha256","sha256_hex";
 use Digest::SHA256;
 
 =pod
@@ -17,7 +16,7 @@ smaller chunk sizes.  Just to be extra-safe we use chunk size 127.
 
 =cut
 
-sub sha256_process_chunks
+sub process_chunks
 	{
 	my $str = shift;
 
@@ -52,26 +51,26 @@ sub sha256_process_chunks
 # allows you to feed the result into other hashes in a standard way.  To view
 # the result as a human-readable hex string, just use:
 #
-#   my $hash = unpack("H*", sha256("my stuff"));
+#   my $hash = unpack("H*", sha256::bin("my stuff"));
 #   print "$hash\n";
 #
 # That will show you the hash value WITHOUT the spaces.
 
-sub sha256
+sub bin
 	{
 	my $str = shift;
 
-	return substr(sha256_process_chunks($str)->digest, 0, 32);
+	return substr(process_chunks($str)->digest, 0, 32);
 	}
 
 # Return the SHA256 digest as a hexadecimal string, broken up with spaces in
 # groups of 8 digits each (the same way GPG returns it).
 
-sub sha256_hex
+sub hex
 	{
 	my $str = shift;
 
-	return sha256_process_chunks($str)->hexdigest;
+	return process_chunks($str)->hexdigest;
 	}
 
 return 1;

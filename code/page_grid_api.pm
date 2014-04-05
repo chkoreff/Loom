@@ -1,83 +1,82 @@
 package page_grid_api;
 use strict;
-use export "page_grid_api_respond";
 use api;
 use context;
 use http;
 use page;
 
-sub page_grid_api_respond
+sub respond
 	{
-	my $api = op_new();
+	my $api = context::new();
 
-	my $action = http_get("action");
+	my $action = http::get("action");
 
-	op_put($api,"function","grid");
-	op_put($api,"action",$action);
+	context::put($api,"function","grid");
+	context::put($api,"action",$action);
 
 	if ($action eq "buy")
 		{
-		op_put($api,
-			"type",http_get("type"),
-			"loc",http_get("loc"),
-			"usage",http_get("usage"),
+		context::put($api,
+			"type",http::get("type"),
+			"loc",http::get("loc"),
+			"usage",http::get("usage"),
 			);
 		}
 	elsif ($action eq "sell")
 		{
-		op_put($api,
-			"type",http_get("type"),
-			"loc",http_get("loc"),
-			"usage",http_get("usage"),
+		context::put($api,
+			"type",http::get("type"),
+			"loc",http::get("loc"),
+			"usage",http::get("usage"),
 			);
 		}
 	elsif ($action eq "issuer")
 		{
-		op_put($api,
-			"type",http_get("type"),
-			"orig",http_get("orig"),
-			"dest",http_get("dest"),
+		context::put($api,
+			"type",http::get("type"),
+			"orig",http::get("orig"),
+			"dest",http::get("dest"),
 			);
 		}
 	elsif ($action eq "touch")
 		{
-		op_put($api,
-			"type",http_get("type"),
-			"loc",http_get("loc"),
+		context::put($api,
+			"type",http::get("type"),
+			"loc",http::get("loc"),
 			);
 		}
 	elsif ($action eq "look")
 		{
-		op_put($api,
-			"type",http_get("type"),
-			"hash",http_get("hash"),
+		context::put($api,
+			"type",http::get("type"),
+			"hash",http::get("hash"),
 			);
 		}
 	elsif ($action eq "move")
 		{
-		op_put($api,
-			"type",http_get("type"),
-			"qty",http_get("qty"),
-			"orig",http_get("orig"),
-			"dest",http_get("dest"),
+		context::put($api,
+			"type",http::get("type"),
+			"qty",http::get("qty"),
+			"orig",http::get("orig"),
+			"dest",http::get("dest"),
 			);
 		}
 	elsif ($action eq "scan")
 		{
-		op_put($api,
-			"locs",http_get("locs"),
-			"types",http_get("types"),
-			"zeroes",http_get("zeroes"),
+		context::put($api,
+			"locs",http::get("locs"),
+			"types",http::get("types"),
+			"zeroes",http::get("zeroes"),
 			);
 		}
 
-	api_respond($api);
+	api::respond($api);
 
 	my $response_code = "200 OK";
 	my $headers = "Content-Type: text/plain\n";
-	my $result = op_write_kv($api);
+	my $result = context::write_kv($api);
 
-	format_HTTP_response($response_code,$headers,$result);
+	page::format_HTTP_response($response_code,$headers,$result);
 	return;
 	}
 

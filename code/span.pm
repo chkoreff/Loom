@@ -1,8 +1,7 @@
 package span;
 use strict;
-use export "span_quote","span_unquote";
 
-sub span_quote
+sub quote
 	{
 	my $in = \shift;
 	my $pos = \shift;
@@ -26,7 +25,7 @@ sub span_quote
 		}
 	}
 
-sub span_unquote
+sub unquote
 	{
 	my $in = \shift;
 	my $pos = \shift;

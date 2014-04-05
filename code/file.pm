@@ -1,51 +1,8 @@
 package file;
 use strict;
-use export
-	"file_new",
-	"path_normalize",
-	"file_full_path",
-	"file_local_path",
-	"file_name",
-	"file_type",
-	"file_size",
-	"file_restrict",
-	"file_child",
-	"file_parent",
-	"file_release",
-	"file_create_text",
-	"file_remove_text",
-	"file_create_dir",
-	"file_names",
-	"file_deep_names",
-	"file_remove_dir",
-	"file_remove_tree",
-	"file_remove_children",
-	"file_rename",
-	"file_create_path",
-	"file_remove_path",
-	"file_is_detached",
-	"file_open_read",
-	"file_open_write",
-	"file_get_line",
-	"file_get_bytes",
-	"file_get_content",
-	"file_get_by_name",
-	"file_put_bytes",
-	"file_put_content",
-	"file_put_by_name",
-	"file_append",
-	"file_update_set_test_delay",
-	"file_update",
-	;
 use Fcntl qw(:DEFAULT :flock);
 
-=pod
-
-=head1 NAME
-
-file - Robust concurrent file operations
-
-=cut
+# Robust concurrent file operations
 
 # Create a new file object with the given path.  Initially, this object simply
 # holds the path for future reference -- no files are opened or created right
@@ -55,7 +12,7 @@ file - Robust concurrent file operations
 # The $level is an optional level which restricts operations to within a
 # specific directory.  Normally this is passed in from the "child" operation.
 
-sub file_new
+sub new
 	{
 	my $path = shift;
 	my $level = shift;  # optional restrict level
@@ -122,7 +79,7 @@ sub path_normalize
 
 # Return the full path of this object.
 
-sub file_full_path
+sub full_path
 	{
 	my $file = shift;
 
@@ -131,7 +88,7 @@ sub file_full_path
 
 # Return the path of this object relative to its restricted context.
 
-sub file_local_path
+sub local_path
 	{
 	my $file = shift;
 	return "" if !defined $file;
@@ -150,11 +107,11 @@ sub file_local_path
 
 # Return the name of this object without any preceding path.
 
-sub file_name
+sub name
 	{
 	my $file = shift;
 
-	my @path = split("/",file_local_path($file));
+	my @path = split("/",local_path($file));
 	return undef if @path == 0;
 	return $path[$#path];
 	}
@@ -162,7 +119,7 @@ sub file_name
 # Return the type of this file object.  The result is "f" for a text file,
 # "d" for a directory, or "" (null) if the file does not exist.
 
-sub file_type
+sub type
 	{
 	my $file = shift;
 
@@ -175,7 +132,7 @@ sub file_type
 # Return the size in bytes of this file.  This does return a number for a
 # directory as well, though that may not be useful.
 
-sub file_size
+sub size
 	{
 	my $file = shift;
 
@@ -185,7 +142,7 @@ sub file_size
 # Restrict all operations to this directory, never allowing any "child"
 # operation to stray outside it.
 
-sub file_restrict
+sub restrict
 	{
 	my $dir = shift;
 
@@ -196,29 +153,29 @@ sub file_restrict
 
 # Return the child with the given path relative to this directory.
 
-sub file_child
+sub child
 	{
 	my $dir = shift;
 	my $path = shift;
 
 	$path = "" if !defined $path;
 	die if !defined $dir->{path};
-	return file_new("$dir->{path}/$path",$dir->{level});
+	return new("$dir->{path}/$path",$dir->{level});
 	}
 
 # Return the parent of this file, or undef if we're at the top level and thus
 # no parent exists.
 
-sub file_parent
+sub parent
 	{
 	my $file = shift;
 
-	return file_child($file,"..");
+	return child($file,"..");
 	}
 
 # Release (close) this file if open.
 
-sub file_release
+sub release
 	{
 	my $file = shift;
 
@@ -235,12 +192,12 @@ sub file_release
 # Create a text file here.  Return true if the file did not exist and was
 # successfully created.
 
-sub file_create_text
+sub create_text
 	{
 	my $file = shift;
 
 	return 0 if $file->{mode} ne "";  # already open
-	return 0 if file_type($file) ne "";    # already exists
+	return 0 if type($file) ne "";    # already exists
 
 	if (!defined $file->{fh} && !sysopen($file->{fh},$file->{path},O_CREAT))
 		{
@@ -249,7 +206,7 @@ sub file_create_text
 		}
 
 	$file->{mode} = "R";
-	file_release($file);
+	release($file);
 
 	return 1;
 	}
@@ -265,7 +222,7 @@ sub file_create_text
 # files were released when deleted, our stress test would fail, revealing
 # data integrity errors.
 
-sub file_remove_text
+sub remove_text
 	{
 	my $file = shift;
 
@@ -275,7 +232,7 @@ sub file_remove_text
 # Create a directory here.  Return true if the directory did not exist and was
 # successfully created.
 
-sub file_create_dir
+sub create_dir
 	{
 	my $dir = shift;
 
@@ -284,7 +241,7 @@ sub file_create_dir
 
 # Return the list of names in this directory, sorted alphabetically.
 
-sub file_names
+sub names
 	{
 	my $dir = shift;
 
@@ -309,28 +266,28 @@ sub file_names
 # Return the deep list of names in this directory, sorted alphabetically.
 # This recursively descends through the directory.
 
-sub file_deep_names
+sub deep_names
 	{
 	my $dir = shift;
 
-	return () if file_type($dir) ne "d";
+	return () if type($dir) ne "d";
 
 	my @result;
 
-	for my $name (file_names($dir))
+	for my $name (names($dir))
 		{
-		my $child = file_child($dir,$name);
-		if (file_type($child) eq "d")
+		my $child = child($dir,$name);
+		if (type($child) eq "d")
 			{
-			my @list = file_deep_names($child);
+			my @list = deep_names($child);
 			for my $path (@list)
 				{
 				push @result, "$name/$path";
 				}
 			}
-		elsif (file_type($child) eq "f")
+		elsif (type($child) eq "f")
 			{
-			push @result, file_name($child);
+			push @result, name($child);
 			}
 		}
 
@@ -341,7 +298,7 @@ sub file_deep_names
 # successfully removed.  Note that the directory can only be removed if it is
 # empty.
 
-sub file_remove_dir
+sub remove_dir
 	{
 	my $dir = shift;
 
@@ -349,30 +306,30 @@ sub file_remove_dir
 	}
 
 # Remove the entire directory tree here.
-sub file_remove_tree
+sub remove_tree
 	{
 	my $dir = shift;
 
 	return 0 if !defined $dir;
-	my $type = file_type($dir);
+	my $type = type($dir);
 
-	return file_remove_text($dir) if $type eq "f" || -l $dir->{path};
+	return remove_text($dir) if $type eq "f" || -l $dir->{path};
 		# If it's a symlink just unlink it, don't delete the whole tree.
 
 	return 0 if $type ne "d";
-	file_remove_children($dir);
-	return file_remove_dir($dir);
+	remove_children($dir);
+	return remove_dir($dir);
 	}
 
 # Remove all the children of this directory.
 
-sub file_remove_children
+sub remove_children
 	{
 	my $dir = shift;
 
-	for my $name (file_names($dir))
+	for my $name (names($dir))
 		{
-		file_remove_tree(file_child($dir,$name));
+		remove_tree(child($dir,$name));
 		}
 
 	return;
@@ -388,45 +345,45 @@ sub file_remove_children
 #
 # TODO 20130830 This is not a portable way to move files to other directories.
 
-sub file_rename
+sub rename
 	{
 	my $file = shift;
 	my $path = shift;
 
-	file_release($file);
+	release($file);
 	rename $file->{path}, $path;
 	}
 
 # Create the enclosing path to this object.  This creates any directories which
 # lead to this object.
 
-sub file_create_path
+sub create_path
 	{
 	my $file = shift;
 
-	my $parent = file_parent($file);
+	my $parent = parent($file);
 	return 1 if !defined $parent;
 
-	my $type = file_type($parent);
+	my $type = type($parent);
 	return 1 if $type eq "d";
 	return 0 if $type eq "f";
 
-	return 0 if !file_create_path($parent);
-	return file_create_dir($parent);
+	return 0 if !create_path($parent);
+	return create_dir($parent);
 	}
 
 # Remove the enclosing path to this object, as far up the tree as possible.
 # This removes any empty directories which lead to this object.
 
-sub file_remove_path
+sub remove_path
 	{
 	my $file = shift;
 
-	my $parent = file_parent($file);
+	my $parent = parent($file);
 	return 1 if !defined $parent;
 
-	return 0 if !file_remove_dir($parent);
-	return file_remove_path($parent);
+	return 0 if !remove_dir($parent);
+	return remove_path($parent);
 	}
 
 # Return true if the file is open but "detached", meaning that it has been
@@ -447,7 +404,7 @@ sub file_remove_path
 # check in place, our stress test is rock solid.  But if the detach check is
 # omitted, the stress test will reveal data integrity problems.
 
-sub file_is_detached
+sub is_detached
 	{
 	my $file = shift;
 
@@ -468,10 +425,10 @@ sub file_is_detached
 	}
 
 # Open this file for read access with a shared lock.  Returns true if it got
-# the lock on a normal attached file.  See file_is_detached for a discussion of
+# the lock on a normal attached file.  See is_detached for a discussion of
 # attached and detached files.
 
-sub file_open_read
+sub open_read
 	{
 	my $file = shift;
 	my $blocking = shift;  # optional, default 1
@@ -493,9 +450,9 @@ sub file_open_read
 
 	return 0 if !$locked;
 
-	if (file_is_detached($file))
+	if (is_detached($file))
 		{
-		file_release($file);
+		release($file);
 		return 0;
 		}
 
@@ -504,10 +461,10 @@ sub file_open_read
 	}
 
 # Open this file for write access with an exclusive lock.  Returns true if it
-# got the lock on a normal attached file.  See file_is_detached for a
-# discussion of attached and detached files.
+# got the lock on a normal attached file.  See is_detached for a discussion of
+# attached and detached files.
 
-sub file_open_write
+sub open_write
 	{
 	my $file = shift;
 	my $blocking = shift;  # optional, default 1
@@ -529,9 +486,9 @@ sub file_open_write
 
 	return 0 if !$locked;
 
-	if (file_is_detached($file))
+	if (is_detached($file))
 		{
-		file_release($file);
+		release($file);
 		return 0;
 		}
 
@@ -542,7 +499,7 @@ sub file_open_write
 
 # Read the next line from the open file.
 
-sub file_get_line
+sub get_line
 	{
 	my $file = shift;
 
@@ -556,7 +513,7 @@ sub file_get_line
 
 # Read a specific number of bytes from the open file if possible.
 
-sub file_get_bytes
+sub get_bytes
 	{
 	my $file = shift;
 	my $num_bytes = shift;
@@ -574,11 +531,11 @@ sub file_get_bytes
 
 # Get the entire content of the file.
 
-sub file_get_content
+sub get_content
 	{
 	my $file = shift;
 
-	file_open_read($file);
+	open_read($file);
 
 	return undef if $file->{mode} eq "";
 	return undef if !defined $file->{fh};
@@ -604,16 +561,16 @@ sub file_get_content
 
 # Get the entire content of a named file in the given directory.
 
-sub file_get_by_name
+sub get_by_name
 	{
 	my $dir = shift;
 	my $name = shift;
 
-	my $file = file_child($dir,$name);
+	my $file = child($dir,$name);
 	return "" if !defined $file;
 
-	my $val = file_get_content($file);
-	file_release($file);
+	my $val = get_content($file);
+	release($file);
 
 	return "" if !defined $val;
 	return $val;
@@ -621,7 +578,7 @@ sub file_get_by_name
 
 # Write the bytes to the open file at the current position.
 
-sub file_put_bytes
+sub put_bytes
 	{
 	my $file = shift;
 	my $text = shift;
@@ -648,12 +605,12 @@ sub file_put_bytes
 
 # Replace the entire content of the file.
 
-sub file_put_content
+sub put_content
 	{
 	my $file = shift;
 	my $text = shift;
 
-	file_open_write($file);
+	open_write($file);
 
 	return 0 if $file->{mode} ne "W";
 	return 0 if !defined $file->{fh};
@@ -661,23 +618,23 @@ sub file_put_content
 	seek($file->{fh}, 0, 0);
 	truncate($file->{fh}, 0);
 
-	return file_put_bytes($file,$text);
+	return put_bytes($file,$text);
 	}
 
 # Put the entire content of a named file in the given directory.
 
-sub file_put_by_name
+sub put_by_name
 	{
 	my $dir = shift;
 	my $name = shift;
 	my $text = shift;
 
-	return file_update($dir, {$name,$text}, {});
+	return update($dir, {$name,$text}, {});
 	}
 
 # Append the text to the open file.
 
-sub file_append
+sub append
 	{
 	my $file = shift;
 	my $text = shift;
@@ -687,7 +644,7 @@ sub file_append
 
 	seek($file->{fh}, 0, 2);
 
-	return file_put_bytes($file,$text);
+	return put_bytes($file,$text);
 	}
 
 # Atomic parallel update routine.
@@ -712,11 +669,10 @@ sub file_append
 # directory structure needed to support the keys (file names) which are
 # mentioned in the $new table.
 #
-# As an extra security precaution, we recommend that you call "file_restrict"
-# on the directory handle before calling "file_update".  That will prevent any
-# keys from using ".." to reach up and modify files outside the directory.
-# Calling file_restrict will make the directory into a securely sealed off
-# "sandbox".
+# As an extra security precaution, we recommend that you call "restrict" on the
+# directory handle before calling "update".  That will prevent any keys from
+# using ".." to reach up and modify files outside the directory.  Calling
+# restrict will make the directory into a securely sealed off "sandbox".
 #
 # This routine has been highly tested under extreme processor loads and
 # adverse timing conditions to maximize contention.  Many code branches are
@@ -741,12 +697,12 @@ sub file_append
 
 my $g_test_delay;
 
-sub file_update_set_test_delay
+sub set_test_delay
 	{
 	$g_test_delay = shift;
 	}
 
-sub file_update
+sub update
 	{
 	my $dir = shift;
 	my $new = shift;
@@ -770,7 +726,7 @@ sub file_update
 
 	for my $key (@key_list)
 		{
-		my $file = file_child($dir,$key);
+		my $file = child($dir,$key);
 		if (!defined $file)
 			{
 			# Tried to venture outside of restricted directory scope.
@@ -781,8 +737,8 @@ sub file_update
 		# Try to create the file in case it doesn't already exist.  Otherwise
 		# we won't be able to lock it.
 
-		file_create_path($file);
-		file_create_text($file);
+		create_path($file);
+		create_text($file);
 
 		$file_map->{$key} = $file;
 		push @file_list, $file;
@@ -795,14 +751,14 @@ sub file_update
 		@file_list =
 			map { $_->[0] }
 			sort { $a->[1] cmp $b->[1] }
-			map { [$_, file_full_path($_) ] }
+			map { [$_, full_path($_) ] }
 			@file_list;
 
 		# Lock the files in order.
 
 		for my $file (@file_list)
 			{
-			next if file_open_write($file);
+			next if open_write($file);
 
 			# Some possible errors here:
 			#   Inappropriate ioctl for device
@@ -829,7 +785,7 @@ sub file_update
 			my $old_val = $old->{$key};
 			next if !defined $old_val;
 
-			my $curr_val = file_get_content($file);
+			my $curr_val = get_content($file);
 			next if defined $curr_val && $curr_val eq $old_val;
 
 			$ok = 0;   # something didn't match!
@@ -840,8 +796,8 @@ sub file_update
 				# or perhaps some other process created it and we got the lock
 				# on it first.  Either way we go ahead and remove the file.
 
-				file_remove_text($file);
-				file_remove_path($file);
+				remove_text($file);
+				remove_path($file);
 				}
 			}
 		}
@@ -854,13 +810,13 @@ sub file_update
 			{
 			my $file = $file_map->{$key};
 
-			my $size = file_size($file);
+			my $size = size($file);
 			$size = 0 if !defined $size;
 
 			if ($file->{mode} eq "W" && $size == 0)
 				{
-				file_remove_text($file);
-				file_remove_path($file);
+				remove_text($file);
+				remove_path($file);
 				}
 			}
 		}
@@ -885,14 +841,14 @@ sub file_update
 			next if !defined $new_val;
 				# Don't update if new value is undefined.
 
-			$ok = 0 if !file_put_content($file,$new_val);
+			$ok = 0 if !put_content($file,$new_val);
 				# Write the new content.
 
 			if ($new_val eq "")
 				{
 				# Remove the file if it's empty.
-				file_remove_text($file);
-				file_remove_path($file);
+				remove_text($file);
+				remove_path($file);
 				}
 
 			last if !$ok;
@@ -933,7 +889,7 @@ sub file_update
 
 	for my $file (@file_list)
 		{
-		file_release($file);
+		release($file);
 		}
 
 	return $ok;

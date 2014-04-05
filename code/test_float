@@ -4,5 +4,4 @@ use FindBin;
 use lib $FindBin::RealBin;
 
 use test_float;
-
-test_float_all();
+test_float::run();

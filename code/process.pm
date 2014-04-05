@@ -1,9 +1,7 @@
 package process;
 use strict;
-use export "wait_children";
 
 # Wait for all children to finish.
-
 sub wait_children
 	{
 	while (1)

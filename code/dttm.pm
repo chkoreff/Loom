@@ -1,19 +1,7 @@
 package dttm;
 use strict;
-use export
-	"valid_dttm",
-	"dttm_as_gmt",
-	"dttm_as_local",
-	"dttm_as_cookie",
-	;
 
-=pod
-
-=head1 NAME
-
-Date and time operations.
-
-=cut
+# Date and time operations.
 
 sub valid_dttm
 	{
@@ -24,7 +12,7 @@ sub valid_dttm
 	return 0;
 	}
 
-sub dttm_as_gmt
+sub as_gmt
 	{
 	my $time = shift;
 
@@ -39,7 +27,7 @@ sub dttm_as_gmt
 	return $dttm;
 	}
 
-sub dttm_as_local
+sub as_local
 	{
 	my $time = shift;
 
@@ -58,7 +46,7 @@ sub dttm_as_local
 # in HTML, e.g. "Thu, 29-Nov-2007 16:18:42 GMT".  This format is typically
 # used for cookie expiration times.
 
-sub dttm_as_cookie
+sub as_cookie
 	{
 	my $time = shift;
 

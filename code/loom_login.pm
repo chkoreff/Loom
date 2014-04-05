@@ -1,11 +1,5 @@
 package loom_login;
 use strict;
-use export
-	"passphrase_location",
-	"passphrase_session",
-	"valid_session",
-	"kill_session",
-	;
 use archive;
 use id;
 use sha256;
@@ -43,8 +37,8 @@ sub passphrase_location
 	{
 	my $passphrase = shift;
 
-	my $hash = sha256($passphrase);
-	my $loc = fold_hash($hash);
+	my $hash = sha256::bin($passphrase);
+	my $loc = id::fold_hash($hash);
 	$loc = unpack("H*",$loc);
 
 	return $loc;
@@ -57,8 +51,8 @@ sub passphrase_session
 	my $passphrase = shift;
 
 	my $loc_object =  passphrase_location($passphrase);
-	my $loc_session_ptr = xor_hex($loc_object, "0" x 31 . "1");
-	my $session = archive_touch($loc_session_ptr);
+	my $loc_session_ptr = id::xor_hex($loc_object, "0" x 31 . "1");
+	my $session = archive::touch($loc_session_ptr);
 	return $session;
 	}
 
@@ -68,11 +62,11 @@ sub valid_session
 	{
 	my $session = shift;
 
-	return 0 if !valid_id($session);
+	return 0 if !id::valid_id($session);
 
-	my $loc_object = archive_touch($session);
+	my $loc_object = archive::touch($session);
 
-	return 1 if valid_id($loc_object);
+	return 1 if id::valid_id($loc_object);
 	return 0;
 	}
 
@@ -91,18 +85,18 @@ sub kill_session
 	{
 	my $session = shift;
 
-	my $loc_object = archive_touch($session);
-	my $loc_session_ptr = xor_hex($loc_object, "0" x 31 . "1");
+	my $loc_object = archive::touch($session);
+	my $loc_session_ptr = id::xor_hex($loc_object, "0" x 31 . "1");
 
-	archive_write($session,"",$loc_object);
-	archive_sell($session,$loc_object);
+	archive::do_write($session,"",$loc_object);
+	archive::sell($session,$loc_object);
 
-	$session = archive_random_vacant_location();
+	$session = archive::random_vacant_location();
 
-	archive_write($loc_session_ptr,$session,$loc_object);
+	archive::do_write($loc_session_ptr,$session,$loc_object);
 
-	archive_buy($session,$loc_object);
-	archive_write($session,$loc_object,$loc_object);
+	archive::buy($session,$loc_object);
+	archive::do_write($session,$loc_object,$loc_object);
 	return;
 	}
 
