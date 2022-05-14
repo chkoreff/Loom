@@ -55,24 +55,14 @@ sub help_index
 			html::top_url("function","archive_tutorial", "help",1),
 			"Archive");
 
-		my $link_cms = page::highlight_link(
-			html::top_url("function","edit"),
-			"CMS");
-
 		my $link_tools = page::highlight_link(
 			html::top_url("function","folder_tools"),
 			"Tools");
 
-		my $link_source = page::highlight_link(
-			"/source",
-			"Source Code", 0, "Source code for the Loom server");
-
 		page::top_link("");
 		page::top_link($link_grid_api);
 		page::top_link($link_archive_api);
-		page::top_link($link_cms);
 		page::top_link($link_tools);
-		page::top_link($link_source);
 		}
 
 	if ($topic eq "contact_info")
@@ -85,13 +75,13 @@ sub help_index
 If you have any questions please send an email to $dsp_email.
 EOM
 );
-		my $pgp_key = archive::get(loom_config::get("support_pgp_key"));
+		my $pgp_key = loom_config::get("support_pgp_key");
 		if ($pgp_key ne "")
 		{
 		my $url = html::top_url("help",1, "topic","pgp");
 		page::emit(<<EOM
-We encourage you to send us an <a href="$url">encrypted email</a>
-using PGP.
+<p>
+To send an encrypted email, use our <a href="$url">PGP key</a>.
 EOM
 );
 		}
@@ -101,7 +91,7 @@ EOM
 
 	if ($topic eq "pgp")
 		{
-		my $pgp_key = archive::get(loom_config::get("support_pgp_key"));
+		my $pgp_key = loom_config::get("support_pgp_key");
 		return if $pgp_key eq "";
 
 		my $dsp_email = get_email_support();
@@ -118,14 +108,6 @@ EOM
 		return;
 		}
 
-	if ($topic eq "get_usage_tokens")
-		{
-		my $loc = loom_config::get("exchanger_page");
-		my $page = archive::get($loc);
-		page::emit($page);
-		return;
-		}
-
 	my $link_grid_api = page::highlight_link(
 		html::top_url("function","grid_tutorial", "help",1),
 		"Grid");
@@ -133,10 +115,6 @@ EOM
 	my $link_archive_api = page::highlight_link(
 		html::top_url("function","archive_tutorial", "help",1),
 		"Archive");
-
-	my $link_cms = page::highlight_link(
-		html::top_url("function","edit"),
-		"Content Management System");
 
 	my $link_tools = page::highlight_link(
 		html::top_url("function","folder_tools"),
@@ -154,23 +132,14 @@ Interface (API).  There are two primary APIs:
 
 Those links also include a "Tutorial" which gives you
 the chance to try out the API interactively.
-
-<h1> Content Management System (CMS) </h1>
 <p>
-The $link_cms is a very basic system for managing documents in the
-Loom Archive.  You can create, delete, edit, and upload data here, paying in
-usage tokens.
-
-<h1> Tools </h1>
 We also have some $link_tools which do some computations with IDs and
 passphrases.
-
 EOM
 );
 
 	return;
 	}
-
 
 # Note that this routine deliberately does not quote the keys and values.
 

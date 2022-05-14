@@ -8,7 +8,7 @@ use html;
 use http;
 use loom_qty;
 use page;
-use page_folder; # TODO
+use page_folder;
 
 sub handle_history
 	{
@@ -335,7 +335,7 @@ Your wallet display consists of four sections:
 <ul>
 <li> Enter the quantity into the text box labeled "Quantity".
 <li> Choose the asset in the drop-down menu.
-<li> Choose the contact in the drop-down menu. 
+<li> Choose the contact in the drop-down menu.
 <li> Press <b>Pay</b>
 </ul>
 <p>

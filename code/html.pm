@@ -142,7 +142,8 @@ sub make_url
 
 sub top_url
 	{
-	return make_url("/", @_);
+	my $prefix = sloop_config::get("path_prefix");
+	return make_url($prefix, @_);
 	}
 
 return 1;

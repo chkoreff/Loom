@@ -343,8 +343,7 @@ sub remove_children
 #
 # Note that this rename will clobber any existing destination.
 #
-# TODO 20130830 This is not a portable way to move files to other directories.
-
+# LATER 20130830 This is not a portable way to move files to other directories.
 sub rename
 	{
 	my $file = shift;

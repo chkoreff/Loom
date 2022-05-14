@@ -9,7 +9,7 @@ use id;
 use loom_config;
 use loom_qty;
 use page;
-use page_folder; # TODO
+use page_folder;
 use random;
 use sha256;
 

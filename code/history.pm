@@ -321,16 +321,15 @@ History
 <input class=small type=submit name=delete_history_items value="Delete Chosen Items Now!">
 </td>
 </tr>
-
 EOM
 	}
 
 	$table .= <<EOM;
 <tr>
-<td class=wallet_small_clean align=right>
-<input class=smaller type=submit name=edit_history_items value="Edit">
+<td class=wallet_small_clean>
+<input class=smaller type=submit name=edit_history_items value="Edit" style='padding:0;'>
 </td>
-<td class=wallet_bold_clean align=right>
+<td class=wallet_bold_clean align=left>
 Time (UTC)
 </td>
 <td class=wallet_bold_clean align=right>
@@ -343,7 +342,6 @@ Time (UTC)
 <span style='margin-right:8px'>Contact</span>
 </td>
 </tr>
-
 EOM
 
 	my $first_memo = "";  # track where to set focus
@@ -452,10 +450,10 @@ EOM
 
 	$table .= <<EOM;
 <tr valign=middle style='background-color:$row_color; height:28px;'>
-<td align=right>
+<td align=left>
 <input$q_checked type=checkbox name=choose_$h_id>
 </td>
-<td align=right>
+<td align=left>
 $q_dttm
 </td>
 <td align=right>
@@ -512,7 +510,7 @@ EOM
 <tr style='background-color:$row_color; height:28px;'>
 <td></td>
 <td colspan=4>
-<div style='overflow: auto; font-size:10pt; display:block; margin-top: 0px; margin-bottom:2px'>
+<div style='overflow: auto; font-size:10pt; display:block; margin-top: 0px; margin-left:20px; margin-bottom:2px'>
 $q_memo
 </div>
 </td>

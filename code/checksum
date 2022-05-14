@@ -95,8 +95,7 @@ EOM
 		exit(2);
 		}
 
-	# TODO 20130830 This doesn't allow paths that start with "../".
-
+	# LATER 20130830 This doesn't allow paths that start with "../".
 	for my $path (@ARGV)
 		{
 		my $file = file::new($path);

@@ -168,8 +168,8 @@ EOM
 	}
 
 	{
-	my $this_url = loom_config::get("this_url");
-	my $url = q{/test/path/a///%3Cbr%3E%3F%2F%22hi%22%25%2F..%2Fweird%20/two%0D%0Alines here/c/};
+	my $prefix = sloop_config::get("path_prefix");
+	my $url = $prefix . q{/test/path/a///%3Cbr%3E%3F%2F%22hi%22%25%2F..%2Fweird%20/two%0D%0Alines here/c/};
 
 	page::emit(<<EOM
 <h1>Test path interpretation</h1>

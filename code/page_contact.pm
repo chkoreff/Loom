@@ -8,8 +8,9 @@ use http;
 use id;
 use loom_config;
 use page;
-use page_folder; # TODO
+use page_folder;
 use random;
+use history_contact;
 
 sub help_contact
 	{
@@ -234,7 +235,6 @@ sub page_zoom_contact_heading
 		$q_title = "";
 		$q_loc_id = "(Secret)";
 		}
-	
 	page::emit(<<EOM
 <h1> Contact : $q_loc_name </h1>
 <p> Location :
@@ -546,149 +546,7 @@ EOM
 		page::emit($table);
 		}
 
-	# NOTE: I am keeping the elaborate Invitation Link mechanism because it's
-	# good for automated invitation systems.  However, I am disabling its
-	# display for now because it doesn't flow smoothly here.
-	# LATER: maybe put this somewhere else.
-
-	if (0)  # LATER disabled for now
-	{
-
-	if ($loc ne $loc_folder)
-	{
-
-	if ($action ne "accept" && $action ne "invite" && $action ne "delete")
-	{
-	my $loc_folder = page_folder::current_location();
-
-	my $loc = page_folder::map_nickname_to_id("loc",$display->{location_name});
-
-	my @list_type = page_folder::get_sorted_list_type_enabled();
-
-	my $owner_name = $display->{location_name};
-	my $sponsor_name = page_folder::map_id_to_nickname("loc",$loc_folder);
-
-	my $context = context::new();
-
-	context::put($context,"function","folder", "invite",1);
-
-	context::put($context,"owner.name",$owner_name);
-	context::put($context,"sponsor.name",$sponsor_name);
-
-	my $type_no = 0;
-
-	context::put($context,"nT","0");
-
-	my @used_types;
-	my %used_type;
-
-	my $scan = grid::scan([$loc],\@list_type,1);
-		# Scan all types including 0-values.
-
-	for my $loc (split(" ",context::get($scan,"locs")))
-		{
-		for my $pair (split(" ",context::get($scan,"loc/$loc")))
-			{
-			my ($value,$type) = split(":",$pair);
-
-			next if $used_type{$type};
-
-			push @used_types, $type;
-			$used_type{$type} = 1;
-			}
-		}
-
-	for my $type (@used_types)
-		{
-		$type_no++;
-		my $type_name = page_folder::map_id_to_nickname("type",$type);
-
-		my $scale = page_folder::get("type_scale.$type");
-		$scale = "0" if $scale eq "";
-
-		my $min_precision = page_folder::get("type_min_precision.$type");
-		$min_precision = "0" if $min_precision eq "";
-
-		my $type_display = "";
-		if ($scale ne "0" || $min_precision ne "0")
-			{
-			$type_display = "$scale.$min_precision";
-			}
-
-		context::put($context,"T$type_no.id",$type);
-		context::put($context,"T$type_no.name",$type_name);
-		context::put($context,"T$type_no.display",$type_display);
-		}
-
-	context::put($context,"nT",$type_no);
-
-	context::put($context,"usage", $loc);
-
-	my $url = html::top_url(context::pairs($context));
-
-	my $build = page_folder::build_template($context);
-
-	my $min_usage = $build->{min_usage};
-
-	my $actual_usage = $display->{usage_count}->{$loc};
-	$actual_usage = "0" if !defined $actual_usage;
-
-	page::emit(<<EOM
-<h2> Inviting a new user </h2>
-If your contact has never used the Loom system before, he will need to sign up
-and create his own Loom wallet.  For that he will need at least 100
-usage tokens.
-EOM
-);
-	if ($actual_usage >= 100)
-	{
-	page::emit(<<EOM
-Since this contact already contains $actual_usage usage tokens, you can send
-him the contact point and it will work just fine.
-EOM
-);
-	}
-	else
-	{
-	page::emit(<<EOM
-So if you are sending this contact point to a brand new user, be sure to pay
-at least 100 usage tokens to this contact first.  Then send him the contact
-location.
-EOM
-);
-	}
-
-	if ($actual_usage >= $min_usage)
-	{
-	page::emit(<<EOM
-<p>
-Alternatively, you could send him this entire
-<a href="$url" target=_invite>Invitation Link</a> which has
-all the asset types listed above built in so he does not have to add them.
-(Hint: to send the link, right-click on it and click "Copy Link" in the
-pop-up menu.  Compose a message to your contact, right-click in the message
-window and click "Paste" in the pop-up menu.)
-EOM
-);
-	}
-	else
-	{
-	page::emit(<<EOM
-<p>
-Alternatively, you could send him an entire invitation link with all the asset
-types built in so he does not have to add them.  But first you must pay at
-least $min_usage usage tokens to this contact.  Then click the contact name
-again and an invitation link will appear here.
-EOM
-);
-	}
-
-	}
-
-	}
-
-	}
-
+	history_contact::show($loc);
 	return;
 	}
 

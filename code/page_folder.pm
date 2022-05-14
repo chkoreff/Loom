@@ -16,7 +16,7 @@ use page;
 use page_asset;
 use page_contact;
 use page_help;
-use page_wallet; # TODO
+use page_wallet;
 use random;
 
 sub put_mask_if_absent
@@ -321,7 +321,7 @@ sub configure_scan_display
 				# However, do not include 0-value locations in the wallet
 				# display.
 
-				# TODO 20140404 actually I'd kind of like 0-value locations to
+				# LATER 20140404 actually I'd kind of like 0-value locations to
 				# show up under your personal location, but of course not under
 				# the "on the table" locations.  Unfortunately this can't be
 				# done easily because I'm using api_grid::scan which makes no
@@ -693,7 +693,7 @@ EOM
 		http::slice(qw(session)),
 		);
 
-	# TODO 20140404 Perhaps separate assets and liabilities
+	# LATER 20140404 Perhaps separate assets and liabilities
 	my $label = $loc eq $loc_folder ? "In my wallet" : "On the table";
 
 	my $q_loc_name = html::quote($loc_name);
@@ -1454,12 +1454,7 @@ EOM
 <input type=submit name=create_folder value="Create Wallet">
 </td>
 </tr>
-
 </table>
-<p>
-<a target=_new href="/help#where_do_i_get_an_invitation">
-Where do I get an invitation?
-</a>
 EOM
 );
 
@@ -1511,7 +1506,7 @@ EOM
 <p>
 Your sponsor is offering you the following assets.  When you create your new
 wallet, you will be charged $build->{cost} usage tokens, and any remaining
-assets will become yours.  
+assets will become yours.
 EOM
 );
 		}
@@ -1547,27 +1542,6 @@ EOM
 
 	$g_folder_object = undef;
 	$g_folder_location = undef;
-	}
-
-	if (http::get("invite"))
-	{
-	}
-	elsif (http::get("usage") eq "")
-	{
-
-	#  NOTE: disabled 11/19/11
-	if (0)
-	{
-	my $url = html::top_url("help",1, "topic","get_usage_tokens");
-	my $link = qq{<a class=large href="$url">How do I get an invitation?</a>};
-
-	page::emit(<<EOM
-<p>
-$link
-EOM
-);
-	}
-
 	}
 
 	page::emit(<<EOM
@@ -1643,19 +1617,6 @@ sub page_login
 
 	page::need_keyboard();
 
-	if (0)
-	{
-	my $name = loom_config::get("system_name");
-	my $login_greeting = "<h1>\nWelcome to $name.</h1>";
-
-	page::emit(<<EOM
-$login_greeting
-EOM
-);
-	}
-
-#Please enter your passphrase here.  For your security, we highly recommend that
-#you <em>bookmark</em> this site and only come here by clicking that bookmark.
 	page::emit(<<EOM
 <p>
 Please enter passphrase:
@@ -1680,12 +1641,6 @@ EOM
 		"Become a brand new user",
 		);
 
-#	my $name = loom_config::get("system_name");
-#	page::emit(<<EOM
-#<p>
-#New to $name?  $link_folder_new
-#EOM
-#);
 	page::emit(<<EOM
 <p>
 $link_folder_new
@@ -1694,164 +1649,12 @@ EOM
 #If you don't have a passphrase yet, $link_folder_new.
 	}
 
-	if (0)
-	{
+	my $prefix = sloop_config::get("path_prefix");
 	page::emit(<<EOM
 <p>
-<h1>Q. What is Loom ...</h1>
-<ul>
-<li>Digital Money?
-<li>A Private Trading Platform?
-<li>An Alternative to Fiat Currencies?
-<li>A Hedge Against Runaway Inflation?
-</ul>
-<h1>A. Actually, a bit of all of the above.  Here's a basic explanation:</h1>
-<p>
-At heart, Loom is a very private <em>communications</em> channel for sharing
-information.  Mostly, the information is about digital assets and who owns
-them.  Loom allows people to give away those assets or exchange them, in
-total privacy.
-<p>
-Loom is not about any specific asset.  <em>Any asset</em> that can be represented
-digitally, can be traded via Loom.  There isn't even just one Loom.  Loom is
-an open-source software <em>standard</em>.  So <em>anyone</em> can run their own
-version of loom if they want.
+<a href="$prefix/help">Learn more &hellip;</a>
 EOM
 );
-	}
-
-	page::emit(<<EOM
-<p>
-<a href="/help">Learn more &hellip;</a>
-EOM
-);
-
-	# Disable the security advice for now, it just scares people.
-	# LATER:  figure out a non-threatening way to bring some of it back.
-	if (0)
-	{
-	page::emit(<<EOM
-<p>
-<table border=1 cellpadding=0 style='border-collapse:collapse'>
-<tr>
-<td colspan=2>
-<h2> Important Security Advice </h2>
-<p>
-Do not log in here unless you are certain you are at the <em>authentic</em>
-Loom site.  Some people will try to lead you to a fake Loom site and steal your
-passphrase, but you can easily protect yourself with a little discipline.
-</td>
-</tr>
-<tr>
-<td valign=top>
-<h2> <span style='color:green'>What you SHOULD do:</span> </h2>
-<ul>
-<li> Type "loom.cc" in the location bar of your browser and press the Enter
-key.  Make sure you type it in the area <em>way</em> at the top of your browser
-&mdash; not in the search area.  Hint: type Ctrl-L to put your cursor in the
-location bar, then type "loom.cc" there and press Enter.
-<li> You will then see the landing page.  Click the link under
-"Traditional Secure Login", or use the "Enhanced Security Option" if you prefer.
-<li> You will then see the secure login page.  For your convenience, we
-recommend that you <b>bookmark</b> that page in your browser.  That way you can
-reach it in the future with a single click.
-<li> At the secure login page, you may safely log in.
-</ul>
-</td>
-<td valign=top>
-<h2> <span style='color:red'>What you should NEVER do:</span> </h2>
-<ul>
-<li> Never log into Loom by clicking a link you found in an email, or even in
-another web page.  The links you see in emails and other web pages could lead
-you to a fake Loom site.  If you log in at one of those fake sites, a thief
-will steal your passphrase.  You have been warned.
-</ul>
-</td>
-</tr>
-</table>
-EOM
-);
-	}
-
-	# Disable for now.  This is all on the Help page.
-	if (0)
-	{
-	page::emit(<<EOM
-<h1> What is Loom? </h1>
-<p>
-Loom is a system which enables people to transfer ownership of any kind of
-asset privately and at will.
-
-<p>
-For example, a reputable individual can store gold in a vault and create a
-brand new digital asset redeemable for that physical gold.  People who know and
-trust that digital asset can add it to their Loom wallets and pay it around
-however they like.
-
-<p>
-Gold is just one example.  Imagine digital assets directly redeemable for cash,
-silver, coffee, oil, copper, electricity, lumber, hours of professional
-service, rewards &mdash; the possibilities are endless!
-
-<h1> How do I sign up? </h1>
-<p>
-First, you should know that using the Loom system is not free.  To use Loom,
-you must have an asset called <em>usage tokens</em>.  Loom charges usage tokens
-when you store information, and refunds usage tokens when you delete
-information.
-
-<p>
-So before you can sign up and create a Loom wallet, you need to get an
-<em>invitation code</em>, which is a location that contains enough usage
-tokens for you to get started.
-
-<h1> Where do I get an invitation? </h1>
-<p>
-If you know someone who already uses Loom, you can ask them for an invitation.
-Or you can purchase an invitation from an exchanger such as:
-
-<ul>
-<li> <a href="https://secure.goldnow.st/register.php">GoldNow</a> </li>
-<li> <a href="https://secure.gsfsystem.com/">GSF System</a> </li>
-<li> <a href="http://www.loommarket.com/">Loom Market</a> </li>
-</ul>
-EOM
-);
-	# LATER: soft-code these exchangers, and possibly all this text, into the
-	# Loom archive.  For now I don't really care.  If you're running your own
-	# Loom server, just hack in whatever you want here.
-	}
-
-	# LATER let's rethink this.  If we are supposed to be at an https site
-	# but we aren't, then it means the redirection from http to https is
-	# not working.  In that case we don't want the user to log in at all.
-	# The site is effectively down and we should go into maintenance mode.
-
-	if (0)
-	{
-	my $color = "";
-	my $msg = "";
-
-	my $this_url = loom_config::get("this_url");
-
-	if ($this_url =~ /^https:/)
-	{
-	$color = "green";
-	$msg = "This is a secure login form.";
-	}
-	else
-	{
-	$color = "red";
-	$msg = "*** WARNING: This is <em>not</em> a secure login form!";
-	}
-
-	page::emit(<<EOM
-<span class=small style='color:$color; font-weight:bold; margin-left:20px;'>
-$msg
-</span>
-EOM
-);
-	}
 
 	page::top_link("");
 
@@ -1859,30 +1662,16 @@ EOM
 		html::top_url("function","folder", "new_folder",1),
 		"Sign Up", 0, "Become a brand new user"));
 
+	{
+	my $url = html::top_url();
 	page::top_link(page::highlight_link(
-		"/help",
+		$url."/help",
 		"Help", 0, "Frequently Asked Questions"));
+	}
 
 	page::top_link(page::highlight_link(
 		html::top_url("help",1, "topic","contact_info"),
 		"Contact", 0, "Contact someone for help with your questions"));
-
-#	page::top_link(page::highlight_link(
-#		"/news",
-#		"News", 0,
-#		"See the latest announcements and other useful information"));
-
-	if (0)
-	{
-	# NOTE: disabled 11/19/11
-	page::top_link(page::highlight_link(
-		"/merchants",
-		"Merchants", 0, "See who uses Loom"));
-
-	page::top_link(page::highlight_link(
-		"/trade",
-		"Trade", 0, "See the products that vendors buy and sell."));
-	}
 
 	page::top_link(page::highlight_link(
 		html::top_url("help",1),
@@ -1970,10 +1759,14 @@ sub respond
 
 			# http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 
+			my $url = html::top_url(
+				"function","folder",
+				"session","$masked_session",
+				);
 			page::format_HTTP_response
 				(
 				"303 See Other",
-				"Location: /?function=folder&session=$masked_session\n",
+				"Location: $url\n",
 				"",
 				);
 
@@ -1989,10 +1782,13 @@ sub respond
 			{
 			loom_login::kill_session($real_session);
 
+			my $url = html::top_url(
+				"logout","1",
+				);
 			page::format_HTTP_response
 				(
 				"303 See Other",
-				"Location: /?logout=1\n",
+				"Location: $url\n",
 				"",
 				);
 
@@ -2001,7 +1797,6 @@ sub respond
 		}
 
 	my $real_session = page::check_session();
-
 	if ($real_session eq "")
 		{
 		page_login();

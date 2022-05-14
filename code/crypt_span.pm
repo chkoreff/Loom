@@ -88,7 +88,8 @@ sub encrypt
 
 	# Quote the text into the span format.
 
-	my $quoted = span::quote($text,0);
+	my $pos = 0;
+	my $quoted = span::quote($text,$pos);
 
 	# Pad the quoted text with NULs to an even multiple of blocksize.
 
@@ -120,7 +121,8 @@ sub decrypt
 
 	$text = crypt_blocks($cipher,0,$text);
 
-	return span::unquote($text,0);
+	my $pos = 0;
+	return span::unquote($text,$pos);
 	}
 
 return 1;

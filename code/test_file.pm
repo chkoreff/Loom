@@ -125,7 +125,7 @@ sub run
 	# repeatable sequences, which might be useful in some cases.
 	#
 	# When we spawn each child process, we call "rand" to generate a seed
-	# for that process.  Then the child calls "srand" with the given seed.  
+	# for that process.  Then the child calls "srand" with the given seed.
 	#
 	# Strangely, if we *don't* do that, and we happen to call "rand" here in
 	# the parent process (which we normally don't), it seems to destroy any

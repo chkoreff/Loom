@@ -47,4 +47,17 @@ sub get
 	return context::get($g_config,$key);
 	}
 
+sub logical_path
+	{
+	my $prefix = get("path_prefix");
+	my $path = http::path();
+	$path = substr($path,length($prefix));
+	return $path;
+	}
+
+sub host_domain
+	{
+	return "fexl.com";
+	}
+
 return 1;

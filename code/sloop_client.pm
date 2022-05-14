@@ -12,14 +12,11 @@ use page;
 use page_archive_api;
 use page_archive_tutorial;
 use page_data;
-use page_edit;
 use page_folder;
 use page_grid_api;
 use page_grid_tutorial;
-use page_help;
 use page_test;
 use page_tool;
-use page_trade;
 use page_view;
 use page_wallet;
 use random;
@@ -27,165 +24,7 @@ use sloop_io;
 use sloop_top;
 use trans;
 
-# LATER 20100325 Do a local install of all the prerequisite Perl modules.
-
-# LATER 031810 make the entire server completely self-configuring upon
-# installation.
-
-# LATER 20110313 Even though Perl closes abandoned file handles automatically,
-# let's put in code to close them explicitly, and include a counter of open
-# files which must be zero at key places during the program run.
-
-# LATER minimize coupling on these
-
 my $g_transaction_in_progress;
-
-# The transactional API is:
-#
-#    /trans/begin
-#    /trans/commit
-#    /trans/cancel
-#
-# This returns results in KV format.
-#
-# You can also do transactions interactively, in HTML, by using "trans_web"
-# instead of "trans".
-
-sub page_trans_respond
-	{
-	my @path = http::split_path(http::path());
-	my $format = shift @path;
-
-	die if $format ne "trans" && $format ne "trans_web";
-
-	my $action = shift @path;
-	$action = "" if !defined $action;
-
-	my $api = context::new();
-	context::put($api,"action",$action);
-
-	if ($action eq "begin")
-		{
-		context::put($api,"status",$g_transaction_in_progress ? "fail" : "success");
-		$g_transaction_in_progress = 1;
-		}
-	elsif ($action eq "commit")
-		{
-		my $ok = trans::commit();
-		context::put($api,"status", $ok ? "success" : "fail");
-		$g_transaction_in_progress = 0;
-		}
-	elsif ($action eq "cancel")
-		{
-		context::put($api,"status","success");
-		trans::cancel();
-		$g_transaction_in_progress = 0;
-		}
-	else
-		{
-		context::put($api,"status","fail");
-		context::put($api,"error_action","unknown");
-		}
-
-	if ($format eq "trans")
-		{
-		# Return result in KV format.
-		my $response_code = "200 OK";
-		my $headers = "Content-Type: text/plain\n";
-		my $text = context::write_kv($api);
-		page::format_HTTP_response($response_code,$headers,$text);
-		}
-	elsif ($format eq "trans_web")
-		{
-		# Return result in HTML format.
-
-		my $action = context::get($api,"action");
-		my $status = context::get($api,"status");
-
-		if ($action eq "begin")
-			{
-			page::set_title("Transaction");
-
-			page::emit(<<EOM
-<h1> Transaction in Progress </h1>
-EOM
-);
-			page::emit(<<EOM
-<p>
-You have started a new transaction.
-EOM
-) if $status eq "success";
-			page::emit(<<EOM
-<p>
-You already have a transaction in progress.
-EOM
-) if $status eq "fail";
-			page::emit(<<EOM
-<p>
-Now you can now go off and do any series of operations you like.  Use the link
-below if you'd like to start fresh.  Or, if you already have a window or tab
-open, you can go there and do the operations.
-
-<p style='margin-left:20px'>
-<a href="/" target=_new> Visit Home page in a new window. </a>
-<p>
-When you're done, come back to this window and either commit or cancel the
-transaction.
-<p style='margin-left:20px; margin-top:30px;'>
-<a href="/trans_web/commit"> Commit the transaction (save all changes). </a>
-<p style='margin-left:20px; margin-top:30px;'>
-<a href="/trans_web/cancel"> Cancel the transaction (discard all changes). </a>
-EOM
-);
-			}
-		elsif ($action eq "commit")
-			{
-			if ($status eq "success")
-			{
-			page::emit(<<EOM
-<h1> Transaction Committed </h1>
-<p>
-The transaction was committed successfully.
-EOM
-);
-			}
-			else
-			{
-			page::emit(<<EOM
-<h1> Transaction Failed </h1>
-<p>
-It was not possible to commit the transaction because some other process made
-some changes while the transaction was in progress.  Perhaps someone else is
-changing this same data from another web browser.
-EOM
-);
-			}
-
-			}
-		elsif ($action eq "cancel")
-			{
-			page::emit(<<EOM
-<h1> Transaction Canceled </h1>
-<p>
-The transaction has been canceled.
-EOM
-);
-			}
-
-		if ($action eq "commit" || $action eq "cancel")
-			{
-			page::emit(<<EOM
-<p style='margin-left:20px'>
-<a href="/trans_web/begin"> Start a new transaction. </a>
-<p style='margin-left:20px'>
-<a href="/"> Return to Home page. </a>
-EOM
-);
-			}
-		}
-
-	return;
-	}
 
 sub showing_maintenance_page
 	{
@@ -210,42 +49,6 @@ EOM
 	page::ok($page);
 	return 1;
 	}
-
-sub interpret_archive_slot
-	{
-	my $id = shift;
-
-	my $content = archive::get($id);
-	my ($header_op,$header_text,$payload) = page::split_content($content);
-
-	my $content_type = context::get($header_op,"Content-Type");
-	$content_type = context::get($header_op,"Content-type")
-		if $content_type eq "";
-
-	if ($content_type eq "standard-page")
-		{
-		my $title = context::get($header_op,"Title");
-		page::set_title($title);
-		page::emit($payload);
-
-		page::top_link(page::highlight_link(html::top_url(), "Home"));
-
-		page::top_link(page::highlight_link(
-			http::path(),
-			page::get_title(),1));
-		}
-	elsif ($content_type eq "loom-trade-page")
-		{
-		page_trade::respond($id,$header_op,$payload);
-		}
-	else
-		{
-		page::not_found();
-		}
-	}
-
-# LATER: Normalize the internal redirect mechanism as well, or make it
-# unnecessary.
 
 sub loom_dispatch
 	{
@@ -276,7 +79,7 @@ sub loom_dispatch
 	my $resolved = 0;
 	my $counter = 0;
 
-	my $path = http::path();
+	my $path = sloop_config::logical_path();
 
 	while (!$resolved)
 	{
@@ -355,30 +158,7 @@ sub loom_dispatch
 		}
 	else
 		{
-		# LATER this is the only case where you can get infinite loops.
-		# All we have to do is reduce the alias to a form which is
-		# resolved *outside* of this loop, down below.  That is, the
-		# alias is just a single mapping operation.
-		#
-		# We currently use this for favicon.ico and nav_logo.
-
-		my $alias = loom_config::get("alias/$function");
-
-		if ($alias ne "")
-			{
-			$path = $alias;
-			$resolved = 0;
-			}
-		else
-			{
-			# If we don't find an alias for this leg of the path, just put it
-			# in the "function" key and drop into the normal processing below.
-			#
-			# LATER: we could implement full positional notation for all
-			# functions, besides just the few we've done.
-
-			http::put("function",$function);
-			}
+		http::put("function",$function);
 		}
 	}
 
@@ -397,17 +177,9 @@ sub loom_dispatch
 		{
 		page_archive_api::respond();
 		}
-	elsif ($name eq "trans" || $name eq "trans_web")
-		{
-		page_trans_respond();
-		}
 	elsif ($name eq "view")
 		{
 		page_view::respond();
-		}
-	elsif ($name eq "edit" || $name eq "upload")
-		{
-		page_edit::respond();
 		}
 	elsif ($name eq "data")
 		{
@@ -428,6 +200,11 @@ sub loom_dispatch
 	elsif ($name eq "test")
 		{
 		page_test::respond();
+		}
+	elsif ($name eq "help")
+		{
+		require page_faq;
+		page_faq::respond();
 		}
 	elsif ($name eq "random")
 		{
@@ -464,24 +241,9 @@ sub loom_dispatch
 
 		page::format_HTTP_response($response_code,$headers,$result);
 		}
-	elsif ($name eq "object")
-		{
-		my @path = http::split_path($path);
-		shift @path;
-		my $id = shift @path;
-		interpret_archive_slot($id);
-		}
 	else
 		{
-		my $id = loom_config::get("link/$name");
-		if ($id eq "")
-			{
-			page::not_found();
-			}
-		else
-			{
-			interpret_archive_slot($id);
-			}
+		page::not_found();
 		}
 
 	return;

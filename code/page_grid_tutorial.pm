@@ -407,14 +407,14 @@ EOM
 	if (context::get($api,"action") ne "")
 	{
 	my $q_result = context::write_kv($api);
-	my $url = html::top_url(context::pairs($orig_api));
-
-	my $this_url = loom_config::get("this_url");
+	my $url =
+		loom_config::get("this_url").
+		html::make_url("/",context::pairs($orig_api));
 
 	page::emit(<<EOM
 <h2>URL</h2>
 <p>
-<a href="$url">$this_url$url</a>
+<a href="$url">$url</a>
 </p>
 
 <h2>Result (in KV format)</h2>

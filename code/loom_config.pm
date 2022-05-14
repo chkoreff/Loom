@@ -1,36 +1,28 @@
 package loom_config;
 use strict;
-use archive;
-use context;
 use file;
-use sloop_top;
 
-my $g_config;
-
-# Read the basic system configuration from the data/conf/loom file.   That will
-# point to a place in the archive, and we read that in KV format.
-
-sub init
+sub pgp_key
 	{
-	my $text = file::get_by_name(sloop_top::dir(),"data/conf/loom");
-
-	my $top_config = context::read_kv(context::new(),$text);
-	my $config_id = context::get($top_config,"config_id");
-
-	$g_config = context::read_kv(context::new(),archive::get($config_id));
-
-	context::default($g_config,"odd_row_color","#ffffff");
-	context::default($g_config,"even_row_color","#e8f8fe");
-
-	return;
+	my $file = file::new("/home/web/data/site/static/fexl/keys/patrick.txt");
+	my $text = file::get_content($file);
+	return "" if !defined $text;
+	return $text;
 	}
 
 sub get
 	{
 	my $key = shift;
-
-	init() if !defined $g_config;
-	return context::get($g_config,$key);
+	if ($key eq "odd_row_color") {return "#ffffff"};
+	if ($key eq "even_row_color") {return "#e8f8fe"};
+	if ($key eq "email_support") {return 'pc@fexl.com'};
+	if ($key eq "support_pgp_key") {return pgp_key() };
+	if ($key eq "this_url")
+		{
+		my $prefix = sloop_config::get("path_prefix");
+		return "https://fexl.com".$prefix;
+		}
+	return "";
 	}
 
 return 1;

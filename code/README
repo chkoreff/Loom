@@ -4,8 +4,8 @@ Written by Patrick Chkoreff
 Loom is a open source web server.  All code in this directory is subject to the
 license conditions described in the "NOTICE" file.
 
-This code is currently running at <https://loom.cc>, and possibly other places
-as well.
+This code is currently running at <https://fexl.com/loom>, and possibly other
+places as well.
 
 Loom provides two basic concepts known as the "Grid" and the "Archive".  In
 short:
@@ -61,9 +61,7 @@ probably already done that.)
 
 3. mkdir -p data/run
 
-4. Run "code/loom -y" to start the server.  You might want to go ahead and set
-your PATH variable so you can just run "loom" instead of having to specify the
- full path to it.
+4. Run "loom -y" to start the server.  This runs ~/bin/loom.
 
 5. Point your browser to http://localhost:8286/
 

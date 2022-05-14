@@ -118,7 +118,7 @@ Content-Type: text/css
   padding:1px 4px;
   font:bold 11px Arial,sans-serif;
   border:1px outset #aaaaaa;
-  background-color:#cccccc;  
+  background-color:#cccccc;
   cursor:pointer;
 }
 #keyboardInputMaster span#keyboardInputClose {
@@ -129,7 +129,7 @@ Content-Type: text/css
 }
 #keyboardInputMaster span.pressed {
   border:1px inset #999999;
-  background-color:#bbbbbb;  
+  background-color:#bbbbbb;
 }
 
 #keyboardInputMaster div {
@@ -203,7 +203,8 @@ sub data_keyboard_js
 	{
 	# This url is substituted into the javascript.
 
-	my $url_keyboard_png = "/cache/3600/data/keyboard.png";
+	my $prefix = html::top_url();
+	my $url_keyboard_png = $prefix."/cache/3600/data/keyboard.png";
 
 	my $data = "";
 	$data .= <<'EOM';
@@ -247,7 +248,7 @@ function buildKeyboardInputs() {
   this.VKI_layout = new Object();
 
   // - Lay out each keyboard in rows of sub-arrays
-  // 
+  //
   // - If a sub-array has only two items (eg. ["t", "T"]) then this key
   //   is a normal letter, where the first element is unshifted and the
   //   second is shifted.
@@ -502,7 +503,7 @@ function buildKeyboardInputs() {
       closer.onclick = function(e) { self.VKI_close(); }
   this.VKI_keyboard.appendChild(closer);
 
-  this.VKI_keyboard.appendChild(document.createElement('div'));      
+  this.VKI_keyboard.appendChild(document.createElement('div'));
 
 
 
@@ -578,7 +579,7 @@ function buildKeyboardInputs() {
               }
             } else if (this.VKI_layout[this.VKI_kt][x][y].length == 2)
               this.VKI_layout[this.VKI_kt][x][y][2] = this.VKI_layout[this.VKI_kt][x][y][3] = "\xa0";
-  
+
             if (!li.onclick) {
               li.onclick = function() {
                 if (self.VKI_deadkeysOn && self.VKI_dead) {
@@ -744,7 +745,7 @@ function buildKeyboardInputs() {
 
 
   if (window.addEventListener) {
-    window.addEventListener('resize', this.VKI_position, false); 
+    window.addEventListener('resize', this.VKI_position, false);
   } else if (window.attachEvent)
     window.attachEvent('onresize', this.VKI_position);
 
@@ -764,7 +765,7 @@ function buildKeyboardInputs() {
 
 /* ***** Attach this script to the onload event ******************** */
 if (window.addEventListener) {
-  window.addEventListener('load', buildKeyboardInputs, false); 
+  window.addEventListener('load', buildKeyboardInputs, false);
 } else if (window.attachEvent)
   window.attachEvent('onload', buildKeyboardInputs);
 
@@ -778,7 +779,7 @@ function findPos(obj) {
   do {
     curleft += obj.offsetLeft;
     curtop += obj.offsetTop;
-  } while (obj = obj.offsetParent);    
+  } while (obj = obj.offsetParent);
   return [curleft, curtop];
 }
 

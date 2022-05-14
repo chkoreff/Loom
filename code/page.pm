@@ -123,15 +123,11 @@ sub put_cookie
 	my $val = shift;
 	my $timeout = shift;  # in seconds (optional)
 
-	my $this_url = loom_config::get("this_url");
-	my $host = http::header("Host");
+	my $host_domain = sloop_config::host_domain();
 
-	my $server_name = $host;
-	$server_name =~ s/:\d+$//; # strip off port number if present
-
-	my $cookie_domain = ".$server_name";
-	my $cookie_path = "/";
-	my $cookie_secure = ($this_url =~ /^https:/);
+	my $cookie_domain = ".".$host_domain;
+	my $cookie_path = sloop_config::get("path_prefix");
+	my $cookie_secure = "1";
 
 	my $expires = "";
 	if (defined $timeout)
@@ -271,7 +267,7 @@ sub top_link
 
 # Conditionally highlighted link.
 
-# TODO 20140405 simplify page::top_link(page::highlight_link(...))
+# LATER 20140405 simplify page::top_link(page::highlight_link(...))
 sub highlight_link
 	{
 	my $url = shift;
@@ -342,23 +338,14 @@ sub loom_top_navigation_bar
 		$dsp_links .= qq{<span style='padding-right:15px'>$link</span>\n};
 		}
 
-	my $nav_logo_stanza = loom_config::get("nav_logo_stanza");
-
-	if ($nav_logo_stanza eq "")
-		{
-		$nav_logo_stanza = "<td></td>\n";
-		}
-
 	my $result = "";
 	$result .= <<EOM;
 <div id=navigation>
 <table border=0 width="100%" cellpadding=0 cellspacing=0>
 <colgroup>
-<col>
 <col width="100%">
 </colgroup>
 <tr>
-$nav_logo_stanza
 <td>
 $dsp_links
 </td>
@@ -368,7 +355,7 @@ EOM
 		{
 		$result .= <<EOM;
 <tr>
-<td colspan=2>
+<td>
 $g_top_message
 </td>
 </tr>
@@ -400,9 +387,10 @@ sub loom_render_page
 
 	if ($g_need_keyboard)
 		{
+		my $prefix = sloop_config::get("path_prefix");
 		$keyboard_script .= <<EOM;
-<script type="text/javascript" src="/cache/7200/data/keyboard.js" charset="UTF-8"></script>
-<link rel="stylesheet" href="/cache/7200/data/keyboard.css" type="text/css">
+<script type="text/javascript" src="$prefix/cache/7200/data/keyboard.js" charset="UTF-8"></script>
+<link rel="stylesheet" href="$prefix/cache/7200/data/keyboard.css" type="text/css">
 EOM
 		}
 
@@ -413,12 +401,11 @@ EOM
 	# Allow optional "base ref" clause in case someone is running the Loom
 	# server behind a front-end that uses some other root path.
 	my $base_clause = "";
-	if (loom_config::get("use_base"))
-		{
-		my $this_url = loom_config::get("this_url");
-		$base_clause = qq{<base href="$this_url">\n};
-		}
 
+	# LATER 20200512 Consider using base_clause.
+	###$base_clause = qq{<base href="$this_url">\n};
+
+	my $prefix = sloop_config::get("path_prefix");
 	$payload .= <<EOM;
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <html>
@@ -428,7 +415,7 @@ $base_clause<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="description" content="$system_name">
 <meta name="keywords" content="CMS content-management gold payment freedom">
 <title>$title</title>
-<link rel="stylesheet" href="/cache/7200/data/style.css" type="text/css">
+<link rel="stylesheet" href="$prefix/cache/7200/data/style.css" type="text/css">
 $keyboard_script
 </head>
 <body style='max-width:700px'$onload_clause>
